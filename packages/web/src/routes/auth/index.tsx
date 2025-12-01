@@ -1,8 +1,8 @@
 import { withActor } from '@/context/auth.withActor'
-import { Actor } from '@quizfunnel/core/actor'
-import { Database } from '@quizfunnel/core/database/index'
-import { UserTable } from '@quizfunnel/core/user/index.sql'
-import { WorkspaceTable } from '@quizfunnel/core/workspace/index.sql'
+import { Actor } from '@shopfunnel/core/actor'
+import { Database } from '@shopfunnel/core/database/index'
+import { UserTable } from '@shopfunnel/core/user/index.sql'
+import { WorkspaceTable } from '@shopfunnel/core/workspace/index.sql'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { and, desc, eq, isNull } from 'drizzle-orm'
 

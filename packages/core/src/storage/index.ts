@@ -1,4 +1,4 @@
-import { Resource } from '@quizfunnel/resource'
+import { Resource } from '@shopfunnel/resource'
 import { z } from 'zod'
 import { fn } from '../utils/fn'
 

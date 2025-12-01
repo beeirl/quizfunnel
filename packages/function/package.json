@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "name": "@quizfunnel/function",
+  "name": "@shopfunnel/function",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -9,8 +9,8 @@
   },
   "dependencies": {
     "@openauthjs/openauth": "catalog:",
-    "@quizfunnel/core": "workspace:*",
-    "@quizfunnel/resource": "workspace:*",
+    "@shopfunnel/core": "workspace:*",
+    "@shopfunnel/resource": "workspace:*",
     "zod": "catalog:"
   },
   "devDependencies": {

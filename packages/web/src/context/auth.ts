@@ -1,5 +1,5 @@
 import { createClient } from '@openauthjs/openauth/client'
-import { Actor } from '@quizfunnel/core/actor'
+import { Actor } from '@shopfunnel/core/actor'
 import { useAuthSession } from './auth.session'
 
 export const AuthClient = createClient({

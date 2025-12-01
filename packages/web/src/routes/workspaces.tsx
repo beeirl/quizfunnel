@@ -1,7 +1,7 @@
 import { withActor } from '@/context/auth.withActor'
 import { AppLayout } from '@beeirl/ui/app-layout'
-import { Account } from '@quizfunnel/core/account/index'
-import { queryOptions, useSuspenseQuery } from '@tanstack/react-query'
+import { Account } from '@shopfunnel/core/account/index'
+import { queryOptions } from '@tanstack/react-query'
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 
@@ -17,17 +17,16 @@ const workspacesQueryOptions = () =>
     queryFn: () => getWorkspacesFn(),
   })
 
-export const Route = createFileRoute('/$workspaceID')({
+export const Route = createFileRoute('/workspaces')({
   ssr: 'data-only',
   component: RouteComponent,
-  loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(workspacesQueryOptions())
-  },
+  // loader: async ({ context }) => {
+  //   await context.queryClient.ensureQueryData(workspacesQueryOptions())
+  // },
 })
 
 function RouteComponent() {
-  const workspacesQuery = useSuspenseQuery(workspacesQueryOptions())
-
+  // const workspacesQuery = useSuspenseQuery(workspacesQueryOptions())
   return (
     <AppLayout.Root>
       <Outlet />

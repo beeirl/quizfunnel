@@ -1,4 +1,4 @@
-import { Resource } from '@quizfunnel/resource'
+import { Resource } from '@shopfunnel/resource'
 import type { ExtractTablesWithRelations } from 'drizzle-orm'
 import { PgTransaction, type PgTransactionConfig } from 'drizzle-orm/pg-core'
 import type { PostgresJsQueryResultHKT } from 'drizzle-orm/postgres-js'

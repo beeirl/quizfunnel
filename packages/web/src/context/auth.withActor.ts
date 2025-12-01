@@ -1,4 +1,4 @@
-import { Actor } from '@quizfunnel/core/actor'
+import { Actor } from '@shopfunnel/core/actor'
 import { getActor } from './auth'
 
 export async function withActor<T>(fn: () => T, workspace?: string) {
