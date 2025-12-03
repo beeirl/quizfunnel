@@ -85,7 +85,7 @@ export function FormPage({ blocks, values, errors, showNextButton, setValue, onN
       <Form className="flex flex-col" errors={errors}>
         {blocks.map(renderBlock)}
       </Form>
-      {!showNextButton && <Button onClick={onNext}>Next</Button>}
+      {showNextButton && <Button onClick={onNext}>Next</Button>}
     </div>
   )
 }

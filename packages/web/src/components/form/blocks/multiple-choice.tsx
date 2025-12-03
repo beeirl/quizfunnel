@@ -5,8 +5,8 @@ import { Field } from './field'
 
 export interface MultipleChoiceBlockProps {
   block: Extract<FormBlock, { type: 'multiple_choice' }>
-  value?: string | string[]
-  onValueChange: (value: string | string[]) => void
+  value?: string | string[] | null
+  onValueChange: (value: string | string[] | null) => void
 }
 
 export function MultipleChoiceBlock({ block, value, onValueChange }: MultipleChoiceBlockProps) {
@@ -18,10 +18,15 @@ export function MultipleChoiceBlock({ block, value, onValueChange }: MultipleCho
         aria-label={block.properties.label}
         selectionMode={block.properties.multiple ? 'multiple' : 'single'}
         disallowEmptySelection={!block.properties.multiple}
-        selectedKeys={value}
+        selectedKeys={Array.isArray(value) ? value : value ? [value] : undefined}
         onSelectionChange={(selection) => {
           if (selection === 'all') return
-          onValueChange(Array.from(selection) as string[])
+          const value = Array.from(selection) as string[]
+          if (!block.properties.multiple) {
+            onValueChange(value[0] ?? null)
+          } else {
+            onValueChange(value)
+          }
         }}
         className="flex flex-col gap-3"
       >
