@@ -1,5 +1,4 @@
 // prettier-ignore
-
 export const secret = {
   CLOUDFLARE_API_TOKEN: new sst.Secret('CLOUDFLARE_API_TOKEN', process.env.CLOUDFLARE_API_TOKEN),
   CLOUDFLARE_DEFAULT_ACCOUNT_ID: new sst.Secret('CLOUDFLARE_DEFAULT_ACCOUNT_ID', sst.cloudflare.DEFAULT_ACCOUNT_ID),

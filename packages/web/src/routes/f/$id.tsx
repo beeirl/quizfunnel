@@ -2,7 +2,7 @@ import { Form } from '@/components/form'
 import type { FormInfo } from '@/components/form/types'
 import { createFileRoute } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/s/$id')({
+export const Route = createFileRoute('/f/$id')({
   component: RouteComponent,
 })
 

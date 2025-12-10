@@ -1,8 +1,8 @@
 import z from 'zod'
-import { FormSchema } from './schema'
+import { FunnelSchema } from './schema'
 
-export namespace Form {
-  export type Schema = FormSchema
+export namespace Funnel {
+  export type Schema = FunnelSchema
 
   export const Info = z.object({
     id: z.string(),

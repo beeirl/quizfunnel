@@ -1,4 +1,4 @@
-import type { FormSchema } from '@shopfunnel/core/form/schema'
+import type { FormSchema } from '@shopfunnel/core/funnel/schema'
 import { AnimatePresence, motion } from 'motion/react'
 import * as React from 'react'
 import { FormPage } from './page'

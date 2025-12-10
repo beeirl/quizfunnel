@@ -1,17 +1,16 @@
 import { jsonb, pgTable, uniqueIndex, varchar } from 'drizzle-orm/pg-core'
-import { timestamp, timestampColumns, workspaceColumns, workspaceIndexes } from '../database/types'
-import { FormSchema } from './schema'
+import { timestampColumns, workspaceColumns, workspaceIndexes } from '../database/types'
+import { FunnelSchema } from './schema'
 
-export const FormTable = pgTable(
-  'form',
+export const FunnelTable = pgTable(
+  'funnel',
   {
     ...workspaceColumns,
     ...timestampColumns,
-    shortID: varchar('short_id', { length: 6 }).notNull(),
+    shortId: varchar('short_id', { length: 6 }).notNull(),
+    templateId: varchar('template_id', { length: 255 }),
     title: varchar('title', { length: 255 }).notNull(),
-    schema: jsonb('schema').$type<FormSchema>().notNull(),
-    closedAt: timestamp('closed_at'),
-    closesAt: timestamp('closes_at'),
+    schema: jsonb('schema').$type<FunnelSchema>().notNull(),
   },
-  (table) => [...workspaceIndexes(table), uniqueIndex('short_id').on(table.workspaceID, table.shortID)],
+  (table) => [...workspaceIndexes(table), uniqueIndex('short_id').on(table.workspaceID, table.shortId)],
 )

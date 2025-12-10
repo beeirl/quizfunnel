@@ -1,171 +1,192 @@
-export namespace FormSchema {
-  interface TextInputFormBlock {
-    id: string
-    type: 'text_input'
-    properties: {
-      label: string
-      description?: string
-    }
-    validations: {
-      email?: boolean
-      maxLength?: number
-      required?: boolean
-    }
-  }
-  interface MultipleChoiceFormBlock {
-    id: string
-    type: 'multiple_choice'
-    properties: {
-      label: string
-      description?: string
-      multiple?: boolean
-      choices: {
-        id: string
+export namespace FunnelSchema {
+  export namespace Page {
+    export interface ShortTextComponent {
+      id: string
+      type: 'short_text'
+      properties: {
         label: string
-        attachment?:
-          | {
-              type: 'image' | 'video'
-              url: string
-            }
-          | {
-              type: 'emoji'
-              emoji: string
-            }
-      }[]
+        description?: string
+        placeholder?: string
+      }
+      validations: {
+        email?: boolean
+        maxLength?: number
+        required?: boolean
+      }
     }
-    validations: {
-      minChoices?: number
-      maxChoices?: number
-      required?: boolean
-    }
-  }
-  interface DropdownFormBlock {
-    id: string
-    type: 'dropdown'
-    properties: {
-      label: string
-      description?: string
-      options: {
-        id: string
+
+    export interface MultipleChoiceComponent {
+      id: string
+      type: 'multiple_choice'
+      properties: {
         label: string
-      }[]
+        description?: string
+        multiple?: boolean
+        choices: {
+          id: string
+          label: string
+          attachment?:
+            | {
+                type: 'image'
+                url: string
+              }
+            | {
+                type: 'emoji'
+                emoji: string
+              }
+        }[]
+      }
+      validations: {
+        minChoices?: number
+        maxChoices?: number
+        required?: boolean
+      }
     }
-    validations: {
-      required?: boolean
+
+    export interface DropdownComponent {
+      id: string
+      type: 'dropdown'
+      properties: {
+        label: string
+        description?: string
+        options: {
+          id: string
+          label: string
+        }[]
+      }
+      validations: {
+        required?: boolean
+      }
     }
-  }
-  interface SliderFormBlock {
-    id: string
-    type: 'slider'
-    properties: {
-      label: string
-      description?: string
-      step?: number
-      defaultValue?: number
-      minValue?: number
-      maxValue?: number
+
+    export interface SliderComponent {
+      id: string
+      type: 'slider'
+      properties: {
+        label: string
+        description?: string
+        step?: number
+        defaultValue?: number
+        minValue?: number
+        maxValue?: number
+      }
     }
-  }
-  interface ProgressFormBlock {
-    id: string
-    type: 'progress'
-  }
-  interface HeadingFormBlock {
-    id: string
-    type: 'heading'
-    properties: {
-      text: string
+
+    export interface ProgressComponent {
+      id: string
+      type: 'progress'
     }
-  }
-  interface ParagraphFormBlock {
-    id: string
-    type: 'paragraph'
-    properties: {
-      text: string
+
+    export interface HeadingComponent {
+      id: string
+      type: 'heading'
+      properties: {
+        text: string
+      }
     }
-  }
-  interface GaugeFormBlock {
-    id: string
-    type: 'gauge'
-    properties: {
-      minValue?: number
-      maxValue?: number
-      step?: number
-      value: string
+
+    export interface ParagraphComponent {
+      id: string
+      type: 'paragraph'
+      properties: {
+        text: string
+      }
     }
-  }
-  interface StatCardsFormBlock {
-    id: string
-    type: 'stat_cards'
-    properties: {
-      items: {
-        id: string
-        emoji: string
-        title: string
+
+    export interface GaugeComponent {
+      id: string
+      type: 'gauge'
+      properties: {
+        minValue?: number
+        maxValue?: number
+        step?: number
         value: string
-      }[]
+      }
     }
+
+    export interface ListComponent {
+      id: string
+      type: 'list'
+      properties: {
+        orientation: 'horizontal' | 'vertical'
+        textPlacement: 'bottom' | 'right'
+        size: 'sm' | 'lg'
+        items: {
+          id: string
+          // emoji / icon / image?
+          icon: string
+          title: string
+          subtitle?: string
+        }[]
+      }
+    }
+
+    export type Component =
+      | ShortTextComponent
+      | MultipleChoiceComponent
+      | DropdownComponent
+      | SliderComponent
+      | ProgressComponent
+      | HeadingComponent
+      | ParagraphComponent
+      | GaugeComponent
+      | ListComponent
   }
-  export type Block =
-    | TextInputFormBlock
-    | MultipleChoiceFormBlock
-    | DropdownFormBlock
-    | SliderFormBlock
-    | ProgressFormBlock
-    | HeadingFormBlock
-    | ParagraphFormBlock
-    | GaugeFormBlock
-    | StatCardsFormBlock
 
   export interface Page {
     id: string
-    blocks: Block[]
+    components: Page.Component[]
+    properties?: {
+      buttonText?: string
+    }
   }
 
-  export interface LogicalCondition {
-    op: 'and' | 'or'
-    vars: ComparisonCondition[]
-  }
+  export namespace Rule {
+    export interface LogicalCondition {
+      op: 'and' | 'or'
+      vars: ComparisonCondition[]
+    }
 
-  export interface ComparisonCondition {
-    op: 'lt' | 'lte' | 'gt' | 'gte' | 'eq' | 'neq' | 'always'
-    vars: {
-      type: 'block' | 'variable' | 'constant'
-      value: string | number | boolean
-    }[]
-  }
+    export interface ComparisonCondition {
+      op: 'lt' | 'lte' | 'gt' | 'gte' | 'eq' | 'neq' | 'always'
+      vars: {
+        type: 'component' | 'variable' | 'constant'
+        value: string | number | boolean
+      }[]
+    }
 
-  export type Condition = ComparisonCondition | LogicalCondition
+    export type Condition = ComparisonCondition | LogicalCondition
 
-  export interface Action {
-    type: 'jump' | 'hide' | 'add' | 'subtract' | 'multiply' | 'divide' | 'set'
-    condition: Condition
-    details: {
-      to?: {
-        type: 'page'
-        value: string
-      }
-      target?: {
-        type: 'block' | 'variable'
-        value: string
-      }
-      value?: {
-        type: 'constant' | 'variable'
-        value: number
+    export interface Action {
+      type: 'jump' | 'hide' | 'add' | 'subtract' | 'multiply' | 'divide' | 'set'
+      condition: Condition
+      details: {
+        to?: {
+          type: 'page'
+          value: string
+        }
+        target?: {
+          type: 'component' | 'variable'
+          value: string
+        }
+        value?: {
+          type: 'constant' | 'variable'
+          value: number
+        }
       }
     }
   }
 
   export interface Rule {
     pageId: string
-    actions: Action[]
+    actions: Rule.Action[]
   }
 
   export type Variables = Record<string, string | number>
 }
 
-export interface FormSchema {
-  pages: FormSchema.Page[]
-  rules: FormSchema.Rule[]
-  variables: FormSchema.Variables
+export interface FunnelSchema {
+  pages: FunnelSchema.Page[]
+  rules: FunnelSchema.Rule[]
+  variables: FunnelSchema.Variables
 }

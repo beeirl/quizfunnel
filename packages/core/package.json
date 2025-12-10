@@ -23,7 +23,7 @@
     "luxon": "catalog:",
     "postgres": "3.4.7",
     "remeda": "catalog:",
-    "stripe": "18.0.0",
+    "stripe": "20.0.0",
     "ulid": "catalog:",
     "zod": "catalog:"
   },

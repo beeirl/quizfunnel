@@ -1,5 +1,5 @@
 import type { Form } from '@shopfunnel/core/form/index'
-import type { FormSchema } from '@shopfunnel/core/form/schema'
+import type { FormSchema } from '@shopfunnel/core/funnel/schema'
 
 export type FormInfo = Form.Info
 
