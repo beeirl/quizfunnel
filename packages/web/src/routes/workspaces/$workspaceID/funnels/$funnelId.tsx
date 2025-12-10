@@ -1,20 +1,23 @@
-import type { FunnelSchema } from '@shopfunnel/core/form/schema'
+import type { Funnel } from '@shopfunnel/core/funnel/index'
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
-import { ComponentsSidebar } from './-components/components-sidebar'
-import { PagePreview } from './-components/page-preview'
-import { PagesSidebar } from './-components/pages-sidebar'
-import { PropertiesSidebar } from './-components/properties-sidebar'
+import { BlocksPanel } from './-components/blocks-panel'
+import { PagesSidebar } from './-components/pages-panel'
+import { PagePreview } from './-components/preview-panel'
+import { SettingsPanel } from './-components/settings-panel'
 
 export const Route = createFileRoute('/workspaces/$workspaceID/funnels/$funnelId')({
   component: RouteComponent,
 })
 
-const exampleSchema: FunnelSchema = {
+const defaultFunnel: Funnel.Info = {
+  id: 'funnel',
+  shortID: 'fun',
+  title: 'Funnel',
   pages: [
     {
       id: 'basic-info',
-      components: [
+      blocks: [
         {
           id: 'name-input',
           type: 'short_text',
@@ -42,7 +45,7 @@ const exampleSchema: FunnelSchema = {
     },
     {
       id: 'experience',
-      components: [
+      blocks: [
         {
           id: 'satisfaction-choice',
           type: 'multiple_choice',
@@ -95,98 +98,90 @@ const exampleSchema: FunnelSchema = {
 }
 
 function RouteComponent() {
-  const [schema, setSchema] = useState<FunnelSchema>(exampleSchema)
-  const [selectedPageId, setSelectedPageId] = useState<string | null>(schema.pages[0]?.id ?? null)
-  const [selectedComponentId, setSelectedComponentId] = useState<string | null>(
-    schema.pages[0]?.components[0]?.id ?? null,
-  )
+  const [funnel, setFunnel] = useState<Funnel.Info>(defaultFunnel)
+  const [selectedPageId, setSelectedPageId] = useState<string | null>(defaultFunnel.pages[0]?.id ?? null)
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(defaultFunnel.pages[0]?.blocks[0]?.id ?? null)
 
-  // Derived state
-  const selectedPage = schema.pages.find((page) => page.id === selectedPageId)
-  const selectedComponent = selectedPage?.components.find((c) => c.id === selectedComponentId)
+  const selectedPage = funnel.pages.find((page) => page.id === selectedPageId)
+  const selectedBlock = selectedPage?.blocks.find((b) => b.id === selectedBlockId)
 
-  // Handlers
   const handleSelectPage = (pageId: string) => {
     setSelectedPageId(pageId)
-    const page = schema.pages.find((p) => p.id === pageId)
-    setSelectedComponentId(page?.components[0]?.id ?? null)
+    const page = funnel.pages.find((p) => p.id === pageId)
+    setSelectedBlockId(page?.blocks[0]?.id ?? null)
   }
 
-  const handleReorderPages = (pages: FunnelSchema.Page[]) => {
-    setSchema((prev) => ({ ...prev, pages }))
+  const handleReorderPages = (pages: Funnel.Page[]) => {
+    setFunnel((prev) => ({ ...prev, pages }))
   }
 
-  const handleReorderComponents = (components: FunnelSchema.Page.Component[]) => {
+  const handleReorderBlocks = (blocks: Funnel.Page.Block[]) => {
     if (!selectedPageId) return
-    setSchema((prev) => ({
+    setFunnel((prev) => ({
       ...prev,
-      pages: prev.pages.map((page) => (page.id === selectedPageId ? { ...page, components } : page)),
+      pages: prev.pages.map((page) => (page.id === selectedPageId ? { ...page, blocks } : page)),
     }))
   }
 
-  const handleUpdateComponent = (componentId: string, updates: Partial<FunnelSchema.Page.Component>) => {
-    setSchema((prev) => ({
+  const handleUpdateBlock = (blockId: string, updates: Partial<Funnel.Page.Block>) => {
+    setFunnel((prev) => ({
       ...prev,
       pages: prev.pages.map((page) => ({
         ...page,
-        components: page.components.map((c) =>
-          c.id === componentId ? ({ ...c, ...updates } as FunnelSchema.Page.Component) : c,
-        ),
+        blocks: page.blocks.map((b) => (b.id === blockId ? ({ ...b, ...updates } as Funnel.Page.Block) : b)),
       })),
     }))
   }
 
-  const handleAddComponent = (afterComponentId: string | null, component: FunnelSchema.Page.Component) => {
+  const handleAddBlock = (afterBlockId: string | null, block: Funnel.Page.Block) => {
     if (!selectedPageId) return
 
-    setSchema((prev) => ({
+    setFunnel((prev) => ({
       ...prev,
       pages: prev.pages.map((page) => {
         if (page.id !== selectedPageId) return page
 
-        const components = [...page.components]
-        if (afterComponentId) {
-          const afterIndex = components.findIndex((c) => c.id === afterComponentId)
+        const blocks = [...page.blocks]
+        if (afterBlockId) {
+          const afterIndex = blocks.findIndex((b) => b.id === afterBlockId)
           if (afterIndex !== -1) {
-            components.splice(afterIndex + 1, 0, component)
+            blocks.splice(afterIndex + 1, 0, block)
           } else {
-            components.push(component)
+            blocks.push(block)
           }
         } else {
-          components.push(component)
+          blocks.push(block)
         }
 
-        return { ...page, components }
+        return { ...page, blocks }
       }),
     }))
 
-    // Select the newly added component
-    setSelectedComponentId(component.id)
+    // Select the newly added block
+    setSelectedBlockId(block.id)
   }
 
   return (
     <div className="flex h-screen w-full">
       <PagesSidebar
-        pages={schema.pages}
+        pages={funnel.pages}
         selectedPageId={selectedPageId}
         onSelectPage={handleSelectPage}
         onReorderPages={handleReorderPages}
       />
-      <ComponentsSidebar
-        components={selectedPage?.components ?? []}
-        selectedComponentId={selectedComponentId}
-        onSelectComponent={setSelectedComponentId}
-        onReorderComponents={handleReorderComponents}
-        onAddComponent={handleAddComponent}
+      <BlocksPanel
+        blocks={selectedPage?.blocks ?? []}
+        selectedBlockId={selectedBlockId}
+        onSelectBlock={setSelectedBlockId}
+        onReorderBlocks={handleReorderBlocks}
+        onAddBlock={handleAddBlock}
       />
       <PagePreview
-        components={selectedPage?.components ?? []}
-        selectedComponentId={selectedComponentId}
-        onSelectComponent={setSelectedComponentId}
+        blocks={selectedPage?.blocks ?? []}
+        selectedBlockId={selectedBlockId}
+        onSelectBlock={setSelectedBlockId}
       />
-      {selectedComponent && (
-        <PropertiesSidebar component={selectedComponent} onUpdateComponent={handleUpdateComponent} />
-      )}
+      {selectedBlock && <SettingsPanel block={selectedBlock} onUpdateBlock={handleUpdateBlock} />}
     </div>
   )
 }

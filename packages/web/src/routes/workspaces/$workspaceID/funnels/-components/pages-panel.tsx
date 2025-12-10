@@ -4,13 +4,13 @@ import { cn } from '@beeirl/ui/styles'
 import { move } from '@dnd-kit/helpers'
 import { DragDropProvider } from '@dnd-kit/react'
 import { useSortable } from '@dnd-kit/react/sortable'
-import type { FunnelSchema } from '@shopfunnel/core/form/schema'
+import type { Funnel } from '@shopfunnel/core/funnel/index'
 
 interface PagesSidebarProps {
-  pages: FunnelSchema.Page[]
+  pages: Funnel.Page[]
   selectedPageId: string | null
   onSelectPage: (pageId: string) => void
-  onReorderPages: (pages: FunnelSchema.Page[]) => void
+  onReorderPages: (pages: Funnel.Page[]) => void
 }
 
 function PageItem({
@@ -19,7 +19,7 @@ function PageItem({
   selected,
   onSelect,
 }: {
-  page: FunnelSchema.Page
+  page: Funnel.Page
   index: number
   selected: boolean
   onSelect: () => void
@@ -46,7 +46,7 @@ function PageItem({
       </div>
       <div className="pointer-events-none flex flex-col items-center gap-0.5 text-center">
         <span className="text-[10px] font-medium text-gray-400">
-          {page.components.length} {page.components.length === 1 ? 'component' : 'components'}
+          {page.blocks.length} {page.blocks.length === 1 ? 'block' : 'blocks'}
         </span>
       </div>
     </div>

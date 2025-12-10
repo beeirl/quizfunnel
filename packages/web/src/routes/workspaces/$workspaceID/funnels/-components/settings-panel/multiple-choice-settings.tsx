@@ -6,15 +6,14 @@ import { Switch } from '@beeirl/ui/switch'
 import { move } from '@dnd-kit/helpers'
 import { DragDropProvider, PointerSensor } from '@dnd-kit/react'
 import { useSortable } from '@dnd-kit/react/sortable'
-import type { FunnelSchema } from '@shopfunnel/core/form/schema'
+import type { Funnel } from '@shopfunnel/core/funnel/index'
+import { Section } from './section'
 
-import { Property } from '../property'
+type Choice = Funnel.Page.MultipleChoiceBlock['properties']['choices'][number]
 
-type Choice = FunnelSchema.Page.MultipleChoiceComponent['properties']['choices'][number]
-
-interface MultipleChoicePropertiesProps {
-  component: FunnelSchema.Page.MultipleChoiceComponent
-  onUpdate: (updates: Partial<FunnelSchema.Page.MultipleChoiceComponent>) => void
+interface MultipleChoiceSettingsProps {
+  block: Funnel.Page.MultipleChoiceBlock
+  onUpdate: (updates: Partial<Funnel.Page.MultipleChoiceBlock>) => void
 }
 
 function ChoiceItem({
@@ -46,13 +45,13 @@ function ChoiceItem({
   )
 }
 
-export function MultipleChoiceProperties({ component, onUpdate }: MultipleChoicePropertiesProps) {
-  const choices = component.properties.choices
+export function MultipleChoiceSettings({ block, onUpdate }: MultipleChoiceSettingsProps) {
+  const choices = block.properties.choices
 
   const handleChoiceUpdate = (choiceId: string, updates: Partial<Choice>) => {
     onUpdate({
       properties: {
-        ...component.properties,
+        ...block.properties,
         choices: choices.map((c) => (c.id === choiceId ? { ...c, ...updates } : c)),
       },
     })
@@ -61,7 +60,7 @@ export function MultipleChoiceProperties({ component, onUpdate }: MultipleChoice
   const handleChoiceDelete = (choiceId: string) => {
     onUpdate({
       properties: {
-        ...component.properties,
+        ...block.properties,
         choices: choices.filter((c) => c.id !== choiceId),
       },
     })
@@ -74,7 +73,7 @@ export function MultipleChoiceProperties({ component, onUpdate }: MultipleChoice
     }
     onUpdate({
       properties: {
-        ...component.properties,
+        ...block.properties,
         choices: [...choices, newChoice],
       },
     })
@@ -83,7 +82,7 @@ export function MultipleChoiceProperties({ component, onUpdate }: MultipleChoice
   const handleChoicesReorder = (newChoices: Choice[]) => {
     onUpdate({
       properties: {
-        ...component.properties,
+        ...block.properties,
         choices: newChoices,
       },
     })
@@ -91,48 +90,48 @@ export function MultipleChoiceProperties({ component, onUpdate }: MultipleChoice
 
   return (
     <div>
-      <Property.Root>
-        <Property.Header>
-          <Property.Title>Label</Property.Title>
-        </Property.Header>
-        <Property.Content>
+      <Section.Root>
+        <Section.Header>
+          <Section.Title>Label</Section.Title>
+        </Section.Header>
+        <Section.Content>
           <Input
-            value={component.properties.label}
+            value={block.properties.label}
             placeholder="Enter label..."
             onValueChange={(label) =>
               onUpdate({
-                properties: { ...component.properties, label },
+                properties: { ...block.properties, label },
               })
             }
           />
-        </Property.Content>
-      </Property.Root>
+        </Section.Content>
+      </Section.Root>
 
-      <Property.Root>
-        <Property.Header>
-          <Property.Title>Description</Property.Title>
-        </Property.Header>
-        <Property.Content>
+      <Section.Root>
+        <Section.Header>
+          <Section.Title>Description</Section.Title>
+        </Section.Header>
+        <Section.Content>
           <Input
-            value={component.properties.description ?? ''}
+            value={block.properties.description ?? ''}
             placeholder="Enter description..."
             onValueChange={(description) =>
               onUpdate({
-                properties: { ...component.properties, description: description || undefined },
+                properties: { ...block.properties, description: description || undefined },
               })
             }
           />
-        </Property.Content>
-      </Property.Root>
+        </Section.Content>
+      </Section.Root>
 
-      <Property.Root>
-        <Property.Header>
-          <Property.Title>Choices</Property.Title>
+      <Section.Root>
+        <Section.Header>
+          <Section.Title>Choices</Section.Title>
           <IconButton className="mx-0" color="gray" size="sm" variant="ghost" onClick={handleChoiceAdd}>
             <PlusIcon />
           </IconButton>
-        </Property.Header>
-        <Property.Content>
+        </Section.Header>
+        <Section.Content>
           <DragDropProvider
             sensors={[
               PointerSensor.configure({
@@ -161,21 +160,21 @@ export function MultipleChoiceProperties({ component, onUpdate }: MultipleChoice
           {choices.length === 0 && (
             <div className="flex items-center justify-center py-4 text-sm text-gray-400">No choices yet</div>
           )}
-        </Property.Content>
-      </Property.Root>
+        </Section.Content>
+      </Section.Root>
 
-      <Property.Root>
-        <Property.Header>
-          <Property.Title>Options</Property.Title>
-        </Property.Header>
-        <Property.Content>
+      <Section.Root>
+        <Section.Header>
+          <Section.Title>Options</Section.Title>
+        </Section.Header>
+        <Section.Content>
           <Field.Root orientation="horizontal">
             <Field.Label>Allow multiple selections</Field.Label>
             <Switch
-              checked={component.properties.multiple ?? false}
+              checked={block.properties.multiple ?? false}
               onCheckedChange={(multiple) =>
                 onUpdate({
-                  properties: { ...component.properties, multiple },
+                  properties: { ...block.properties, multiple },
                 })
               }
             />
@@ -183,16 +182,16 @@ export function MultipleChoiceProperties({ component, onUpdate }: MultipleChoice
           <Field.Root orientation="horizontal">
             <Field.Label>Required</Field.Label>
             <Switch
-              checked={component.validations.required ?? false}
+              checked={block.validations.required ?? false}
               onCheckedChange={(required) =>
                 onUpdate({
-                  validations: { ...component.validations, required },
+                  validations: { ...block.validations, required },
                 })
               }
             />
           </Field.Root>
-        </Property.Content>
-      </Property.Root>
+        </Section.Content>
+      </Section.Root>
     </div>
   )
 }
