@@ -46,7 +46,7 @@ export namespace Account {
         tx
           .select({
             provider: AuthTable.provider,
-            accountID: AuthTable.accountID,
+            accountId: AuthTable.accountId,
           })
           .from(AuthTable)
           .where(
@@ -56,15 +56,15 @@ export namespace Account {
             ),
           ),
       )
-      const idFromProvider = rows.find((row) => row.provider === input.provider)?.accountID
-      const idFromEmail = rows.find((row) => row.provider === 'email')?.accountID
+      const idFromProvider = rows.find((row) => row.provider === input.provider)?.accountId
+      const idFromEmail = rows.find((row) => row.provider === 'email')?.accountId
       if (idFromProvider && idFromEmail) return idFromProvider
 
       // create account if not found
-      let accountID = idFromProvider ?? idFromEmail
-      if (!accountID) {
+      let accountId = idFromProvider ?? idFromEmail
+      if (!accountId) {
         console.log('creating account for', input.email)
-        accountID = await Account.create({})
+        accountId = await Account.create({})
       }
 
       await Database.use((tx) =>
@@ -73,26 +73,25 @@ export namespace Account {
           .values([
             {
               id: Identifier.create('auth'),
-              accountID,
+              accountId,
               provider: input.provider,
               subject: input.subject,
             },
             {
               id: Identifier.create('auth'),
-              accountID,
+              accountId,
               provider: 'email',
               subject: input.email,
             },
           ])
-          .onConflictDoUpdate({
-            target: [AuthTable.provider, AuthTable.subject],
+          .onDuplicateKeyUpdate({
             set: {
               archivedAt: null,
             },
           }),
       )
 
-      return accountID
+      return accountId
     },
   )
 
@@ -101,10 +100,10 @@ export namespace Account {
       tx
         .select(getTableColumns(WorkspaceTable))
         .from(WorkspaceTable)
-        .innerJoin(UserTable, eq(UserTable.workspaceID, WorkspaceTable.id))
+        .innerJoin(UserTable, eq(UserTable.workspaceId, WorkspaceTable.id))
         .where(
           and(
-            eq(UserTable.accountID, Actor.accountID()),
+            eq(UserTable.accountId, Actor.accountId()),
             isNull(UserTable.archivedAt),
             isNull(WorkspaceTable.archivedAt),
           ),

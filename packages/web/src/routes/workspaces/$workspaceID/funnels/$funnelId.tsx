@@ -6,13 +6,13 @@ import { PagesSidebar } from './-components/pages-panel'
 import { PagePreview } from './-components/preview-panel'
 import { SettingsPanel } from './-components/settings-panel'
 
-export const Route = createFileRoute('/workspaces/$workspaceID/funnels/$funnelId')({
+export const Route = createFileRoute('/workspaces/$workspaceId/funnels/$funnelId')({
   component: RouteComponent,
 })
 
 const defaultFunnel: Funnel.Info = {
   id: 'funnel',
-  shortID: 'fun',
+  shortId: 'fun',
   title: 'Funnel',
   pages: [
     {

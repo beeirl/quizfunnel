@@ -1,26 +1,25 @@
+import { Client } from '@planetscale/database'
 import { Resource } from '@shopfunnel/resource'
 import type { ExtractTablesWithRelations } from 'drizzle-orm'
-import { PgTransaction, type PgTransactionConfig } from 'drizzle-orm/pg-core'
-import type { PostgresJsQueryResultHKT } from 'drizzle-orm/postgres-js'
-import { drizzle } from 'drizzle-orm/postgres-js'
-import postgres from 'postgres'
+import { MySqlTransaction, type MySqlTransactionConfig } from 'drizzle-orm/mysql-core'
+import type { PlanetScalePreparedQueryHKT, PlanetscaleQueryResultHKT } from 'drizzle-orm/planetscale-serverless'
+import { drizzle } from 'drizzle-orm/planetscale-serverless'
 import { Context } from '../utils/context'
 import { memo } from '../utils/memo'
 
 export namespace Database {
-  export type Transaction = PgTransaction<
-    PostgresJsQueryResultHKT,
-    Record<string, unknown>,
-    ExtractTablesWithRelations<Record<string, unknown>>
+  export type Transaction = MySqlTransaction<
+    PlanetscaleQueryResultHKT,
+    PlanetScalePreparedQueryHKT,
+    Record<string, never>,
+    ExtractTablesWithRelations<Record<string, never>>
   >
 
   const client = memo(() => {
-    const result = postgres({
+    const result = new Client({
       host: Resource.Database.host,
-      database: Resource.Database.database,
-      user: Resource.Database.username,
+      username: Resource.Database.username,
       password: Resource.Database.password,
-      port: Resource.Database.port,
     })
     const db = drizzle(result, {})
     return db
@@ -67,7 +66,7 @@ export namespace Database {
     }
   }
 
-  export async function transaction<T>(callback: (tx: TxOrDb) => Promise<T>, config?: PgTransactionConfig) {
+  export async function transaction<T>(callback: (tx: TxOrDb) => Promise<T>, config?: MySqlTransactionConfig) {
     try {
       const { tx } = TransactionContext.use()
       return callback(tx)

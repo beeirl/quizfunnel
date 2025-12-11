@@ -1,7 +1,7 @@
-import { pgTable, primaryKey } from 'drizzle-orm/pg-core'
+import { mysqlTable, primaryKey } from 'drizzle-orm/mysql-core'
 import { id, timestampColumns } from '../database/types'
 
-export const AccountTable = pgTable(
+export const AccountTable = mysqlTable(
   'account',
   {
     id: id('id').notNull(),

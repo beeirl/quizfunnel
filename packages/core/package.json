@@ -21,7 +21,6 @@
     "@planetscale/database": "1.19.0",
     "drizzle-orm": "catalog:",
     "luxon": "catalog:",
-    "postgres": "3.4.7",
     "remeda": "catalog:",
     "stripe": "20.0.0",
     "ulid": "catalog:",
@@ -33,6 +32,7 @@
     "@types/luxon": "catalog:",
     "@types/node": "catalog:",
     "drizzle-kit": "catalog:",
+    "mysql2": "3.14.4",
     "typescript": "catalog:"
   }
 }

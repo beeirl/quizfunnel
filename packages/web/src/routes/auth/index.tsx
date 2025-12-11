@@ -11,8 +11,9 @@ export const Route = createFileRoute('/auth/')({
     handlers: {
       GET: async () => {
         try {
-          const workspaceID = await getLastSeenWorkspaceID()
-          return redirect({ to: `/${workspaceID}` })
+          const workspaceId = await getLastSeenWorkspaceId()
+          if (!workspaceId) return redirect({ to: '/auth/authorize' })
+          return redirect({ to: '/workspaces/$workspaceId', params: { workspaceId } })
         } catch {
           return redirect({ to: '/auth/authorize' })
         }
@@ -21,17 +22,17 @@ export const Route = createFileRoute('/auth/')({
   },
 })
 
-async function getLastSeenWorkspaceID() {
+async function getLastSeenWorkspaceId() {
   return withActor(async () => {
     const actor = Actor.assert('account')
     return Database.use(async (tx) =>
       tx
         .select({ id: WorkspaceTable.id })
         .from(UserTable)
-        .innerJoin(WorkspaceTable, eq(UserTable.workspaceID, WorkspaceTable.id))
+        .innerJoin(WorkspaceTable, eq(UserTable.workspaceId, WorkspaceTable.id))
         .where(
           and(
-            eq(UserTable.accountID, actor.properties.accountID),
+            eq(UserTable.accountId, actor.properties.accountId),
             isNull(UserTable.archivedAt),
             isNull(WorkspaceTable.archivedAt),
           ),

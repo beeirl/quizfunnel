@@ -8,7 +8,7 @@ export namespace Actor {
   export const Account = z.object({
     type: z.literal('account'),
     properties: z.object({
-      accountID: z.string(),
+      accountId: z.string(),
       email: z.string(),
     }),
   })
@@ -23,9 +23,9 @@ export namespace Actor {
   export const User = z.object({
     type: z.literal('user'),
     properties: z.object({
-      userID: z.string(),
-      workspaceID: z.string(),
-      accountID: z.string(),
+      userId: z.string(),
+      workspaceId: z.string(),
+      accountId: z.string(),
       role: z.enum(UserRole),
     }),
   })
@@ -34,7 +34,7 @@ export namespace Actor {
   export const System = z.object({
     type: z.literal('system'),
     properties: z.object({
-      workspaceID: z.string(),
+      workspaceId: z.string(),
     }),
   })
   export type System = z.infer<typeof System>
@@ -81,10 +81,10 @@ export namespace Actor {
     )
   }
 
-  export function workspaceID() {
+  export function workspaceId() {
     const actor = use()
-    if ('workspaceID' in actor.properties) {
-      return actor.properties.workspaceID
+    if ('workspaceId' in actor.properties) {
+      return actor.properties.workspaceId
     }
     throw new VisibleError(
       'authentication',
@@ -94,13 +94,13 @@ export namespace Actor {
   }
 
   export function workspace() {
-    return workspaceID()
+    return workspaceId()
   }
 
-  export function accountID() {
+  export function accountId() {
     const actor = use()
-    if ('accountID' in actor.properties) {
-      return actor.properties.accountID
+    if ('accountId' in actor.properties) {
+      return actor.properties.accountId
     }
     throw new VisibleError(
       'authentication',
@@ -109,8 +109,8 @@ export namespace Actor {
     )
   }
 
-  export function userID() {
-    return assert('user').properties.userID
+  export function userId() {
+    return assert('user').properties.userId
   }
 
   export function userRole() {

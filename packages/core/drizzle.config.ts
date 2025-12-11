@@ -6,7 +6,7 @@ export default defineConfig({
   strict: true,
   schema: ['./src/**/*.sql.ts'],
   verbose: true,
-  dialect: 'postgresql',
+  dialect: 'mysql',
   dbCredentials: {
     database: Resource.Database.database,
     host: Resource.Database.host,

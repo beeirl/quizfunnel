@@ -1,10 +1,10 @@
+import { eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
-import { and, eq, isNull, sql } from 'drizzle-orm'
-import { fn } from '../utils/fn'
 import { Actor } from '../actor'
 import { Database } from '../database'
 import { Identifier } from '../identifier'
 import { UserTable } from '../user/index.sql'
+import { fn } from '../utils/fn'
 import { WorkspaceTable } from './index.sql'
 
 export namespace Workspace {
@@ -24,22 +24,22 @@ export namespace Workspace {
     }),
     async ({ name }) => {
       const account = Actor.assert('account')
-      const workspaceID = Identifier.create('workspace')
-      const userID = Identifier.create('user')
+      const workspaceId = Identifier.create('workspace')
+      const userId = Identifier.create('user')
       await Database.transaction(async (tx) => {
         await tx.insert(WorkspaceTable).values({
-          id: workspaceID,
+          id: workspaceId,
           name,
         })
         await tx.insert(UserTable).values({
-          workspaceID,
-          id: userID,
-          accountID: account.properties.accountID,
+          workspaceId,
+          id: userId,
+          accountId: account.properties.accountId,
           name: '',
           role: 'admin',
         })
       })
-      return workspaceID
+      return workspaceId
     },
   )
 
@@ -49,14 +49,14 @@ export namespace Workspace {
     }),
     async ({ name }) => {
       Actor.assertAdmin()
-      const workspaceID = Actor.workspace()
+      const workspaceId = Actor.workspace()
       return Database.use(async (tx) =>
         tx
           .update(WorkspaceTable)
           .set({
             name,
           })
-          .where(eq(WorkspaceTable.id, workspaceID)),
+          .where(eq(WorkspaceTable.id, workspaceId)),
       )
     },
   )

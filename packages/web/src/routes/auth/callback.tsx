@@ -1,6 +1,6 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
 import { AuthClient } from '@/context/auth'
 import { useAuthSession } from '@/context/auth.session'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/auth/callback')({
   server: {
@@ -16,7 +16,7 @@ export const Route = createFileRoute('/auth/callback')({
         const decoded = AuthClient.decode(result.tokens.access, {} as any)
         if (decoded.err) throw new Error(decoded.err.message)
         const session = await useAuthSession()
-        const id = decoded.subject.properties.accountID
+        const id = decoded.subject.properties.accountId
         await session.update((value) => {
           return {
             ...value,

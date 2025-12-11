@@ -1,7 +1,7 @@
-import { pgTable, uniqueIndex, varchar } from 'drizzle-orm/pg-core'
+import { mysqlTable, uniqueIndex, varchar } from 'drizzle-orm/mysql-core'
 import { id, timestampColumns } from '../database/types'
 
-export const WorkspaceTable = pgTable(
+export const WorkspaceTable = mysqlTable(
   'workspace',
   {
     id: id('id').notNull().primaryKey(),

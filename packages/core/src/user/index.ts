@@ -1,15 +1,15 @@
-import { z } from 'zod'
 import { and, eq, getTableColumns, isNull, sql } from 'drizzle-orm'
-import { fn } from '../utils/fn'
-import { Database } from '../database'
-import { UserRole, UserTable } from './index.sql'
+import { z } from 'zod'
 import { Actor } from '../actor'
-import { Identifier } from '../identifier'
 import { AuthTable } from '../auth/index.sql'
+import { Database } from '../database'
+import { Identifier } from '../identifier'
+import { fn } from '../utils/fn'
+import { UserRole, UserTable } from './index.sql'
 
 export namespace User {
   const assertNotSelf = (id: string) => {
-    if (Actor.userID() !== id) return
+    if (Actor.userId() !== id) return
     throw new Error(`Expected not self actor, got self actor`)
   }
 
@@ -21,8 +21,8 @@ export namespace User {
           authEmail: AuthTable.subject,
         })
         .from(UserTable)
-        .leftJoin(AuthTable, and(eq(UserTable.accountID, AuthTable.accountID), eq(AuthTable.provider, 'email')))
-        .where(and(eq(UserTable.workspaceID, Actor.workspace()), isNull(UserTable.archivedAt))),
+        .leftJoin(AuthTable, and(eq(UserTable.accountId, AuthTable.accountId), eq(AuthTable.provider, 'email')))
+        .where(and(eq(UserTable.workspaceId, Actor.workspace()), isNull(UserTable.archivedAt))),
     ),
   )
 
@@ -31,7 +31,7 @@ export namespace User {
       tx
         .select()
         .from(UserTable)
-        .where(and(eq(UserTable.workspaceID, Actor.workspace()), eq(UserTable.id, id), isNull(UserTable.archivedAt)))
+        .where(and(eq(UserTable.workspaceId, Actor.workspace()), eq(UserTable.id, id), isNull(UserTable.archivedAt)))
         .then((rows) => rows[0]),
     ),
   )
@@ -43,8 +43,8 @@ export namespace User {
           email: AuthTable.subject,
         })
         .from(UserTable)
-        .leftJoin(AuthTable, and(eq(UserTable.accountID, AuthTable.accountID), eq(AuthTable.provider, 'email')))
-        .where(and(eq(UserTable.workspaceID, Actor.workspace()), eq(UserTable.id, id)))
+        .leftJoin(AuthTable, and(eq(UserTable.accountId, AuthTable.accountId), eq(AuthTable.provider, 'email')))
+        .where(and(eq(UserTable.workspaceId, Actor.workspace()), eq(UserTable.id, id)))
         .then((rows) => rows[0]?.email),
     ),
   )
@@ -56,31 +56,30 @@ export namespace User {
     }),
     async ({ email, role }) => {
       Actor.assertAdmin()
-      const workspaceID = Actor.workspace()
+      const workspaceId = Actor.workspace()
 
-      const accountID = await Database.use(async (tx) =>
+      const accountId = await Database.use(async (tx) =>
         tx
           .select({
-            accountID: AuthTable.accountID,
+            accountId: AuthTable.accountId,
           })
           .from(AuthTable)
           .where(and(eq(AuthTable.provider, 'email'), eq(AuthTable.subject, email)))
-          .then((rows) => rows[0]?.accountID),
+          .then((rows) => rows[0]?.accountId),
       )
 
-      if (accountID) {
+      if (accountId) {
         await Database.use(async (tx) =>
           tx
             .insert(UserTable)
             .values({
               id: Identifier.create('user'),
               name: '',
-              accountID,
-              workspaceID,
+              accountId,
+              workspaceId,
               role,
             })
-            .onConflictDoUpdate({
-              target: [UserTable.workspaceID, UserTable.accountID],
+            .onDuplicateKeyUpdate({
               set: {
                 role,
                 archivedAt: null,
@@ -95,11 +94,10 @@ export namespace User {
               id: Identifier.create('user'),
               name: '',
               email,
-              workspaceID,
+              workspaceId,
               role,
             })
-            .onConflictDoUpdate({
-              target: [UserTable.workspaceID, UserTable.email],
+            .onDuplicateKeyUpdate({
               set: {
                 role,
                 archivedAt: null,
@@ -116,7 +114,7 @@ export namespace User {
       const invitations = await tx
         .select({
           id: UserTable.id,
-          workspaceID: UserTable.workspaceID,
+          workspaceId: UserTable.workspaceId,
         })
         .from(UserTable)
         .where(eq(UserTable.email, account.properties.email))
@@ -124,7 +122,7 @@ export namespace User {
       await tx
         .update(UserTable)
         .set({
-          accountID: account.properties.accountID,
+          accountId: account.properties.accountId,
           email: null,
         })
         .where(eq(UserTable.email, account.properties.email))
@@ -146,7 +144,7 @@ export namespace User {
         tx
           .update(UserTable)
           .set({ role })
-          .where(and(eq(UserTable.id, id), eq(UserTable.workspaceID, Actor.workspace()))),
+          .where(and(eq(UserTable.id, id), eq(UserTable.workspaceId, Actor.workspace()))),
       )
     },
   )
@@ -161,8 +159,7 @@ export namespace User {
         .set({
           archivedAt: sql`now()`,
         })
-        .where(and(eq(UserTable.id, id), eq(UserTable.workspaceID, Actor.workspace()))),
+        .where(and(eq(UserTable.id, id), eq(UserTable.workspaceId, Actor.workspace()))),
     )
   })
 }
-

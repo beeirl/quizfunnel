@@ -8,7 +8,7 @@ export const Route = createFileRoute('/f/$id')({
 
 const form: FormInfo = {
   id: 'example-form',
-  shortID: 'ex',
+  shortId: 'ex',
   title: 'Simple Example Form',
   schema: {
     pages: [

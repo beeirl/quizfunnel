@@ -1,29 +1,29 @@
-import { z } from 'zod'
 import { and, eq } from 'drizzle-orm'
-import { fn } from '../utils/fn'
+import { z } from 'zod'
+import { Account } from '../account'
 import { Database } from '../database'
 import { Identifier } from '../identifier'
-import { AuthTable, AuthProvider } from './index.sql'
-import { Account } from '../account'
+import { fn } from '../utils/fn'
+import { AuthProvider, AuthTable } from './index.sql'
 
 export namespace Auth {
   export const create = fn(
     z.object({
       provider: z.enum(AuthProvider),
       subject: z.string(),
-      accountID: z.string().optional(),
+      accountId: z.string().optional(),
     }),
     async (input) => {
-      const accountID = input.accountID ?? (await Account.create({}))
+      const accountId = input.accountId ?? (await Account.create({}))
       return Database.transaction(async (tx) => {
         const id = Identifier.create('auth')
         await tx.insert(AuthTable).values({
           id,
           provider: input.provider,
           subject: input.subject,
-          accountID,
+          accountId,
         })
-        return { id, accountID }
+        return { id, accountId }
       })
     },
   )
@@ -43,14 +43,9 @@ export namespace Auth {
       }),
   )
 
-  export const fromAccountID = fn(z.string(), async (accountID) =>
+  export const fromAccountId = fn(z.string(), async (accountId) =>
     Database.use(async (tx) => {
-      return tx
-        .select()
-        .from(AuthTable)
-        .where(eq(AuthTable.accountID, accountID))
-        .execute()
+      return tx.select().from(AuthTable).where(eq(AuthTable.accountId, accountId)).execute()
     }),
   )
 }
-

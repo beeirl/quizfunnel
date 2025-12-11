@@ -1,13 +1,13 @@
+import { and, eq, inArray, lte } from 'drizzle-orm'
 import { DateTime } from 'luxon'
 import { chunk } from 'remeda'
 import { z } from 'zod'
 import { Actor } from '../actor'
-import { and, eq, inArray, lte } from 'drizzle-orm'
+import { Database } from '../database'
+import { Identifier } from '../identifier'
 import { Storage } from '../storage'
 import { VisibleError, VisibleErrorCodes } from '../utils/error'
 import { fn } from '../utils/fn'
-import { Identifier } from '../identifier'
-import { Database } from '../database'
 import { fileTable, fileUploadTable } from './index.sql'
 
 export namespace File {
@@ -30,7 +30,7 @@ export namespace File {
   export const Upload = z.object({
     contentType: z.string(),
     createdAt: z.date(),
-    fileID: z.string(),
+    fileId: z.string(),
     name: z.string(),
     public: z.boolean(),
     size: z.number(),
@@ -43,7 +43,7 @@ export namespace File {
       throw new VisibleError('not_found', VisibleErrorCodes.NotFound.RESOURCE_NOT_FOUND, 'File not found')
     }
     const buffer = await Storage.get({
-      key: getKey({ fileID: id, workspaceID: Actor.workspaceID() }),
+      key: getKey({ fileId: id, workspaceId: Actor.workspaceId() }),
       public: metadata.public,
     })
     if (!buffer) {
@@ -57,7 +57,7 @@ export namespace File {
       tx
         .select()
         .from(fileTable)
-        .where(and(eq(fileTable.workspaceID, Actor.workspaceID()), eq(fileTable.id, id)))
+        .where(and(eq(fileTable.workspaceId, Actor.workspaceId()), eq(fileTable.id, id)))
         .then((rows) => {
           const firstRow = rows[0]
           if (!firstRow) return undefined
@@ -76,8 +76,8 @@ export namespace File {
 
   export const getUrl = fn(
     z.object({
-      fileID: Info.shape.id,
-      workspaceID: z.string(),
+      fileId: Info.shape.id,
+      workspaceId: z.string(),
     }),
     (input) => {
       return `${Storage.getBucket(true).url}/${getKey(input)}`
@@ -95,7 +95,7 @@ export namespace File {
     async (input) => {
       const id = Identifier.create('file')
       await Storage.put({
-        key: getKey({ fileID: id, workspaceID: Actor.workspaceID() }),
+        key: getKey({ fileId: id, workspaceId: Actor.workspaceId() }),
         body: input.data,
         contentType: input.contentType,
         public: input.public,
@@ -103,7 +103,7 @@ export namespace File {
       await Database.use(async (tx) =>
         tx.insert(fileTable).values({
           id,
-          workspaceID: Actor.workspaceID(),
+          workspaceId: Actor.workspaceId(),
           contentType: input.contentType,
           name: input.name,
           public: input.public,
@@ -119,7 +119,7 @@ export namespace File {
       tx
         .select()
         .from(fileTable)
-        .where(and(eq(fileTable.workspaceID, Actor.workspaceID()), eq(fileTable.id, id)))
+        .where(and(eq(fileTable.workspaceId, Actor.workspaceId()), eq(fileTable.id, id)))
         .then((rows) => rows[0]),
     )
     if (!file) {
@@ -127,11 +127,11 @@ export namespace File {
     }
 
     await Storage.remove({
-      keys: [getKey({ fileID: file.id, workspaceID: file.workspaceID })],
+      keys: [getKey({ fileId: file.id, workspaceId: file.workspaceId })],
       public: file.public,
     })
     await Database.use(async (tx) =>
-      tx.delete(fileTable).where(and(eq(fileTable.workspaceID, Actor.workspaceID()), eq(fileTable.id, file.id))),
+      tx.delete(fileTable).where(and(eq(fileTable.workspaceId, Actor.workspaceId()), eq(fileTable.id, file.id))),
     )
   })
 
@@ -140,7 +140,7 @@ export namespace File {
       tx
         .select()
         .from(fileTable)
-        .where(and(eq(fileTable.workspaceID, Actor.workspaceID()), eq(fileTable.id, id)))
+        .where(and(eq(fileTable.workspaceId, Actor.workspaceId()), eq(fileTable.id, id)))
         .then((rows) => rows[0]),
     )
     if (!file) {
@@ -149,7 +149,7 @@ export namespace File {
     const downloadUrl = await Storage.getSignedUrl({
       method: 'get',
       contentType: file.contentType,
-      key: getKey({ fileID: file.id, workspaceID: file.workspaceID }),
+      key: getKey({ fileId: file.id, workspaceId: file.workspaceId }),
       public: file.public,
     })
     return { downloadUrl }
@@ -165,13 +165,13 @@ export namespace File {
       public: true,
     }),
     async (input) => {
-      const fileID = Identifier.create('file')
+      const fileId = Identifier.create('file')
       await Database.use(async (tx) =>
         tx.insert(fileUploadTable).values({
           contentType: input.contentType,
-          fileID,
+          fileId,
           name: input.name,
-          workspaceID: Actor.workspaceID(),
+          workspaceId: Actor.workspaceId(),
           public: input.public ?? false,
           size: input.size,
         }),
@@ -179,29 +179,29 @@ export namespace File {
       const uploadUrl = await Storage.getSignedUrl({
         method: 'put',
         contentType: input.contentType,
-        key: getKey({ fileID, workspaceID: Actor.workspaceID() }),
+        key: getKey({ fileId, workspaceId: Actor.workspaceId() }),
         public: input.public,
       })
       return {
-        fileID,
+        fileId,
         uploadUrl,
       }
     },
   )
 
-  export const finalizeUpload = fn(Upload.shape.fileID, (fileID) =>
+  export const finalizeUpload = fn(Upload.shape.fileId, (fileId) =>
     Database.transaction(async (tx) => {
       const fileUpload = await tx
         .select()
         .from(fileUploadTable)
-        .where(and(eq(fileUploadTable.workspaceID, Actor.workspaceID()), eq(fileUploadTable.fileID, fileID)))
+        .where(and(eq(fileUploadTable.workspaceId, Actor.workspaceId()), eq(fileUploadTable.fileId, fileId)))
         .then((rows) => rows[0])
       if (!fileUpload) {
         throw new VisibleError('not_found', VisibleErrorCodes.NotFound.RESOURCE_NOT_FOUND, 'File upload not found')
       }
       await tx.insert(fileTable).values({
-        id: fileUpload.fileID,
-        workspaceID: fileUpload.workspaceID,
+        id: fileUpload.fileId,
+        workspaceId: fileUpload.workspaceId,
         contentType: fileUpload.contentType,
         name: fileUpload.name,
         public: fileUpload.public,
@@ -209,7 +209,7 @@ export namespace File {
       })
       await tx
         .delete(fileUploadTable)
-        .where(and(eq(fileUploadTable.workspaceID, Actor.workspaceID()), eq(fileUploadTable.fileID, fileID)))
+        .where(and(eq(fileUploadTable.workspaceId, Actor.workspaceId()), eq(fileUploadTable.fileId, fileId)))
     }),
   )
 
@@ -224,15 +224,15 @@ export namespace File {
     for (const fileUploadChunk of chunk(fileUploads, 1000)) {
       await Storage.remove({
         keys: fileUploadChunk.map((fileUpload: (typeof fileUploads)[0]) =>
-          getKey({ fileID: fileUpload.fileID, workspaceID: fileUpload.workspaceID }),
+          getKey({ fileId: fileUpload.fileId, workspaceId: fileUpload.workspaceId }),
         ),
         public: fileUploadChunk[0]?.public ?? false,
       })
       await Database.use(async (tx) =>
         tx.delete(fileUploadTable).where(
           inArray(
-            fileUploadTable.fileID,
-            fileUploadChunk.map((fileUpload: (typeof fileUploads)[0]) => fileUpload.fileID),
+            fileUploadTable.fileId,
+            fileUploadChunk.map((fileUpload: (typeof fileUploads)[0]) => fileUpload.fileId),
           ),
         ),
       )
@@ -241,11 +241,11 @@ export namespace File {
 
   const getKey = fn(
     z.object({
-      fileID: Info.shape.id,
-      workspaceID: z.string(),
+      fileId: Info.shape.id,
+      workspaceId: z.string(),
     }),
     (input) => {
-      return `workspace/${input.workspaceID}/${input.fileID}`
+      return `workspace/${input.workspaceId}/${input.fileId}`
     },
   )
 }

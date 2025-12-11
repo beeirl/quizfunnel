@@ -7,7 +7,7 @@ export interface FormPageProps {
   values?: FormValues
   errors?: FormErrors
   showNextButton?: boolean
-  setValue?: (blockID: string, value: FormValues[string]) => void
+  setValue?: (blockId: string, value: FormValues[string]) => void
   onNext?: () => void
   onPrev?: () => void
 }

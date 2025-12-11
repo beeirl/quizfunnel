@@ -1,25 +1,24 @@
-import { pgTable, uniqueIndex, varchar, pgEnum, index } from 'drizzle-orm/pg-core'
-import { timestampColumns, id, workspaceColumns, timestamp, workspaceIndexes } from '../database/types'
+import { index, mysqlEnum, mysqlTable, uniqueIndex, varchar } from 'drizzle-orm/mysql-core'
+import { id, timestamp, timestampColumns, workspaceColumns, workspaceIndexes } from '../database/types'
 
 export const UserRole = ['admin', 'member'] as const
-export const userRoleEnum = pgEnum('role', UserRole)
 
-export const UserTable = pgTable(
+export const UserTable = mysqlTable(
   'user',
   {
     ...workspaceColumns,
     ...timestampColumns,
-    accountID: id('account_id'),
+    accountId: id('account_id'),
     email: varchar('email', { length: 255 }),
     name: varchar('name', { length: 255 }).notNull(),
     lastSeenAt: timestamp('last_seen_at'),
-    role: userRoleEnum().notNull(),
+    role: mysqlEnum('role', UserRole).notNull(),
   },
   (table) => [
     ...workspaceIndexes(table),
-    uniqueIndex('user_account_id').on(table.workspaceID, table.accountID),
-    uniqueIndex('user_email').on(table.workspaceID, table.email),
-    index('global_account_id').on(table.accountID),
+    uniqueIndex('user_account_id').on(table.workspaceId, table.accountId),
+    uniqueIndex('user_email').on(table.workspaceId, table.email),
+    index('global_account_id').on(table.accountId),
     index('global_email').on(table.email),
   ],
 )

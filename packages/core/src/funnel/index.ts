@@ -1,4 +1,10 @@
+import { and, eq, isNull } from 'drizzle-orm'
 import z from 'zod'
+import { Actor } from '../actor'
+import { Database } from '../database'
+import { Identifier } from '../identifier'
+import { fn } from '../utils/fn'
+import { FunnelTable } from './index.sql'
 import { FunnelPage } from './page'
 import { FunnelRule } from './rule'
 import { FunnelVariables } from './variable'
@@ -6,13 +12,13 @@ import { FunnelVariables } from './variable'
 export namespace Funnel {
   export const Info = z.object({
     id: z.string(),
-    shortID: z.string(),
+    shortId: z.string(),
     title: z.string(),
     schema: z.record(z.string(), z.any()),
   })
   export type Info = {
     id: string
-    shortID: string
+    shortId: string
     title: string
     pages: Funnel.Page[]
     rules: Funnel.Rule[]
@@ -22,4 +28,77 @@ export namespace Funnel {
   export import Page = FunnelPage
   export import Rule = FunnelRule
   export type Variables = FunnelVariables
+
+  export const fromId = fn(Identifier.schema('funnel'), async (id) =>
+    Database.use(async (tx) =>
+      tx
+        .select()
+        .from(FunnelTable)
+        .where(
+          and(eq(FunnelTable.workspaceId, Actor.workspace()), eq(FunnelTable.id, id), isNull(FunnelTable.archivedAt)),
+        )
+        .then((rows) => rows[0]),
+    ),
+  )
+
+  export const list = fn(z.void(), () =>
+    Database.use(async (tx) =>
+      tx
+        .select()
+        .from(FunnelTable)
+        .where(and(eq(FunnelTable.workspaceId, Actor.workspace()), isNull(FunnelTable.archivedAt))),
+    ),
+  )
+
+  export const create = fn(
+    z.object({
+      themeId: z.string(),
+      title: z.string().min(1).max(255),
+      pages: z.custom<FunnelPage[]>().default([]),
+      rules: z.custom<FunnelRule[]>().default([]),
+      variables: z.custom<FunnelVariables>().default({}),
+    }),
+    async (input) => {
+      const id = Identifier.create('funnel')
+      const shortId = id.slice(-8)
+      await Database.use(async (tx) =>
+        tx.insert(FunnelTable).values({
+          id,
+          workspaceId: Actor.workspace(),
+          shortId,
+          themeId: input.themeId,
+          title: input.title,
+          pages: input.pages,
+          rules: input.rules,
+          variables: input.variables,
+        }),
+      )
+      return id
+    },
+  )
+
+  export const update = fn(
+    z.object({
+      id: Identifier.schema('funnel'),
+      themeId: Identifier.schema('theme').optional(),
+      title: z.string().min(1).max(255).optional(),
+      pages: z.custom<Funnel.Page[]>().optional(),
+      rules: z.custom<Funnel.Rule[]>().optional(),
+      variables: z.custom<Funnel.Variables>().optional(),
+    }),
+    (input) => {
+      return Database.use(async (tx) =>
+        tx
+          .update(FunnelTable)
+          .set({
+            themeId: input.themeId,
+            title: input.title,
+            pages: input.pages,
+            rules: input.rules,
+            variables: input.variables,
+          })
+          .where(and(eq(FunnelTable.id, input.id), eq(FunnelTable.workspaceId, Actor.workspace()))),
+      )
+    },
+  )
 }

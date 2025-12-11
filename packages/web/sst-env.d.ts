@@ -14,14 +14,6 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
-    "DATABASE_PASSWORD": {
-      "type": "sst.sst.Secret"
-      "value": string
-    }
-    "DATABASE_USERNAME": {
-      "type": "sst.sst.Secret"
-      "value": string
-    }
     "Database": {
       "database": string
       "host": string

@@ -17,12 +17,12 @@ type Env = {
 
 export const subjects = createSubjects({
   account: z.object({
-    accountID: z.string(),
+    accountId: z.string(),
     email: z.string(),
   }),
   user: z.object({
-    userID: z.string(),
-    workspaceID: z.string(),
+    userId: z.string(),
+    workspaceId: z.string(),
   }),
 })
 
@@ -56,21 +56,21 @@ export default {
         if (!email) throw new Error('No email found')
         if (!subject) throw new Error('No subject found')
 
-        const accountID = await Account.findOrCreate({
+        const accountId = await Account.findOrCreate({
           email,
           provider: response.provider,
           subject,
         })
 
         // Get workspace
-        await Actor.provide('account', { accountID, email }, async () => {
+        await Actor.provide('account', { accountId, email }, async () => {
           await User.joinInvitedWorkspaces()
           const workspaces = await Account.workspaces()
           if (workspaces.length === 0) {
             await Workspace.create({ name: 'Default' })
           }
         })
-        return ctx.subject('account', accountID, { accountID, email })
+        return ctx.subject('account', accountId, { accountId, email })
       },
     }).fetch(request, env, ctx)
     return result

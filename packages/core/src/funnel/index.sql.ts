@@ -1,20 +1,20 @@
-import { jsonb, pgTable, uniqueIndex, varchar } from 'drizzle-orm/pg-core'
+import { json, mysqlTable, uniqueIndex, varchar } from 'drizzle-orm/mysql-core'
 import { timestampColumns, workspaceColumns, workspaceIndexes } from '../database/types'
 import { FunnelPage } from './page'
 import { FunnelRule } from './rule'
 import { FunnelVariables } from './variable'
 
-export const FunnelTable = pgTable(
+export const FunnelTable = mysqlTable(
   'funnel',
   {
     ...workspaceColumns,
     ...timestampColumns,
-    shortId: varchar('short_id', { length: 6 }).notNull(),
-    templateId: varchar('template_id', { length: 255 }),
+    shortId: varchar('short_id', { length: 8 }).notNull(),
+    themeId: varchar('theme_id', { length: 255 }).notNull(),
     title: varchar('title', { length: 255 }).notNull(),
-    pages: jsonb('pages').$type<FunnelPage[]>().notNull(),
-    rules: jsonb('rules').$type<FunnelRule[]>().notNull(),
-    variables: jsonb('variables').$type<FunnelVariables>().notNull(),
+    pages: json('pages').$type<FunnelPage[]>().notNull(),
+    rules: json('rules').$type<FunnelRule[]>().notNull(),
+    variables: json('variables').$type<FunnelVariables>().notNull(),
   },
-  (table) => [...workspaceIndexes(table), uniqueIndex('short_id').on(table.workspaceID, table.shortId)],
+  (table) => [...workspaceIndexes(table), uniqueIndex('short_id').on(table.workspaceId, table.shortId)],
 )
