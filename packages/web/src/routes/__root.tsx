@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-import styles from '@/styles/index.css?url'
+import styles from '@/styles.css?url'
 import { QueryClient } from '@tanstack/react-query'
 import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
@@ -22,7 +22,6 @@ export const Route = createRootRouteWithContext<{
       },
     ],
     links: [
-      { rel: 'stylesheet', href: 'https://rsms.me/inter/inter.css' },
       { rel: 'stylesheet', href: styles },
     ],
   }),

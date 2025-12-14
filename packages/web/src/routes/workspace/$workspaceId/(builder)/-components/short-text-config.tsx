@@ -1,0 +1,94 @@
+import { Switch } from '@/components/ui/switch'
+import type { ShortTextBlock } from '@shopfunnel/core/funnel/schema'
+import { createServerFn } from '@tanstack/react-start'
+import { Field } from './field'
+import { Input } from './input'
+import { PaneContent, PaneHeader, PaneRoot, PaneTitle } from './panel'
+
+const fn = createServerFn({ method: 'POST' }).handler(({ data }) => {})
+
+interface ShortTextConfigProps {
+  block: ShortTextBlock
+  onUpdate: (updates: Partial<ShortTextBlock>) => void
+}
+
+export function ShortTextConfig({ block, onUpdate }: ShortTextConfigProps) {
+  return (
+    <form action={fn.url} method="post" encType="multipart/form-data">
+      <PaneRoot>
+        <PaneHeader>
+          <PaneTitle>Question</PaneTitle>
+        </PaneHeader>
+        <PaneContent>
+          <Field.Root>
+            <Input placeholder="Your question here..." />
+          </Field.Root>
+        </PaneContent>
+      </PaneRoot>
+
+      <PaneRoot>
+        <PaneHeader>
+          <PaneTitle>Description</PaneTitle>
+        </PaneHeader>
+        <PaneContent>
+          <Input
+            value={block.properties.description ?? ''}
+            placeholder="Enter description..."
+            onChange={(e) =>
+              onUpdate({
+                properties: { ...block.properties, description: e.target.value || undefined },
+              })
+            }
+          />
+        </PaneContent>
+      </PaneRoot>
+
+      <PaneRoot>
+        <PaneHeader>
+          <PaneTitle>Validation</PaneTitle>
+        </PaneHeader>
+        <PaneContent>
+          <Field.Root orientation="horizontal">
+            <Field.Label htmlFor={`${block.id}-required`}>Required</Field.Label>
+            <Switch
+              id={`${block.id}-required`}
+              checked={block.validations.required ?? false}
+              onCheckedChange={(required) =>
+                onUpdate({
+                  validations: { ...block.validations, required },
+                })
+              }
+            />
+          </Field.Root>
+          <Field.Root orientation="horizontal">
+            <Field.Label htmlFor={`${block.id}-email`}>Email</Field.Label>
+            <Switch
+              id={`${block.id}-email`}
+              checked={block.validations.email ?? false}
+              onCheckedChange={(email) =>
+                onUpdate({
+                  validations: { ...block.validations, email },
+                })
+              }
+            />
+          </Field.Root>
+          {block.validations.email === false && (
+            <Field.Root>
+              <Field.Label>Max length</Field.Label>
+              <Input
+                value={block.validations.maxLength?.toString() ?? ''}
+                placeholder="No limit"
+                onChange={(e) => {
+                  const maxLength = e.target.value ? parseInt(e.target.value, 10) : undefined
+                  onUpdate({
+                    validations: { ...block.validations, maxLength: isNaN(maxLength!) ? undefined : maxLength },
+                  })
+                }}
+              />
+            </Field.Root>
+          )}
+        </PaneContent>
+      </PaneRoot>
+    </form>
+  )
+}

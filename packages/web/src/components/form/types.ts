@@ -1,14 +1,21 @@
-import type { Form } from '@shopfunnel/core/form/index'
-import type { FormSchema } from '@shopfunnel/core/funnel/schema'
+import type { Block, Page, Rule, Variables, Condition, ComparisonCondition } from '@shopfunnel/core/funnel/schema'
 
-export type FormInfo = Form.Info
+export interface FormInfo {
+  id: string
+  schema: {
+    pages: Page[]
+    rules: Rule[]
+    variables: Variables
+  }
+}
 
-export type FormBlock = FormSchema.Block
+export type FormBlock = Block
 
-export type FormVariables = Record<string, string | number>
+export type FormVariables = Variables
 
 export type FormValues = Record<string, unknown>
 
 export type FormErrors = Record<string, string>
 
-export { FormSchema }
+// Re-export schema types for convenience
+export type { Block, Page, Rule, Variables, Condition, ComparisonCondition }

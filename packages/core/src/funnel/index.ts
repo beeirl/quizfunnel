@@ -5,9 +5,7 @@ import { Database } from '../database'
 import { Identifier } from '../identifier'
 import { fn } from '../utils/fn'
 import { FunnelTable } from './index.sql'
-import { FunnelPage } from './page'
-import { FunnelRule } from './rule'
-import { FunnelVariables } from './variable'
+import type { Page, Rule, Variables } from './schema'
 
 export namespace Funnel {
   export const Info = z.object({
@@ -20,14 +18,10 @@ export namespace Funnel {
     id: string
     shortId: string
     title: string
-    pages: Funnel.Page[]
-    rules: Funnel.Rule[]
-    variables: Funnel.Variables
+    pages: Page[]
+    rules: Rule[]
+    variables: Variables
   }
-
-  export import Page = FunnelPage
-  export import Rule = FunnelRule
-  export type Variables = FunnelVariables
 
   export const fromId = fn(Identifier.schema('funnel'), async (id) =>
     Database.use(async (tx) =>
@@ -50,41 +44,32 @@ export namespace Funnel {
     ),
   )
 
-  export const create = fn(
-    z.object({
-      themeId: z.string(),
-      title: z.string().min(1).max(255),
-      pages: z.custom<FunnelPage[]>().default([]),
-      rules: z.custom<FunnelRule[]>().default([]),
-      variables: z.custom<FunnelVariables>().default({}),
-    }),
-    async (input) => {
-      const id = Identifier.create('funnel')
-      const shortId = id.slice(-8)
-      await Database.use(async (tx) =>
-        tx.insert(FunnelTable).values({
-          id,
-          workspaceId: Actor.workspace(),
-          shortId,
-          themeId: input.themeId,
-          title: input.title,
-          pages: input.pages,
-          rules: input.rules,
-          variables: input.variables,
-        }),
-      )
-      return id
-    },
-  )
+  export const create = async () => {
+    const id = Identifier.create('funnel')
+    const shortId = id.slice(-8)
+    await Database.use(async (tx) =>
+      tx.insert(FunnelTable).values({
+        id,
+        workspaceId: Actor.workspace(),
+        shortId,
+        themeId: '',
+        title: 'My new funnel',
+        pages: [],
+        rules: [],
+        variables: {},
+      }),
+    )
+    return id
+  }
 
   export const update = fn(
     z.object({
       id: Identifier.schema('funnel'),
       themeId: Identifier.schema('theme').optional(),
       title: z.string().min(1).max(255).optional(),
-      pages: z.custom<Funnel.Page[]>().optional(),
-      rules: z.custom<Funnel.Rule[]>().optional(),
-      variables: z.custom<Funnel.Variables>().optional(),
+      pages: z.custom<Page[]>().optional(),
+      rules: z.custom<Rule[]>().optional(),
+      variables: z.custom<Variables>().optional(),
     }),
     (input) => {
       return Database.use(async (tx) =>

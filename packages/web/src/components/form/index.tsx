@@ -1,4 +1,4 @@
-import type { FormSchema } from '@shopfunnel/core/funnel/schema'
+import type { Block, Page, Rule, Condition, ComparisonCondition, InputBlock } from '@shopfunnel/core/funnel/schema'
 import { AnimatePresence, motion } from 'motion/react'
 import * as React from 'react'
 import { FormPage } from './page'
@@ -26,6 +26,12 @@ interface FormHistoryEntry {
 interface FormRuleEvaluationResult {
   jumpTo: string | undefined
   hiddenBlockIds: Set<string>
+  variables: FormVariables
+}
+
+interface FormSchema {
+  pages: Page[]
+  rules: Rule[]
   variables: FormVariables
 }
 
@@ -184,14 +190,13 @@ export function Form({ form }: { form: FormInfo }) {
   )
 }
 
-const INPUT_BLOCK_TYPES = ['text_input', 'multiple_choice', 'dropdown', 'slider'] as const
-export function isInputBlock(
-  block: FormBlock,
-): block is Extract<FormBlock, { type: (typeof INPUT_BLOCK_TYPES)[number] }> {
+const INPUT_BLOCK_TYPES = ['short_text', 'multiple_choice', 'dropdown', 'slider'] as const
+
+export function isInputBlock(block: Block): block is InputBlock {
   return INPUT_BLOCK_TYPES.includes(block.type as (typeof INPUT_BLOCK_TYPES)[number])
 }
 
-const evaluateCondition = (condition: FormSchema.Condition, state: FormState): boolean => {
+const evaluateCondition = (condition: Condition, state: FormState): boolean => {
   function compare(op: string, left: unknown, right: unknown) {
     if (op === 'eq' && Array.isArray(left)) return left.includes(right as string)
     if (op === 'eq' && Array.isArray(right)) return right.includes(left as string)
@@ -226,7 +231,7 @@ const evaluateCondition = (condition: FormSchema.Condition, state: FormState): b
     }
   }
 
-  function resolveVar(v: FormSchema.ComparisonCondition['vars'][number]): unknown {
+  function resolveVar(v: ComparisonCondition['vars'][number]): unknown {
     if (v.type === 'constant') return v.value
     if (v.type === 'variable') return state.variables[v.value as string]
     if (v.type === 'block') return state.values[v.value as string]
@@ -237,12 +242,13 @@ const evaluateCondition = (condition: FormSchema.Condition, state: FormState): b
     case 'always':
       return true
     case 'and':
-      return condition.vars.every((c) => evaluateCondition(c, state))
+      return (condition as { vars: Condition[] }).vars.every((c) => evaluateCondition(c, state))
     case 'or':
-      return condition.vars.some((c) => evaluateCondition(c, state))
+      return (condition as { vars: Condition[] }).vars.some((c) => evaluateCondition(c, state))
     default: {
-      if (condition.vars.length < 2) return false
-      return compare(condition.op, resolveVar(condition.vars[0]!), resolveVar(condition.vars[1]!))
+      const compCondition = condition as ComparisonCondition
+      if (compCondition.vars.length < 2) return false
+      return compare(compCondition.op, resolveVar(compCondition.vars[0]!), resolveVar(compCondition.vars[1]!))
     }
   }
 }
@@ -321,7 +327,7 @@ const resolveTemplates = (value: unknown, state: FormState): unknown => {
   return value
 }
 
-const validatePage = (page: FormSchema.Page, state: FormState) => {
+const validatePage = (page: Page, state: FormState) => {
   const validators: Record<string, (value: unknown, param: unknown) => string | null> = {
     required: (value) => {
       const empty =
@@ -382,7 +388,7 @@ const validatePage = (page: FormSchema.Page, state: FormState) => {
 }
 
 function buildPage(
-  schema: FormSchema.Page,
+  schema: Page,
   state: FormState,
   evaluation: FormRuleEvaluationResult,
   errors: FormErrors = {},

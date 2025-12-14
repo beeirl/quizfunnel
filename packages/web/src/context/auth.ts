@@ -2,7 +2,6 @@ import { createClient } from '@openauthjs/openauth/client'
 import { Actor } from '@shopfunnel/core/actor'
 import { Database } from '@shopfunnel/core/database/index'
 import { UserTable } from '@shopfunnel/core/user/index.sql'
-import { redirect } from '@tanstack/react-router'
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm'
 import { useAuthSession } from './auth.session'
 
@@ -79,5 +78,6 @@ export async function getActor(workspaceId?: string): Promise<Actor.Info> {
       }
     }
   }
-  throw redirect({ to: '/auth/authorize' })
+  throw new Error('No user found')
+  // throw redirect({ to: '/auth/authorize' })
 }

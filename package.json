@@ -7,7 +7,7 @@
       "packages/*"
     ],
     "catalog": {
-      "@beeirl/ui": "0.52.1",
+      "@beeirl/ui": "0.52.4",
       "@cloudflare/workers-types": "4.20251209.0",
       "@hono/zod-validator": "0.7.5",
       "@openauthjs/openauth": "0.0.0-20250322224806",
