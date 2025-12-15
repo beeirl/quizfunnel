@@ -1,4 +1,4 @@
-import { Block } from '@/block'
+import { Block } from '@/funnel/block'
 import { cn } from '@/utils/cn'
 import type { Page } from '@shopfunnel/core/funnel/schema'
 

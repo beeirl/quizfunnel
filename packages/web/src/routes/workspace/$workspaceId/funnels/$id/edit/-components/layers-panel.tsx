@@ -1,7 +1,7 @@
-import { blockRegistry } from '@/block/registry'
 import { AlertDialog } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Resizable } from '@/components/ui/resizable'
+import { blockRegistry } from '@/funnel/block/registry'
 import { cn } from '@/utils/cn'
 import { move } from '@dnd-kit/helpers'
 import { DragDropProvider } from '@dnd-kit/react'
@@ -9,7 +9,7 @@ import { useSortable } from '@dnd-kit/react/sortable'
 import type { Block, Page } from '@shopfunnel/core/funnel/schema'
 import { IconPlus as PlusIcon, IconTrash as TrashIcon } from '@tabler/icons-react'
 import { AddBlockDialog } from './add-block-dialog'
-import { PaneContent, PaneHeader, PaneRoot, PaneTitle } from './panel'
+import { PaneContent, PaneHeader, PaneRoot, PaneTitle } from './pane'
 
 function SortablePageItem({
   page,
@@ -104,7 +104,7 @@ function SortableBlockItem({
   )
 }
 
-interface ExplorerProps {
+interface LayersPanelProps {
   // Pages
   pages: Page[]
   selectedPageId: string | null
@@ -119,7 +119,7 @@ interface ExplorerProps {
   onBlockAdd: (block: Block) => void
 }
 
-export function Explorer({
+export function LayersPanel({
   pages,
   selectedPageId,
   onPageSelect,
@@ -130,7 +130,7 @@ export function Explorer({
   onBlockSelect,
   onBlocksReorder,
   onBlockAdd,
-}: ExplorerProps) {
+}: LayersPanelProps) {
   const selectedPage = pages.find((p) => p.id === selectedPageId)
   const blocks = selectedPage?.blocks ?? []
   return (

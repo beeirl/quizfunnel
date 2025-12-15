@@ -28,9 +28,7 @@ export interface MultipleChoiceBlock {
     choices: Array<{
       id: string
       label: string
-      attachment?:
-        | { type: 'emoji'; emoji: string }
-        | { type: 'image'; url: string }
+      attachment?: { type: 'emoji'; emoji: string } | { type: 'image'; url: string }
     }>
   }
   validations: {
@@ -108,9 +106,7 @@ export interface ListBlock {
       title: string
       subtitle?: string
       icon?: string
-      attachment?:
-        | { type: 'emoji'; value: string }
-        | { type: 'image'; value: string }
+      attachment?: { type: 'emoji'; value: string } | { type: 'image'; value: string }
     }>
   }
 }
@@ -206,10 +202,10 @@ export interface Rule {
 }
 
 // ============================================
-// Funnel
+// Funnel Schema
 // ============================================
 
-export interface Funnel {
+export interface FunnelSchema {
   id: string
   shortId: string
   title: string

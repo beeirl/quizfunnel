@@ -1,0 +1,161 @@
+# Agent Guidelines
+
+## Package Manager
+
+- Use **bun** as the package manager
+- When installing dependencies, always use the latest version with a fixed version (no `^` or `~`)
+  ```bash
+  bun add package@latest --exact
+  ```
+
+## Web Package
+
+### Imports
+
+- Always import React using namespace import:
+
+  ```tsx
+  // Correct
+  import * as React from 'react'
+
+  // Incorrect
+  import React from 'react'
+  ```
+
+- Always use the `@` path alias for local imports:
+
+  ```tsx
+  // Correct
+  import { Button } from '@/components/ui/button'
+  import { cn } from '@/utils/cn'
+
+  // Incorrect
+  import { Button } from '../components/ui/button'
+  import { cn } from '../../utils/cn'
+  ```
+
+### Icons
+
+- Use **Tabler Icons** (`@tabler/icons-react`)
+- Always alias icon imports with the `Icon` suffix:
+
+  ```tsx
+  // Correct
+  import { IconCircle as CircleIcon } from '@tabler/icons-react'
+  import { IconPlus as PlusIcon } from '@tabler/icons-react'
+
+  // Incorrect
+  import { IconCircle } from '@tabler/icons-react'
+  ```
+
+### UI Components
+
+- Use **shadcn/ui** components from `@/components/ui`
+  ```tsx
+  import { Button } from '@/components/ui/button'
+  import { Dialog } from '@/components/ui/dialog'
+  ```
+
+### Styling
+
+- Use **Tailwind CSS v4** for all styling
+- Use the design tokens defined in `packages/web/src/styles.css`
+
+#### Available Colors
+
+| Token                                | Description               |
+| ------------------------------------ | ------------------------- |
+| `background`                         | Page background           |
+| `foreground`                         | Primary text color        |
+| `card` / `card-foreground`           | Card surfaces             |
+| `popover` / `popover-foreground`     | Popover surfaces          |
+| `primary` / `primary-foreground`     | Primary actions           |
+| `secondary` / `secondary-foreground` | Secondary actions         |
+| `muted` / `muted-foreground`         | Muted/disabled states     |
+| `accent` / `accent-foreground`       | Accent highlights         |
+| `destructive`                        | Destructive/error actions |
+| `border`                             | Border color              |
+| `input`                              | Input border color        |
+| `ring`                               | Focus ring color          |
+| `chart-1` to `chart-5`               | Chart colors              |
+| `sidebar-*`                          | Sidebar-specific colors   |
+
+#### Example Usage
+
+```tsx
+<div className="bg-background text-foreground border border-border rounded-lg p-4">
+  <h1 className="text-primary">Title</h1>
+  <p className="text-muted-foreground">Description</p>
+  <button className="bg-primary text-primary-foreground rounded-md px-4 py-2">Click me</button>
+</div>
+```
+
+## Icons
+
+- Use **Tabler Icons** (`@tabler/icons-react`)
+- Always alias icon imports with the `Icon` suffix:
+
+  ```tsx
+  // Correct
+  import { IconCircle as CircleIcon } from '@tabler/icons-react'
+  import { IconPlus as PlusIcon } from '@tabler/icons-react'
+
+  // Incorrect
+  import { IconCircle } from '@tabler/icons-react'
+  ```
+
+## UI Components
+
+- Use **shadcn/ui** components from `@/components/ui`
+  ```tsx
+  import { Button } from '@/components/ui/button'
+  import { Dialog } from '@/components/ui/dialog'
+  ```
+
+## Styling
+
+- Use **Tailwind CSS v4** for all styling
+- Use the design tokens defined in `@packages/web/src/styles.css`
+
+### Available Colors
+
+| Token                                | Description               |
+| ------------------------------------ | ------------------------- |
+| `background`                         | Page background           |
+| `foreground`                         | Primary text color        |
+| `card` / `card-foreground`           | Card surfaces             |
+| `popover` / `popover-foreground`     | Popover surfaces          |
+| `primary` / `primary-foreground`     | Primary actions           |
+| `secondary` / `secondary-foreground` | Secondary actions         |
+| `muted` / `muted-foreground`         | Muted/disabled states     |
+| `accent` / `accent-foreground`       | Accent highlights         |
+| `destructive`                        | Destructive/error actions |
+| `border`                             | Border color              |
+| `input`                              | Input border color        |
+| `ring`                               | Focus ring color          |
+| `chart-1` to `chart-5`               | Chart colors              |
+| `sidebar-*`                          | Sidebar-specific colors   |
+
+### Example Usage
+
+```tsx
+<div className="bg-background text-foreground border border-border rounded-lg p-4">
+  <h1 className="text-primary">Title</h1>
+  <p className="text-muted-foreground">Description</p>
+  <button className="bg-primary text-primary-foreground rounded-md px-4 py-2">Click me</button>
+</div>
+```
+
+## Imports (Web Package)
+
+- Always use the `@` path alias for local imports in the web package:
+
+  ```tsx
+  // Correct
+  import { Button } from '@/components/ui/button'
+  import { cn } from '@/utils/cn'
+
+  // Incorrect
+  import { Button } from '../components/ui/button'
+  import { cn } from '../../utils/cn'
+  ```

@@ -14,5 +14,5 @@ export const FunnelTable = mysqlTable(
     rules: json('rules').$type<Rule[]>().notNull(),
     variables: json('variables').$type<Variables>().notNull(),
   },
-  (table) => [...workspaceIndexes(table), uniqueIndex('short_id').on(table.workspaceId, table.shortId)],
+  (table) => [...workspaceIndexes(table), uniqueIndex('short_id').on(table.shortId)],
 )

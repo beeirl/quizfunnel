@@ -8,8 +8,6 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { createFileRoute } from '@tanstack/react-router'
-
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
@@ -17,17 +15,9 @@ import { Route as AuthAuthorizeRouteImport } from './routes/auth/authorize'
 import { Route as funnelFIdRouteImport } from './routes/(funnel)/f/$id'
 import { Route as WorkspaceWorkspaceIdDashboardRouteRouteImport } from './routes/workspace/$workspaceId/_dashboard/route'
 import { Route as WorkspaceWorkspaceIdDashboardIndexRouteImport } from './routes/workspace/$workspaceId/_dashboard/index'
-import { Route as WorkspaceWorkspaceIdbuilderFunnelsFunnelIdEditRouteImport } from './routes/workspace/$workspaceId/(builder)/funnels/$funnelId/edit'
+import { Route as WorkspaceWorkspaceIdFunnelsIdPreviewIndexRouteImport } from './routes/workspace/$workspaceId/funnels/$id/preview/index'
+import { Route as WorkspaceWorkspaceIdFunnelsIdEditIndexRouteImport } from './routes/workspace/$workspaceId/funnels/$id/edit/index'
 
-const WorkspaceWorkspaceIdRouteImport = createFileRoute(
-  '/workspace/$workspaceId',
-)()
-
-const WorkspaceWorkspaceIdRoute = WorkspaceWorkspaceIdRouteImport.update({
-  id: '/workspace/$workspaceId',
-  path: '/workspace/$workspaceId',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthIndexRoute = AuthIndexRouteImport.update({
   id: '/auth/',
   path: '/auth/',
@@ -59,11 +49,17 @@ const WorkspaceWorkspaceIdDashboardIndexRoute =
     path: '/',
     getParentRoute: () => WorkspaceWorkspaceIdDashboardRouteRoute,
   } as any)
-const WorkspaceWorkspaceIdbuilderFunnelsFunnelIdEditRoute =
-  WorkspaceWorkspaceIdbuilderFunnelsFunnelIdEditRouteImport.update({
-    id: '/(builder)/funnels/$funnelId/edit',
-    path: '/funnels/$funnelId/edit',
-    getParentRoute: () => WorkspaceWorkspaceIdRoute,
+const WorkspaceWorkspaceIdFunnelsIdPreviewIndexRoute =
+  WorkspaceWorkspaceIdFunnelsIdPreviewIndexRouteImport.update({
+    id: '/workspace/$workspaceId/funnels/$id/preview/',
+    path: '/workspace/$workspaceId/funnels/$id/preview/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const WorkspaceWorkspaceIdFunnelsIdEditIndexRoute =
+  WorkspaceWorkspaceIdFunnelsIdEditIndexRouteImport.update({
+    id: '/workspace/$workspaceId/funnels/$id/edit/',
+    path: '/workspace/$workspaceId/funnels/$id/edit/',
+    getParentRoute: () => rootRouteImport,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -73,26 +69,28 @@ export interface FileRoutesByFullPath {
   '/workspace/$workspaceId': typeof WorkspaceWorkspaceIdDashboardRouteRouteWithChildren
   '/f/$id': typeof funnelFIdRoute
   '/workspace/$workspaceId/': typeof WorkspaceWorkspaceIdDashboardIndexRoute
-  '/workspace/$workspaceId/funnels/$funnelId/edit': typeof WorkspaceWorkspaceIdbuilderFunnelsFunnelIdEditRoute
+  '/workspace/$workspaceId/funnels/$id/edit': typeof WorkspaceWorkspaceIdFunnelsIdEditIndexRoute
+  '/workspace/$workspaceId/funnels/$id/preview': typeof WorkspaceWorkspaceIdFunnelsIdPreviewIndexRoute
 }
 export interface FileRoutesByTo {
   '/auth/authorize': typeof AuthAuthorizeRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth': typeof AuthIndexRoute
-  '/workspace/$workspaceId': typeof WorkspaceWorkspaceIdDashboardIndexRoute
   '/f/$id': typeof funnelFIdRoute
-  '/workspace/$workspaceId/funnels/$funnelId/edit': typeof WorkspaceWorkspaceIdbuilderFunnelsFunnelIdEditRoute
+  '/workspace/$workspaceId': typeof WorkspaceWorkspaceIdDashboardIndexRoute
+  '/workspace/$workspaceId/funnels/$id/edit': typeof WorkspaceWorkspaceIdFunnelsIdEditIndexRoute
+  '/workspace/$workspaceId/funnels/$id/preview': typeof WorkspaceWorkspaceIdFunnelsIdPreviewIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/auth/authorize': typeof AuthAuthorizeRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/': typeof AuthIndexRoute
-  '/workspace/$workspaceId': typeof WorkspaceWorkspaceIdRouteWithChildren
   '/workspace/$workspaceId/_dashboard': typeof WorkspaceWorkspaceIdDashboardRouteRouteWithChildren
   '/(funnel)/f/$id': typeof funnelFIdRoute
   '/workspace/$workspaceId/_dashboard/': typeof WorkspaceWorkspaceIdDashboardIndexRoute
-  '/workspace/$workspaceId/(builder)/funnels/$funnelId/edit': typeof WorkspaceWorkspaceIdbuilderFunnelsFunnelIdEditRoute
+  '/workspace/$workspaceId/funnels/$id/edit/': typeof WorkspaceWorkspaceIdFunnelsIdEditIndexRoute
+  '/workspace/$workspaceId/funnels/$id/preview/': typeof WorkspaceWorkspaceIdFunnelsIdPreviewIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -103,44 +101,40 @@ export interface FileRouteTypes {
     | '/workspace/$workspaceId'
     | '/f/$id'
     | '/workspace/$workspaceId/'
-    | '/workspace/$workspaceId/funnels/$funnelId/edit'
+    | '/workspace/$workspaceId/funnels/$id/edit'
+    | '/workspace/$workspaceId/funnels/$id/preview'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth/authorize'
     | '/auth/callback'
     | '/auth'
-    | '/workspace/$workspaceId'
     | '/f/$id'
-    | '/workspace/$workspaceId/funnels/$funnelId/edit'
+    | '/workspace/$workspaceId'
+    | '/workspace/$workspaceId/funnels/$id/edit'
+    | '/workspace/$workspaceId/funnels/$id/preview'
   id:
     | '__root__'
     | '/auth/authorize'
     | '/auth/callback'
     | '/auth/'
-    | '/workspace/$workspaceId'
     | '/workspace/$workspaceId/_dashboard'
     | '/(funnel)/f/$id'
     | '/workspace/$workspaceId/_dashboard/'
-    | '/workspace/$workspaceId/(builder)/funnels/$funnelId/edit'
+    | '/workspace/$workspaceId/funnels/$id/edit/'
+    | '/workspace/$workspaceId/funnels/$id/preview/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AuthAuthorizeRoute: typeof AuthAuthorizeRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthIndexRoute: typeof AuthIndexRoute
-  WorkspaceWorkspaceIdRoute: typeof WorkspaceWorkspaceIdRouteWithChildren
   funnelFIdRoute: typeof funnelFIdRoute
+  WorkspaceWorkspaceIdFunnelsIdEditIndexRoute: typeof WorkspaceWorkspaceIdFunnelsIdEditIndexRoute
+  WorkspaceWorkspaceIdFunnelsIdPreviewIndexRoute: typeof WorkspaceWorkspaceIdFunnelsIdPreviewIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/workspace/$workspaceId': {
-      id: '/workspace/$workspaceId'
-      path: '/workspace/$workspaceId'
-      fullPath: '/workspace/$workspaceId'
-      preLoaderRoute: typeof WorkspaceWorkspaceIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/auth/': {
       id: '/auth/'
       path: '/auth'
@@ -171,7 +165,7 @@ declare module '@tanstack/react-router' {
     }
     '/workspace/$workspaceId/_dashboard': {
       id: '/workspace/$workspaceId/_dashboard'
-      path: '/workspace/$workspaceId'
+      path: ''
       fullPath: '/workspace/$workspaceId'
       preLoaderRoute: typeof WorkspaceWorkspaceIdDashboardRouteRouteImport
       parentRoute: typeof WorkspaceWorkspaceIdRoute
@@ -183,52 +177,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceWorkspaceIdDashboardIndexRouteImport
       parentRoute: typeof WorkspaceWorkspaceIdDashboardRouteRoute
     }
-    '/workspace/$workspaceId/(builder)/funnels/$funnelId/edit': {
-      id: '/workspace/$workspaceId/(builder)/funnels/$funnelId/edit'
-      path: '/funnels/$funnelId/edit'
-      fullPath: '/workspace/$workspaceId/funnels/$funnelId/edit'
-      preLoaderRoute: typeof WorkspaceWorkspaceIdbuilderFunnelsFunnelIdEditRouteImport
-      parentRoute: typeof WorkspaceWorkspaceIdRoute
+    '/workspace/$workspaceId/funnels/$id/preview/': {
+      id: '/workspace/$workspaceId/funnels/$id/preview/'
+      path: '/workspace/$workspaceId/funnels/$id/preview'
+      fullPath: '/workspace/$workspaceId/funnels/$id/preview'
+      preLoaderRoute: typeof WorkspaceWorkspaceIdFunnelsIdPreviewIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workspace/$workspaceId/funnels/$id/edit/': {
+      id: '/workspace/$workspaceId/funnels/$id/edit/'
+      path: '/workspace/$workspaceId/funnels/$id/edit'
+      fullPath: '/workspace/$workspaceId/funnels/$id/edit'
+      preLoaderRoute: typeof WorkspaceWorkspaceIdFunnelsIdEditIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
-
-interface WorkspaceWorkspaceIdDashboardRouteRouteChildren {
-  WorkspaceWorkspaceIdDashboardIndexRoute: typeof WorkspaceWorkspaceIdDashboardIndexRoute
-}
-
-const WorkspaceWorkspaceIdDashboardRouteRouteChildren: WorkspaceWorkspaceIdDashboardRouteRouteChildren =
-  {
-    WorkspaceWorkspaceIdDashboardIndexRoute:
-      WorkspaceWorkspaceIdDashboardIndexRoute,
-  }
-
-const WorkspaceWorkspaceIdDashboardRouteRouteWithChildren =
-  WorkspaceWorkspaceIdDashboardRouteRoute._addFileChildren(
-    WorkspaceWorkspaceIdDashboardRouteRouteChildren,
-  )
-
-interface WorkspaceWorkspaceIdRouteChildren {
-  WorkspaceWorkspaceIdDashboardRouteRoute: typeof WorkspaceWorkspaceIdDashboardRouteRouteWithChildren
-  WorkspaceWorkspaceIdbuilderFunnelsFunnelIdEditRoute: typeof WorkspaceWorkspaceIdbuilderFunnelsFunnelIdEditRoute
-}
-
-const WorkspaceWorkspaceIdRouteChildren: WorkspaceWorkspaceIdRouteChildren = {
-  WorkspaceWorkspaceIdDashboardRouteRoute:
-    WorkspaceWorkspaceIdDashboardRouteRouteWithChildren,
-  WorkspaceWorkspaceIdbuilderFunnelsFunnelIdEditRoute:
-    WorkspaceWorkspaceIdbuilderFunnelsFunnelIdEditRoute,
-}
-
-const WorkspaceWorkspaceIdRouteWithChildren =
-  WorkspaceWorkspaceIdRoute._addFileChildren(WorkspaceWorkspaceIdRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   AuthAuthorizeRoute: AuthAuthorizeRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthIndexRoute: AuthIndexRoute,
-  WorkspaceWorkspaceIdRoute: WorkspaceWorkspaceIdRouteWithChildren,
   funnelFIdRoute: funnelFIdRoute,
+  WorkspaceWorkspaceIdFunnelsIdEditIndexRoute:
+    WorkspaceWorkspaceIdFunnelsIdEditIndexRoute,
+  WorkspaceWorkspaceIdFunnelsIdPreviewIndexRoute:
+    WorkspaceWorkspaceIdFunnelsIdPreviewIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

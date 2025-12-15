@@ -1,78 +1,40 @@
-import { Form } from '@/components/form'
-import type { FormInfo } from '@/components/form/types'
-import { createFileRoute } from '@tanstack/react-router'
+import { Funnel as FunnelComponent } from '@/funnel'
+import { Funnel } from '@shopfunnel/core/funnel/index'
+import { queryOptions, useSuspenseQuery } from '@tanstack/react-query'
+import { createFileRoute, notFound } from '@tanstack/react-router'
+import { createServerFn } from '@tanstack/react-start'
+import { z } from 'zod'
+
+const getFunnel = createServerFn()
+  .inputValidator(z.object({ shortId: z.string().length(8) }))
+  .handler(async ({ data }) => {
+    const funnel = await Funnel.fromShortId(data.shortId)
+    if (!funnel) throw notFound()
+    return funnel
+  })
+
+const getFunnelQueryOptions = (shortId: string) =>
+  queryOptions({
+    queryKey: ['funnel', 'public', shortId],
+    queryFn: () => getFunnel({ data: { shortId } }),
+  })
 
 export const Route = createFileRoute('/(funnel)/f/$id')({
   component: RouteComponent,
+  loader: async ({ context, params }) => {
+    await context.queryClient.ensureQueryData(getFunnelQueryOptions(params.id))
+  },
 })
 
-const form: FormInfo = {
-  id: 'example-form',
-  schema: {
-    pages: [
-      {
-        id: 'main-page',
-        blocks: [
-          {
-            id: 'choice',
-            type: 'multiple_choice',
-            properties: {
-              label: 'Do you want to provide additional information?',
-              description: 'Select an option',
-              multiple: false,
-              choices: [
-                { id: 'yes', label: 'Yes' },
-                { id: 'no', label: 'No' },
-              ],
-            },
-            validations: {
-              required: true,
-            },
-          },
-          {
-            id: 'additional-info',
-            type: 'short_text',
-            properties: {
-              label: 'Additional Information',
-              description: 'Please provide any additional details',
-            },
-            validations: {},
-          },
-        ],
-      },
-    ],
-    rules: [
-      {
-        pageId: 'main-page',
-        actions: [
-          {
-            type: 'hide',
-            condition: {
-              op: 'eq',
-              vars: [
-                { type: 'block', value: 'choice' },
-                { type: 'constant', value: 'no' },
-              ],
-            },
-            details: {
-              target: {
-                type: 'block',
-                value: 'additional-info',
-              },
-            },
-          },
-        ],
-      },
-    ],
-    variables: {},
-  },
-}
-
 function RouteComponent() {
+  const params = Route.useParams()
+
+  const funnelQuery = useSuspenseQuery(getFunnelQueryOptions(params.id))
+
   return (
     <div className="min-h-screen w-full p-6">
       <div className="mx-auto max-w-md">
-        <Form form={form} />
+        <FunnelComponent funnel={funnelQuery.data} />
       </div>
     </div>
   )

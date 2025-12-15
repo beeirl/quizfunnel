@@ -35,6 +35,16 @@ export namespace Funnel {
     ),
   )
 
+  export const fromShortId = fn(z.string().length(8), async (shortId) =>
+    Database.use(async (tx) =>
+      tx
+        .select()
+        .from(FunnelTable)
+        .where(and(eq(FunnelTable.shortId, shortId), isNull(FunnelTable.archivedAt)))
+        .then((rows) => rows[0]),
+    ),
+  )
+
   export const list = fn(z.void(), () =>
     Database.use(async (tx) =>
       tx

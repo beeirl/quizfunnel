@@ -1,14 +1,14 @@
-import { blockRegistry } from '@/block/registry'
+import { blockRegistry } from '@/funnel/block/registry'
 import type { Block, MultipleChoiceBlock, ShortTextBlock } from '@shopfunnel/core/funnel/schema'
-import { MultipleChoiceConfig } from './multiple-choice-config'
-import { ShortTextConfig } from './short-text-config'
+import { MultipleChoicePane } from './multiple-choice-panes'
+import { ShortTextPane } from './short-text-panes'
 
-interface ConfiguratorProps {
+interface InspectorPanelProps {
   block: Block | null
   onBlockUpdate: (blockId: string, updates: Partial<Block>) => void
 }
 
-export function Configurator({ block, onBlockUpdate }: ConfiguratorProps) {
+export function InspectorPanel({ block, onBlockUpdate }: InspectorPanelProps) {
   if (!block) return null
 
   const item = blockRegistry[block.type]
@@ -20,10 +20,10 @@ export function Configurator({ block, onBlockUpdate }: ConfiguratorProps) {
   const renderSettings = () => {
     switch (block.type) {
       case 'short_text':
-        return <ShortTextConfig block={block} onUpdate={handleUpdate as (updates: Partial<ShortTextBlock>) => void} />
+        return <ShortTextPane block={block} onUpdate={handleUpdate as (updates: Partial<ShortTextBlock>) => void} />
       case 'multiple_choice':
         return (
-          <MultipleChoiceConfig
+          <MultipleChoicePane
             block={block}
             onUpdate={handleUpdate as (updates: Partial<MultipleChoiceBlock>) => void}
           />

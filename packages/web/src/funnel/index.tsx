@@ -1,57 +1,68 @@
-import type { Block, Page, Rule, Condition, ComparisonCondition, InputBlock } from '@shopfunnel/core/funnel/schema'
+import { Button } from '@/components/ui/button'
+import { Block as BlockComponent } from '@/funnel/block'
+import { Form } from '@base-ui-components/react'
+import type {
+  Block,
+  ComparisonCondition,
+  Condition,
+  FunnelSchema,
+  InputBlock,
+  Page,
+  Variables,
+} from '@shopfunnel/core/funnel/schema'
 import { AnimatePresence, motion } from 'motion/react'
 import * as React from 'react'
-import { FormPage } from './page'
-import { FormBlock, FormErrors, FormInfo, FormValues, FormVariables } from './types'
 
-interface FormState {
+// ============================================
+// Types
+// ============================================
+
+interface State {
   currentPageIndex: number
-  variables: FormVariables
-  values: FormValues
+  variables: Variables
+  values: Record<string, unknown>
 }
 
-interface FormCurrentPage {
+interface CurrentPage {
   id: string
-  blocks: FormBlock[]
-  values: FormValues
-  errors: FormErrors
+  blocks: Block[]
+  values: Record<string, unknown>
+  errors: Record<string, string>
   autoAdvance: boolean
 }
 
-interface FormHistoryEntry {
+interface HistoryEntry {
   pageIndex: number
-  variables: FormVariables
+  variables: Variables
 }
 
-interface FormRuleEvaluationResult {
+interface RuleEvaluationResult {
   jumpTo: string | undefined
   hiddenBlockIds: Set<string>
-  variables: FormVariables
+  variables: Variables
 }
 
-interface FormSchema {
-  pages: Page[]
-  rules: Rule[]
-  variables: FormVariables
-}
+// ============================================
+// Funnel Component
+// ============================================
 
-export function Form({ form }: { form: FormInfo }) {
-  const storageKey = `form-${form.id}-values`
+export function Funnel({ funnel, mode = 'live' }: { funnel: FunnelSchema; mode?: 'preview' | 'live' }) {
+  const storageKey = `funnel-${funnel.id}-values`
 
-  const stateRef = React.useRef<FormState>({
+  const stateRef = React.useRef<State>({
     currentPageIndex: 0,
     values: {},
-    variables: form.schema.variables ?? {},
+    variables: funnel.variables ?? {},
   })
 
-  const historyRef = React.useRef<FormHistoryEntry[]>([])
+  const historyRef = React.useRef<HistoryEntry[]>([])
 
-  const [currentPage, setCurrentPage] = React.useState<FormCurrentPage | undefined>(() => {
-    const schema = form.schema.pages[stateRef.current.currentPageIndex]
-    if (!schema) return undefined
+  const [currentPage, setCurrentPage] = React.useState<CurrentPage | undefined>(() => {
+    const page = funnel.pages[stateRef.current.currentPageIndex]
+    if (!page) return undefined
 
-    const evaluation = evaluatePageRules(schema.id, form.schema, stateRef.current)
-    return buildPage(schema, stateRef.current, evaluation)
+    const evaluation = evaluatePageRules(page.id, funnel, stateRef.current)
+    return buildPage(page, stateRef.current, evaluation)
   })
 
   React.useEffect(() => {
@@ -63,18 +74,18 @@ export function Form({ form }: { form: FormInfo }) {
       stateRef.current = { ...stateRef.current, values }
 
       // Re-render with restored values
-      const currentPageSchema = form.schema.pages[stateRef.current.currentPageIndex]
+      const currentPageSchema = funnel.pages[stateRef.current.currentPageIndex]
       if (currentPageSchema) {
-        const currentPageEvaluation = evaluatePageRules(currentPageSchema.id, form.schema, stateRef.current)
+        const currentPageEvaluation = evaluatePageRules(currentPageSchema.id, funnel, stateRef.current)
         setCurrentPage(buildPage(currentPageSchema, stateRef.current, currentPageEvaluation))
       }
     } catch {
       // Invalid stored data, ignore
     }
-  }, [storageKey, form.schema])
+  }, [storageKey, funnel])
 
-  function setValue(blockId: string, value: FormValues[string]) {
-    const currentPageSchema = form.schema.pages[stateRef.current.currentPageIndex]
+  function setValue(blockId: string, value: unknown) {
+    const currentPageSchema = funnel.pages[stateRef.current.currentPageIndex]
     if (!currentPageSchema) return
 
     // Update state
@@ -85,7 +96,7 @@ export function Form({ form }: { form: FormInfo }) {
     localStorage.setItem(storageKey, JSON.stringify(stateRef.current.values))
 
     // Re-evaluate rules with updated values
-    const currentPageEvaluation = evaluatePageRules(currentPageSchema.id, form.schema, stateRef.current)
+    const currentPageEvaluation = evaluatePageRules(currentPageSchema.id, funnel, stateRef.current)
     stateRef.current = { ...stateRef.current, variables: currentPageEvaluation.variables }
 
     // Update page view, clearing error for changed field
@@ -101,7 +112,7 @@ export function Form({ form }: { form: FormInfo }) {
   }
 
   function next() {
-    const currentPageSchema = form.schema.pages[stateRef.current.currentPageIndex]
+    const currentPageSchema = funnel.pages[stateRef.current.currentPageIndex]
     if (!currentPageSchema) return
 
     // Validate current page
@@ -118,28 +129,28 @@ export function Form({ form }: { form: FormInfo }) {
     ]
 
     // Evaluate rules to determine next page
-    const currentPageEvaluation = evaluatePageRules(currentPageSchema.id, form.schema, stateRef.current)
+    const currentPageEvaluation = evaluatePageRules(currentPageSchema.id, funnel, stateRef.current)
     stateRef.current = { ...stateRef.current, variables: currentPageEvaluation.variables }
 
     // Resolve next page index based on jump rules or sequential order
     const nextIndex = (() => {
       if (currentPageEvaluation.jumpTo) {
-        const jumpIndex = form.schema.pages.findIndex((page) => page.id === currentPageEvaluation.jumpTo)
+        const jumpIndex = funnel.pages.findIndex((page) => page.id === currentPageEvaluation.jumpTo)
         if (jumpIndex !== -1) return jumpIndex
       }
-      if (stateRef.current.currentPageIndex >= form.schema.pages.length - 1) return -1
+      if (stateRef.current.currentPageIndex >= funnel.pages.length - 1) return -1
       return stateRef.current.currentPageIndex + 1
     })()
     if (nextIndex === -1) return
 
-    const nextPageSchema = form.schema.pages[nextIndex]
+    const nextPageSchema = funnel.pages[nextIndex]
     if (!nextPageSchema) return
 
     // Update page index and render next page
     stateRef.current = { ...stateRef.current, currentPageIndex: nextIndex }
 
     // Evaluate rules for the new page to handle any initial hidden blocks
-    const nextPageEvaluation = evaluatePageRules(nextPageSchema.id, form.schema, stateRef.current)
+    const nextPageEvaluation = evaluatePageRules(nextPageSchema.id, funnel, stateRef.current)
     setCurrentPage(buildPage(nextPageSchema, stateRef.current, nextPageEvaluation))
   }
 
@@ -158,10 +169,10 @@ export function Form({ form }: { form: FormInfo }) {
     }
 
     // Get the previous page schema and evaluate rules for hidden blocks (but don't apply math ops to state)
-    const prevPageSchema = form.schema.pages[prevHistoryEntry.pageIndex]
+    const prevPageSchema = funnel.pages[prevHistoryEntry.pageIndex]
     if (!prevPageSchema) return
 
-    const prevPageEvaluation = evaluatePageRules(prevPageSchema.id, form.schema, stateRef.current)
+    const prevPageEvaluation = evaluatePageRules(prevPageSchema.id, funnel, stateRef.current)
     setCurrentPage(buildPage(prevPageSchema, stateRef.current, prevPageEvaluation))
   }
 
@@ -175,20 +186,29 @@ export function Form({ form }: { form: FormInfo }) {
         transition={{ duration: 0.3, ease: 'easeOut' }}
       >
         {currentPage && (
-          <FormPage
-            blocks={currentPage.blocks}
-            errors={currentPage.errors}
-            values={currentPage.values}
-            showNextButton={!currentPage.autoAdvance}
-            setValue={setValue}
-            onNext={next}
-            onPrev={prev}
-          />
+          <div className="flex w-full flex-col gap-y-6">
+            <Form className="flex flex-col gap-y-4" errors={currentPage.errors}>
+              {currentPage.blocks.map((block) => (
+                <BlockComponent
+                  key={block.id}
+                  mode="live"
+                  block={block}
+                  value={currentPage.values?.[block.id]}
+                  onChange={(value) => setValue?.(block.id, value)}
+                />
+              ))}
+            </Form>
+            {!currentPage.autoAdvance && <Button onClick={next}>Next</Button>}
+          </div>
         )}
       </motion.div>
     </AnimatePresence>
   )
 }
+
+// ============================================
+// Helper Functions
+// ============================================
 
 const INPUT_BLOCK_TYPES = ['short_text', 'multiple_choice', 'dropdown', 'slider'] as const
 
@@ -196,7 +216,7 @@ export function isInputBlock(block: Block): block is InputBlock {
   return INPUT_BLOCK_TYPES.includes(block.type as (typeof INPUT_BLOCK_TYPES)[number])
 }
 
-const evaluateCondition = (condition: Condition, state: FormState): boolean => {
+const evaluateCondition = (condition: Condition, state: State): boolean => {
   function compare(op: string, left: unknown, right: unknown) {
     if (op === 'eq' && Array.isArray(left)) return left.includes(right as string)
     if (op === 'eq' && Array.isArray(right)) return right.includes(left as string)
@@ -253,7 +273,7 @@ const evaluateCondition = (condition: Condition, state: FormState): boolean => {
   }
 }
 
-const evaluatePageRules = (pageId: string, schema: FormSchema, state: FormState): FormRuleEvaluationResult => {
+const evaluatePageRules = (pageId: string, schema: FunnelSchema, state: State): RuleEvaluationResult => {
   let jumpTo: string | undefined
   const hiddenBlockIds = new Set<string>()
   let variables = { ...state.variables }
@@ -305,7 +325,7 @@ const evaluatePageRules = (pageId: string, schema: FormSchema, state: FormState)
   return { jumpTo, hiddenBlockIds, variables }
 }
 
-const resolveTemplates = (value: unknown, state: FormState): unknown => {
+const resolveTemplates = (value: unknown, state: State): unknown => {
   function resolveTemplate(template: string) {
     return template.replace(/\{\{(var|block):([^}]+)\}\}/g, (_, type: string, key: string) => {
       const value = type === 'var' ? state.variables[key.trim()] : state.values[key.trim()]
@@ -327,7 +347,7 @@ const resolveTemplates = (value: unknown, state: FormState): unknown => {
   return value
 }
 
-const validatePage = (page: Page, state: FormState) => {
+const validatePage = (page: Page, state: State) => {
   const validators: Record<string, (value: unknown, param: unknown) => string | null> = {
     required: (value) => {
       const empty =
@@ -368,7 +388,7 @@ const validatePage = (page: Page, state: FormState) => {
     },
   }
 
-  const errors: FormErrors = {}
+  const errors: Record<string, string> = {}
   for (const block of page.blocks) {
     if (!isInputBlock(block)) continue
     if (!('validations' in block)) continue
@@ -389,13 +409,13 @@ const validatePage = (page: Page, state: FormState) => {
 
 function buildPage(
   schema: Page,
-  state: FormState,
-  evaluation: FormRuleEvaluationResult,
-  errors: FormErrors = {},
-): FormCurrentPage {
+  state: State,
+  evaluation: RuleEvaluationResult,
+  errors: Record<string, string> = {},
+): CurrentPage {
   const blocks = schema.blocks
     .filter((block) => !evaluation.hiddenBlockIds.has(block.id))
-    .map((block) => resolveTemplates(block, state) as FormBlock)
+    .map((block) => resolveTemplates(block, state) as Block)
   const blockIds = new Set(blocks.map((block) => block.id))
   const values = Object.fromEntries(Object.entries(state.values).filter(([key]) => blockIds.has(key)))
   const autoAdvance = (() => {

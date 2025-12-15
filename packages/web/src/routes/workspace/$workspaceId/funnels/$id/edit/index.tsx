@@ -1,4 +1,9 @@
 import { withActor } from '@/context/auth.withActor'
+import { InspectorPanel } from '@/routes/workspace/$workspaceId/funnels/$id/edit/-components/inspector-panel'
+import { LayersPanel } from '@/routes/workspace/$workspaceId/funnels/$id/edit/-components/layers-panel'
+import { Navbar, type NavbarTab } from '@/routes/workspace/$workspaceId/funnels/$id/edit/-components/navbar'
+import { Preview } from '@/routes/workspace/$workspaceId/funnels/$id/edit/-components/preview'
+import { ThemePanel } from '@/routes/workspace/$workspaceId/funnels/$id/edit/-components/theme-panel'
 import { Funnel } from '@shopfunnel/core/funnel/index'
 import type { Block, Page, Rule, Variables } from '@shopfunnel/core/funnel/schema'
 import { Identifier } from '@shopfunnel/core/identifier'
@@ -9,9 +14,6 @@ import { createServerFn } from '@tanstack/react-start'
 import * as React from 'react'
 import { ulid } from 'ulid'
 import { z } from 'zod'
-import { Configurator } from '../../-components/configurator'
-import { Explorer } from '../../-components/explorer'
-import { Preview } from '../../-components/preview'
 
 const getFunnel = createServerFn()
   .inputValidator(
@@ -63,24 +65,25 @@ const updateFunnelMutationOptions = (workspaceId: string, funnelId: string) =>
       updateFunnel({ data: { workspaceId, funnelId, ...data } }),
   })
 
-export const Route = createFileRoute('/workspace/$workspaceId/(builder)/funnels/$funnelId/edit')({
+export const Route = createFileRoute('/workspace/$workspaceId/funnels/$id/edit/')({
   component: RouteComponent,
   ssr: 'data-only',
   loader: async ({ context, params }) => {
-    await context.queryClient.ensureQueryData(getFunnelQueryOptions(params.workspaceId, params.funnelId))
+    await context.queryClient.ensureQueryData(getFunnelQueryOptions(params.workspaceId, params.id))
   },
 })
 
 function RouteComponent() {
   const params = Route.useParams()
 
-  const funnelQuery = useSuspenseQuery(getFunnelQueryOptions(params.workspaceId, params.funnelId))
+  const funnelQuery = useSuspenseQuery(getFunnelQueryOptions(params.workspaceId, params.id))
 
   const [funnel, setFunnel] = React.useState<Funnel.Info>(() => funnelQuery.data)
   const [selectedPageId, setSelectedPageId] = React.useState(() => funnel.pages[0]?.id ?? null)
   const [selectedBlockId, setSelectedBlockId] = React.useState(() => funnel.pages[0]?.blocks[0]?.id ?? null)
+  const [activeTab, setActiveTab] = React.useState<NavbarTab>('explorer')
 
-  const updateFunnelMutation = useMutation(updateFunnelMutationOptions(params.workspaceId, params.funnelId))
+  const updateFunnelMutation = useMutation(updateFunnelMutationOptions(params.workspaceId, params.id))
 
   const saveDebouncer = useDebouncer(
     (data: { pages: Page[]; rules: Rule[]; variables: Variables }) => {
@@ -178,20 +181,25 @@ function RouteComponent() {
             <div className="ml-auto flex w-56 items-center justify-end gap-2"></div>
           </div>
           <div className="flex flex-1 overflow-hidden">
-            <Explorer
-              pages={funnel.pages}
-              selectedPageId={selectedPageId}
-              onPageSelect={handlePageSelect}
-              onPagesReorder={handlePagesReorder}
-              onPageAdd={handlePageAdd}
-              onPageDelete={handlePageDelete}
-              selectedBlockId={selectedBlockId}
-              onBlockSelect={handleBlockSelect}
-              onBlocksReorder={handleBlocksReorder}
-              onBlockAdd={handleBlockAdd}
-            />
+            <Navbar activeTab={activeTab} onTabChange={setActiveTab} />
+            {activeTab === 'explorer' ? (
+              <LayersPanel
+                pages={funnel.pages}
+                selectedPageId={selectedPageId}
+                onPageSelect={handlePageSelect}
+                onPagesReorder={handlePagesReorder}
+                onPageAdd={handlePageAdd}
+                onPageDelete={handlePageDelete}
+                selectedBlockId={selectedBlockId}
+                onBlockSelect={handleBlockSelect}
+                onBlocksReorder={handleBlocksReorder}
+                onBlockAdd={handleBlockAdd}
+              />
+            ) : (
+              <ThemePanel />
+            )}
             <Preview page={selectedPage} selectedBlockId={selectedBlockId} onBlockSelect={handleBlockSelect} />
-            <Configurator block={selectedBlock} onBlockUpdate={handleBlockUpdate} />
+            <InspectorPanel block={selectedBlock} onBlockUpdate={handleBlockUpdate} />
           </div>
         </div>
       </div>

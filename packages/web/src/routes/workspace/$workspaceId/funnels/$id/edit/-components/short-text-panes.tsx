@@ -3,16 +3,16 @@ import type { ShortTextBlock } from '@shopfunnel/core/funnel/schema'
 import { createServerFn } from '@tanstack/react-start'
 import { Field } from './field'
 import { Input } from './input'
-import { PaneContent, PaneHeader, PaneRoot, PaneTitle } from './panel'
+import { PaneContent, PaneHeader, PaneRoot, PaneTitle } from './pane'
 
 const fn = createServerFn({ method: 'POST' }).handler(({ data }) => {})
 
-interface ShortTextConfigProps {
+interface ShortTextPaneProps {
   block: ShortTextBlock
   onUpdate: (updates: Partial<ShortTextBlock>) => void
 }
 
-export function ShortTextConfig({ block, onUpdate }: ShortTextConfigProps) {
+export function ShortTextPane({ block, onUpdate }: ShortTextPaneProps) {
   return (
     <form action={fn.url} method="post" encType="multipart/form-data">
       <PaneRoot>

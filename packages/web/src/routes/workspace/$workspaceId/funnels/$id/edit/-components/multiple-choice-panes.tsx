@@ -9,11 +9,11 @@ import * as React from 'react'
 import { ulid } from 'ulid'
 import { Field } from './field'
 import { Input } from './input'
-import { PaneContent, PaneHeader, PaneRoot, PaneTitle } from './panel'
+import { PaneContent, PaneHeader, PaneRoot, PaneTitle } from './pane'
 
 type Choice = MultipleChoiceBlock['properties']['choices'][number]
 
-interface MultipleChoiceConfigProps {
+interface MultipleChoicePaneProps {
   block: MultipleChoiceBlock
   onUpdate: (updates: Partial<MultipleChoiceBlock>) => void
 }
@@ -50,7 +50,7 @@ function ChoiceItem({
   )
 }
 
-export function MultipleChoiceConfig({ block, onUpdate }: MultipleChoiceConfigProps) {
+export function MultipleChoicePane({ block, onUpdate }: MultipleChoicePaneProps) {
   const choices = block.properties.choices
 
   const [focusChoiceId, setFocusChoiceId] = React.useState<string | null>(null)
