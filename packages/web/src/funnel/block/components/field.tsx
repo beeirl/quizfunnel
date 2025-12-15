@@ -12,12 +12,12 @@ interface FieldProps {
 export function Field({ mode = 'live', label, description, children, className }: FieldProps) {
   return (
     <BaseField.Root className={cn('flex flex-col', className)}>
-      {label && <BaseField.Label className="text-lg font-bold text-gray-900">{label}</BaseField.Label>}
+      {label && <BaseField.Label className="text-lg font-bold text-foreground">{label}</BaseField.Label>}
       {description && (
-        <BaseField.Description className="mt-1 text-sm text-gray-500">{description}</BaseField.Description>
+        <BaseField.Description className="mt-1 text-sm text-muted-foreground">{description}</BaseField.Description>
       )}
       <div className="mt-3">{children}</div>
-      {mode === 'live' && <BaseField.Error className="mt-2 text-sm text-red-600" />}
+      {mode === 'live' && <BaseField.Error className="mt-2 text-sm text-destructive" />}
     </BaseField.Root>
   )
 }

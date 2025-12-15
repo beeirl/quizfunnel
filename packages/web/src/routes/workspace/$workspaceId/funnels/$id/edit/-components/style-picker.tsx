@@ -1,13 +1,13 @@
-import { StyleName, STYLES } from '@shopfunnel/core/funnel/schema'
+import { type StyleName, STYLES } from '@shopfunnel/core/funnel/schema'
 import * as React from 'react'
 import { Picker } from './picker'
 
-const STYLE_DESCRIPTIONS = {
+const STYLE_DESCRIPTIONS: Record<StyleName, string> = {
   standard: 'Clean, neutral, and with generous spacing.',
   compact: ' Reduced padding and margins for dense content.',
 }
 
-const STYLE_TITLES = {
+const STYLE_TITLES: Record<StyleName, string> = {
   standard: 'Standard',
   compact: 'Compact',
 }
@@ -57,7 +57,13 @@ const styles = STYLES.map((style) => ({
   description: STYLE_DESCRIPTIONS[style.name],
 }))
 
-export function StylePicker({ selectedStyleName }: { selectedStyleName: StyleName }) {
+export function StylePicker({
+  selectedStyleName,
+  onStyleChange,
+}: {
+  selectedStyleName: StyleName
+  onStyleChange: (styleName: StyleName) => void
+}) {
   const selectedStyle = styles.find((style) => style.name === selectedStyleName)
   return (
     <Picker.Root>
@@ -65,12 +71,19 @@ export function StylePicker({ selectedStyleName }: { selectedStyleName: StyleNam
         <Picker.Trigger>
           <div className="flex flex-col justify-start text-left">
             <div className="text-xs text-muted-foreground">Style</div>
-            <div className="text-sm font-medium text-foreground">{selectedStyle?.title}</div>
+            <div className="text-xs font-medium text-foreground">{selectedStyle?.title}</div>
           </div>
+          {selectedStyle?.icon && (
+            <div className="absolute top-1/2 right-4 flex size-4 -translate-y-1/2 items-center justify-center">
+              {React.cloneElement(selectedStyle.icon, {
+                className: 'size-4',
+              })}
+            </div>
+          )}
         </Picker.Trigger>
       </div>
       <Picker.Content className="md:w-64" align="start" side="right">
-        <Picker.RadioGroup>
+        <Picker.RadioGroup value={selectedStyleName} onValueChange={(value) => onStyleChange(value as StyleName)}>
           <Picker.Group>
             {styles.map((style, index) => (
               <React.Fragment key={style.name}>

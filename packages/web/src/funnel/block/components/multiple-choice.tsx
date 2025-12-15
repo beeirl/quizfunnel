@@ -55,17 +55,17 @@ export function MultipleChoice(props: MultipleChoiceProps) {
             id={choice.id}
             isDisabled={props.mode === 'preview'}
             className={cn(
-              'relative flex items-center gap-3.5 rounded-xl border-2 border-gray-200 bg-white px-4.5 py-3.5 text-left transition-all outline-none',
+              'relative flex items-center gap-3.5 rounded-[calc(var(--radius)+4px)] border-2 border-border bg-background px-4.5 py-3.5 text-left transition-all outline-none',
               props.mode !== 'preview' && [
                 'cursor-pointer',
-                'hover:border-gray-300 hover:bg-gray-50',
-                'data-focused:border-blue-500 data-focused:bg-blue-50',
-                'data-selected:border-blue-500',
+                'hover:border-border hover:bg-muted',
+                'data-focused:border-primary data-focused:bg-primary/10',
+                'data-selected:border-primary',
               ],
             )}
           >
             {choice.attachment?.type === 'emoji' && <span className="text-xl">{choice.attachment.value}</span>}
-            <span className="flex-1 text-base font-semibold text-gray-900">{choice.label}</span>
+            <span className="flex-1 text-base font-semibold text-foreground">{choice.label}</span>
           </ReactAriaListboxItem>
         ))}
       </ReactAriaListbox>

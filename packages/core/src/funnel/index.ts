@@ -83,6 +83,7 @@ export namespace Funnel {
       pages: z.custom<Page[]>().optional(),
       rules: z.custom<Rule[]>().optional(),
       variables: z.custom<Variables>().optional(),
+      theme: z.custom<Theme>().optional(),
     }),
     (input) => {
       return Database.use(async (tx) =>
@@ -94,6 +95,7 @@ export namespace Funnel {
             pages: input.pages,
             rules: input.rules,
             variables: input.variables,
+            theme: input.theme,
           })
           .where(and(eq(FunnelTable.id, input.id), eq(FunnelTable.workspaceId, Actor.workspace()))),
       )

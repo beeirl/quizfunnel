@@ -5,5 +5,5 @@ export interface ParagraphProps {
 }
 
 export function Paragraph({ block }: ParagraphProps) {
-  return <p className="text-base text-gray-600">{block.properties.text}</p>
+  return <p className="text-base text-muted-foreground">{block.properties.text}</p>
 }

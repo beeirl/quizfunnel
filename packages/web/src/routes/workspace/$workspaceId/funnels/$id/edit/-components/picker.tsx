@@ -16,7 +16,7 @@ function PickerTrigger({ className, ...props }: MenuPrimitive.Trigger.Props) {
     <MenuPrimitive.Trigger
       data-slot="dropdown-menu-trigger"
       className={cn(
-        'relative w-[160px] shrink-0 touch-manipulation rounded-xl border border-foreground/10 bg-muted/50 p-2 select-none hover:bg-muted disabled:opacity-50 data-popup-open:bg-muted md:w-full md:rounded-lg md:border-transparent md:bg-transparent',
+        'relative w-[160px] shrink-0 touch-manipulation rounded-xl border border-foreground/10 bg-muted/50 px-2.5 py-2 select-none hover:bg-muted disabled:opacity-50 data-popup-open:bg-muted md:w-full md:rounded-lg md:border-transparent md:bg-transparent',
         className,
       )}
       {...props}

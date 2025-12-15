@@ -21,9 +21,9 @@ export function ShortText(props: ShortTextProps) {
     <Field mode={props.mode} label={props.block.properties.label} description={props.block.properties.description}>
       <BaseInput
         className={cn(
-          'w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-2.5 text-base transition-colors placeholder:text-gray-400',
-          'focus:border-blue-500 focus:outline-none',
-          'data-invalid:border-red-500',
+          'w-full rounded-[var(--radius)] border-2 border-border bg-background px-4 py-2.5 text-base text-foreground transition-colors placeholder:text-muted-foreground',
+          'focus:border-primary focus:outline-none',
+          'data-invalid:border-destructive',
           props.mode === 'preview' && 'pointer-events-none',
         )}
         disabled={props.mode === 'preview'}

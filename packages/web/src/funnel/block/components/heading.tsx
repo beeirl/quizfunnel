@@ -5,5 +5,5 @@ export interface HeadingProps {
 }
 
 export function Heading({ block }: HeadingProps) {
-  return <h2 className="text-2xl font-bold text-gray-900">{block.properties.text}</h2>
+  return <h2 className="text-2xl font-bold text-foreground">{block.properties.text}</h2>
 }

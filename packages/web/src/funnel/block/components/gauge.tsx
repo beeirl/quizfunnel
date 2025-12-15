@@ -6,7 +6,7 @@ export interface GaugeProps {
 
 export function Gauge(_props: GaugeProps) {
   return (
-    <div className="flex h-12 items-center justify-center rounded-lg bg-gray-100 text-sm text-gray-400">
+    <div className="flex h-12 items-center justify-center rounded-[var(--radius)] bg-muted text-sm text-muted-foreground">
       Gauge block
     </div>
   )

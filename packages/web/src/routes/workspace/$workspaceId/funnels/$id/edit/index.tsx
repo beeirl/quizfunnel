@@ -5,7 +5,7 @@ import { Navbar, type NavbarTab } from '@/routes/workspace/$workspaceId/funnels/
 import { Preview } from '@/routes/workspace/$workspaceId/funnels/$id/edit/-components/preview'
 import { ThemePanel } from '@/routes/workspace/$workspaceId/funnels/$id/edit/-components/theme-panel'
 import { Funnel } from '@shopfunnel/core/funnel/index'
-import type { Block, Page, Rule, Variables } from '@shopfunnel/core/funnel/schema'
+import type { Block, Page, Rule, Theme, Variables } from '@shopfunnel/core/funnel/schema'
 import { Identifier } from '@shopfunnel/core/identifier'
 import { useDebouncer } from '@tanstack/react-pacer'
 import { mutationOptions, queryOptions, useMutation, useSuspenseQuery } from '@tanstack/react-query'
@@ -44,6 +44,7 @@ const updateFunnel = createServerFn({ method: 'POST' })
       pages: z.custom<Page[]>().optional(),
       rules: z.custom<Rule[]>().optional(),
       variables: z.custom<Variables>().optional(),
+      theme: z.custom<Theme>().optional(),
     }),
   )
   .handler(({ data }) => {
@@ -54,6 +55,7 @@ const updateFunnel = createServerFn({ method: 'POST' })
           pages: data.pages,
           rules: data.rules,
           variables: data.variables,
+          theme: data.theme,
         }),
       data.workspaceId,
     )
@@ -61,7 +63,7 @@ const updateFunnel = createServerFn({ method: 'POST' })
 
 const updateFunnelMutationOptions = (workspaceId: string, funnelId: string) =>
   mutationOptions({
-    mutationFn: (data: { pages?: Page[]; rules?: Rule[]; variables?: Variables }) =>
+    mutationFn: (data: { pages?: Page[]; rules?: Rule[]; variables?: Variables; theme?: Theme }) =>
       updateFunnel({ data: { workspaceId, funnelId, ...data } }),
   })
 
@@ -86,7 +88,7 @@ function RouteComponent() {
   const updateFunnelMutation = useMutation(updateFunnelMutationOptions(params.workspaceId, params.id))
 
   const saveDebouncer = useDebouncer(
-    (data: { pages: Page[]; rules: Rule[]; variables: Variables }) => {
+    (data: { pages: Page[]; rules: Rule[]; variables: Variables; theme?: Theme }) => {
       updateFunnelMutation.mutate(data)
     },
     { wait: 1000 },
@@ -172,6 +174,20 @@ function RouteComponent() {
     saveDebouncer.maybeExecute({ pages: updated.pages, rules: updated.rules, variables: updated.variables })
   }
 
+  const handleThemeUpdate = (updates: Partial<Theme>) => {
+    const updated = {
+      ...funnel,
+      theme: { ...funnel.theme, ...updates },
+    }
+    setFunnel(updated)
+    saveDebouncer.maybeExecute({
+      pages: updated.pages,
+      rules: updated.rules,
+      variables: updated.variables,
+      theme: updated.theme,
+    })
+  }
+
   return (
     <div className="flex h-screen w-screen">
       <div className="relative flex h-full min-h-32 w-full flex-col">
@@ -196,9 +212,14 @@ function RouteComponent() {
                 onBlockAdd={handleBlockAdd}
               />
             ) : (
-              <ThemePanel theme={funnel.theme} />
+              <ThemePanel theme={funnel.theme} onThemeUpdate={handleThemeUpdate} />
             )}
-            <Preview page={selectedPage} selectedBlockId={selectedBlockId} onBlockSelect={handleBlockSelect} />
+            <Preview
+              page={selectedPage}
+              theme={funnel.theme}
+              selectedBlockId={selectedBlockId}
+              onBlockSelect={handleBlockSelect}
+            />
             <InspectorPanel block={selectedBlock} onBlockUpdate={handleBlockUpdate} />
           </div>
         </div>

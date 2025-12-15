@@ -1,22 +1,30 @@
-import { type ColorName, COLORS } from '@shopfunnel/core/funnel/theme'
+import { type ColorName, COLORS } from '@shopfunnel/core/funnel/schema'
+import * as React from 'react'
 import { Picker } from './picker'
 
 const COLOR_TITLES = {
   blue: 'Blue',
 }
 
-export function ColorPicker({ selectedColorName }: { selectedColorName: ColorName }) {
-  const colors = COLORS.map((color) => ({
-    ...color,
-    title: COLOR_TITLES[color.name],
-  }))
+const colors = COLORS.map((color) => ({
+  ...color,
+  title: COLOR_TITLES[color.name],
+}))
+
+export function ColorPicker({
+  selectedColorName,
+  onColorChange,
+}: {
+  selectedColorName: ColorName
+  onColorChange: (colorName: ColorName) => void
+}) {
   const selectedColor = colors.find((color) => color.name === selectedColorName)
   return (
     <Picker.Root>
       <Picker.Trigger>
         <div className="flex flex-col justify-start text-left">
           <div className="text-xs text-muted-foreground">Color</div>
-          <div className="text-sm font-medium text-foreground">{selectedColor?.title}</div>
+          <div className="text-xs font-medium text-foreground">{selectedColor?.title}</div>
         </div>
         <div
           style={
@@ -28,7 +36,7 @@ export function ColorPicker({ selectedColorName }: { selectedColorName: ColorNam
         />
       </Picker.Trigger>
       <Picker.Content side="right" align="start" className="max-h-96">
-        <Picker.RadioGroup>
+        <Picker.RadioGroup value={selectedColorName} onValueChange={(value) => onColorChange(value as ColorName)}>
           <Picker.Group>
             {colors.map((color) => {
               return (

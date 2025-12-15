@@ -35,7 +35,7 @@ interface PaneContentProps extends React.ComponentProps<'div'> {}
 
 function PaneContent({ children, className, ...props }: PaneContentProps) {
   return (
-    <div className={cn('flex flex-col gap-2 px-4 pb-4', className)} {...props}>
+    <div className={cn('flex flex-col px-4 pb-4', className)} {...props}>
       {children}
     </div>
   )

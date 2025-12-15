@@ -1,14 +1,19 @@
 import { Block } from '@/funnel/block'
+import { Theme as ThemeComponent } from '@/funnel/theme'
 import { cn } from '@/utils/cn'
-import type { Page } from '@shopfunnel/core/funnel/schema'
+import type { Page, Theme } from '@shopfunnel/core/funnel/schema'
 
-interface PreviewProps {
+export function Preview({
+  page,
+  theme,
+  selectedBlockId,
+  onBlockSelect,
+}: {
   page: Page | null
+  theme: Theme
   selectedBlockId: string | null
   onBlockSelect: (blockId: string | null) => void
-}
-
-export function Preview({ page, selectedBlockId, onBlockSelect }: PreviewProps) {
+}) {
   const blocks = page?.blocks ?? []
   return (
     <div className="flex flex-1 flex-col bg-background">
@@ -30,7 +35,9 @@ export function Preview({ page, selectedBlockId, onBlockSelect }: PreviewProps) 
                   selectedBlockId === block.id && 'border-ring ring-3 ring-ring/50 hover:ring-ring/50',
                 )}
               >
-                <Block mode="preview" block={block} />
+                <ThemeComponent theme={theme}>
+                  <Block mode="preview" block={block} />
+                </ThemeComponent>
               </div>
             ))
           )}

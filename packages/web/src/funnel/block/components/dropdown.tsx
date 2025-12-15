@@ -18,8 +18,8 @@ export type DropdownProps =
     }
 
 const triggerClassName =
-  'flex w-full items-center justify-between rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-left text-lg'
-const iconClassName = 'size-3.5 text-gray-500'
+  'flex w-full items-center justify-between rounded-[var(--radius)] border-2 border-border bg-background px-4 py-3 text-left text-lg text-foreground'
+const iconClassName = 'size-3.5 text-muted-foreground'
 
 export function Dropdown(props: DropdownProps) {
   const { mode, block } = props
@@ -34,13 +34,13 @@ export function Dropdown(props: DropdownProps) {
     <Field mode={mode} label={block.properties.label} description={block.properties.description}>
       {props.mode === 'preview' ? (
         <div className={triggerClassName}>
-          <span className="text-gray-400">Select an option...</span>
+          <span className="text-muted-foreground">Select an option...</span>
           <ChevronDownIcon className={iconClassName} />
         </div>
       ) : (
         <BaseSelect.Root items={options} value={props.value} onValueChange={props.onChange}>
           <BaseSelect.Trigger
-            className={cn(triggerClassName, 'transition-colors focus:border-blue-500 focus:outline-none')}
+            className={cn(triggerClassName, 'transition-colors focus:border-primary focus:outline-none')}
           >
             <BaseSelect.Value />
             <BaseSelect.Icon className="transition-transform">
@@ -49,7 +49,7 @@ export function Dropdown(props: DropdownProps) {
           </BaseSelect.Trigger>
           <BaseSelect.Portal>
             <BaseSelect.Positioner className="z-50 outline-none" sideOffset={4} alignItemWithTrigger={false}>
-              <BaseSelect.Popup className="group max-h-(--available-height) min-w-(--anchor-width) origin-(--transform-origin) overflow-y-auto rounded-lg border border-gray-200 bg-[canvas] bg-clip-padding py-1 text-gray-900 shadow-lg shadow-gray-200 transition-[transform,scale,opacity]">
+              <BaseSelect.Popup className="group max-h-(--available-height) min-w-(--anchor-width) origin-(--transform-origin) overflow-y-auto rounded-[var(--radius)] border border-border bg-background bg-clip-padding py-1 text-foreground shadow-lg shadow-border transition-[transform,scale,opacity]">
                 <BaseSelect.List className="max-h-60 overflow-y-auto">
                   {options.map((option) => (
                     <BaseSelect.Item
