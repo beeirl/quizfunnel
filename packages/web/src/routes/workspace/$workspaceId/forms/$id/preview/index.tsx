@@ -17,7 +17,7 @@ const getForm = createServerFn()
   )
   .handler(({ data }) => {
     return withActor(async () => {
-      const form = await Form.fromId(data.formId)
+      const form = await Form.getCurrentVersion(data.formId)
       if (!form) throw notFound()
       return form
     }, data.workspaceId)

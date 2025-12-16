@@ -36,7 +36,7 @@ const createFormMutationOptions = (workspaceId: string) =>
 
 export const Route = createFileRoute('/workspace/$workspaceId/_dashboard/')({
   component: RouteComponent,
-  ssr: 'data-only',
+  ssr: false,
   loader: async ({ context, params }) => {
     await context.queryClient.ensureQueryData(listFormsQueryOptions(params.workspaceId))
   },

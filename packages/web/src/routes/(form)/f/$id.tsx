@@ -8,7 +8,8 @@ import { z } from 'zod'
 const getForm = createServerFn()
   .inputValidator(z.object({ shortId: z.string().length(8) }))
   .handler(async ({ data }) => {
-    const form = await Form.fromShortId(data.shortId)
+    // fromShortId returns undefined if form doesn't exist or has no published version
+    const form = await Form.getPublishedVersion(data.shortId)
     if (!form) throw notFound()
     return form
   })

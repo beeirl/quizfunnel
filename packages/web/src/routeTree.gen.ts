@@ -8,6 +8,8 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
+import { createFileRoute } from '@tanstack/react-router'
+
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
@@ -18,6 +20,15 @@ import { Route as WorkspaceWorkspaceIdDashboardIndexRouteImport } from './routes
 import { Route as WorkspaceWorkspaceIdFormsIdPreviewIndexRouteImport } from './routes/workspace/$workspaceId/forms/$id/preview/index'
 import { Route as WorkspaceWorkspaceIdFormsIdEditIndexRouteImport } from './routes/workspace/$workspaceId/forms/$id/edit/index'
 
+const WorkspaceWorkspaceIdRouteImport = createFileRoute(
+  '/workspace/$workspaceId',
+)()
+
+const WorkspaceWorkspaceIdRoute = WorkspaceWorkspaceIdRouteImport.update({
+  id: '/workspace/$workspaceId',
+  path: '/workspace/$workspaceId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthIndexRoute = AuthIndexRouteImport.update({
   id: '/auth/',
   path: '/auth/',
@@ -51,15 +62,15 @@ const WorkspaceWorkspaceIdDashboardIndexRoute =
   } as any)
 const WorkspaceWorkspaceIdFormsIdPreviewIndexRoute =
   WorkspaceWorkspaceIdFormsIdPreviewIndexRouteImport.update({
-    id: '/workspace/$workspaceId/forms/$id/preview/',
-    path: '/workspace/$workspaceId/forms/$id/preview/',
-    getParentRoute: () => rootRouteImport,
+    id: '/forms/$id/preview/',
+    path: '/forms/$id/preview/',
+    getParentRoute: () => WorkspaceWorkspaceIdRoute,
   } as any)
 const WorkspaceWorkspaceIdFormsIdEditIndexRoute =
   WorkspaceWorkspaceIdFormsIdEditIndexRouteImport.update({
-    id: '/workspace/$workspaceId/forms/$id/edit/',
-    path: '/workspace/$workspaceId/forms/$id/edit/',
-    getParentRoute: () => rootRouteImport,
+    id: '/forms/$id/edit/',
+    path: '/forms/$id/edit/',
+    getParentRoute: () => WorkspaceWorkspaceIdRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -76,8 +87,8 @@ export interface FileRoutesByTo {
   '/auth/authorize': typeof AuthAuthorizeRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth': typeof AuthIndexRoute
-  '/f/$id': typeof formFIdRoute
   '/workspace/$workspaceId': typeof WorkspaceWorkspaceIdDashboardIndexRoute
+  '/f/$id': typeof formFIdRoute
   '/workspace/$workspaceId/forms/$id/edit': typeof WorkspaceWorkspaceIdFormsIdEditIndexRoute
   '/workspace/$workspaceId/forms/$id/preview': typeof WorkspaceWorkspaceIdFormsIdPreviewIndexRoute
 }
@@ -86,6 +97,7 @@ export interface FileRoutesById {
   '/auth/authorize': typeof AuthAuthorizeRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/': typeof AuthIndexRoute
+  '/workspace/$workspaceId': typeof WorkspaceWorkspaceIdRouteWithChildren
   '/workspace/$workspaceId/_dashboard': typeof WorkspaceWorkspaceIdDashboardRouteRouteWithChildren
   '/(form)/f/$id': typeof formFIdRoute
   '/workspace/$workspaceId/_dashboard/': typeof WorkspaceWorkspaceIdDashboardIndexRoute
@@ -108,8 +120,8 @@ export interface FileRouteTypes {
     | '/auth/authorize'
     | '/auth/callback'
     | '/auth'
-    | '/f/$id'
     | '/workspace/$workspaceId'
+    | '/f/$id'
     | '/workspace/$workspaceId/forms/$id/edit'
     | '/workspace/$workspaceId/forms/$id/preview'
   id:
@@ -117,6 +129,7 @@ export interface FileRouteTypes {
     | '/auth/authorize'
     | '/auth/callback'
     | '/auth/'
+    | '/workspace/$workspaceId'
     | '/workspace/$workspaceId/_dashboard'
     | '/(form)/f/$id'
     | '/workspace/$workspaceId/_dashboard/'
@@ -128,13 +141,19 @@ export interface RootRouteChildren {
   AuthAuthorizeRoute: typeof AuthAuthorizeRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthIndexRoute: typeof AuthIndexRoute
+  WorkspaceWorkspaceIdRoute: typeof WorkspaceWorkspaceIdRouteWithChildren
   formFIdRoute: typeof formFIdRoute
-  WorkspaceWorkspaceIdFormsIdEditIndexRoute: typeof WorkspaceWorkspaceIdFormsIdEditIndexRoute
-  WorkspaceWorkspaceIdFormsIdPreviewIndexRoute: typeof WorkspaceWorkspaceIdFormsIdPreviewIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/workspace/$workspaceId': {
+      id: '/workspace/$workspaceId'
+      path: '/workspace/$workspaceId'
+      fullPath: '/workspace/$workspaceId'
+      preLoaderRoute: typeof WorkspaceWorkspaceIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/': {
       id: '/auth/'
       path: '/auth'
@@ -165,7 +184,7 @@ declare module '@tanstack/react-router' {
     }
     '/workspace/$workspaceId/_dashboard': {
       id: '/workspace/$workspaceId/_dashboard'
-      path: ''
+      path: '/workspace/$workspaceId'
       fullPath: '/workspace/$workspaceId'
       preLoaderRoute: typeof WorkspaceWorkspaceIdDashboardRouteRouteImport
       parentRoute: typeof WorkspaceWorkspaceIdRoute
@@ -179,30 +198,60 @@ declare module '@tanstack/react-router' {
     }
     '/workspace/$workspaceId/forms/$id/preview/': {
       id: '/workspace/$workspaceId/forms/$id/preview/'
-      path: '/workspace/$workspaceId/forms/$id/preview'
+      path: '/forms/$id/preview'
       fullPath: '/workspace/$workspaceId/forms/$id/preview'
       preLoaderRoute: typeof WorkspaceWorkspaceIdFormsIdPreviewIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof WorkspaceWorkspaceIdRoute
     }
     '/workspace/$workspaceId/forms/$id/edit/': {
       id: '/workspace/$workspaceId/forms/$id/edit/'
-      path: '/workspace/$workspaceId/forms/$id/edit'
+      path: '/forms/$id/edit'
       fullPath: '/workspace/$workspaceId/forms/$id/edit'
       preLoaderRoute: typeof WorkspaceWorkspaceIdFormsIdEditIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof WorkspaceWorkspaceIdRoute
     }
   }
 }
+
+interface WorkspaceWorkspaceIdDashboardRouteRouteChildren {
+  WorkspaceWorkspaceIdDashboardIndexRoute: typeof WorkspaceWorkspaceIdDashboardIndexRoute
+}
+
+const WorkspaceWorkspaceIdDashboardRouteRouteChildren: WorkspaceWorkspaceIdDashboardRouteRouteChildren =
+  {
+    WorkspaceWorkspaceIdDashboardIndexRoute:
+      WorkspaceWorkspaceIdDashboardIndexRoute,
+  }
+
+const WorkspaceWorkspaceIdDashboardRouteRouteWithChildren =
+  WorkspaceWorkspaceIdDashboardRouteRoute._addFileChildren(
+    WorkspaceWorkspaceIdDashboardRouteRouteChildren,
+  )
+
+interface WorkspaceWorkspaceIdRouteChildren {
+  WorkspaceWorkspaceIdDashboardRouteRoute: typeof WorkspaceWorkspaceIdDashboardRouteRouteWithChildren
+  WorkspaceWorkspaceIdFormsIdEditIndexRoute: typeof WorkspaceWorkspaceIdFormsIdEditIndexRoute
+  WorkspaceWorkspaceIdFormsIdPreviewIndexRoute: typeof WorkspaceWorkspaceIdFormsIdPreviewIndexRoute
+}
+
+const WorkspaceWorkspaceIdRouteChildren: WorkspaceWorkspaceIdRouteChildren = {
+  WorkspaceWorkspaceIdDashboardRouteRoute:
+    WorkspaceWorkspaceIdDashboardRouteRouteWithChildren,
+  WorkspaceWorkspaceIdFormsIdEditIndexRoute:
+    WorkspaceWorkspaceIdFormsIdEditIndexRoute,
+  WorkspaceWorkspaceIdFormsIdPreviewIndexRoute:
+    WorkspaceWorkspaceIdFormsIdPreviewIndexRoute,
+}
+
+const WorkspaceWorkspaceIdRouteWithChildren =
+  WorkspaceWorkspaceIdRoute._addFileChildren(WorkspaceWorkspaceIdRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   AuthAuthorizeRoute: AuthAuthorizeRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthIndexRoute: AuthIndexRoute,
+  WorkspaceWorkspaceIdRoute: WorkspaceWorkspaceIdRouteWithChildren,
   formFIdRoute: formFIdRoute,
-  WorkspaceWorkspaceIdFormsIdEditIndexRoute:
-    WorkspaceWorkspaceIdFormsIdEditIndexRoute,
-  WorkspaceWorkspaceIdFormsIdPreviewIndexRoute:
-    WorkspaceWorkspaceIdFormsIdPreviewIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

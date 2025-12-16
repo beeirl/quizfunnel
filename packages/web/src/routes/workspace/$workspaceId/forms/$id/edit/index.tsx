@@ -26,7 +26,7 @@ const getForm = createServerFn()
   )
   .handler(({ data }) => {
     return withActor(async () => {
-      const form = await Form.fromId(data.formId)
+      const form = await Form.getCurrentVersion(data.formId)
       if (!form) throw notFound()
       return form
     }, data.workspaceId)
@@ -65,6 +65,22 @@ const updateFormMutationOptions = (workspaceId: string, formId: string) =>
       updateForm({ data: { workspaceId, formId, ...data } }),
   })
 
+const publishForm = createServerFn({ method: 'POST' })
+  .inputValidator(
+    z.object({
+      workspaceId: Identifier.schema('workspace'),
+      formId: Identifier.schema('form'),
+    }),
+  )
+  .handler(({ data }) => {
+    return withActor(() => Form.publish(data.formId), data.workspaceId)
+  })
+
+const publishFormMutationOptions = (workspaceId: string, formId: string) =>
+  mutationOptions({
+    mutationFn: () => publishForm({ data: { workspaceId, formId } }),
+  })
+
 export const Route = createFileRoute('/workspace/$workspaceId/forms/$id/edit/')({
   component: RouteComponent,
   ssr: false,
@@ -84,6 +100,7 @@ function RouteComponent() {
   const [activeTab, setActiveTab] = React.useState<NavbarTab>('explorer')
 
   const updateFormMutation = useMutation(updateFormMutationOptions(params.workspaceId, params.id))
+  const publishFormMutation = useMutation(publishFormMutationOptions(params.workspaceId, params.id))
 
   const saveDebouncer = useDebouncer(
     (data: { schema: FormSchema; theme?: FormTheme }) => {
@@ -103,7 +120,7 @@ function RouteComponent() {
 
   const handlePagesReorder = (reorderedPages: Page[]) => {
     const updatedSchema = { ...form.schema, pages: reorderedPages }
-    const updated = { ...form, schema: updatedSchema }
+    const updated = { ...form, schema: updatedSchema, published: false }
     setForm(updated)
     saveDebouncer.maybeExecute({ schema: updated.schema })
   }
@@ -114,7 +131,7 @@ function RouteComponent() {
       blocks: [],
     }
     const updatedSchema = { ...form.schema, pages: [...form.schema.pages, newPage] }
-    const updated = { ...form, schema: updatedSchema }
+    const updated = { ...form, schema: updatedSchema, published: false }
     setForm(updated)
     setSelectedPageId(newPage.id)
     setSelectedBlockId(null)
@@ -130,7 +147,7 @@ function RouteComponent() {
       setSelectedPageId(newSelectedPage?.id ?? null)
       setSelectedBlockId(newSelectedPage?.blocks[0]?.id ?? null)
       const updatedSchema = { ...prev.schema, pages: updatedPages }
-      const updated = { ...prev, schema: updatedSchema }
+      const updated = { ...prev, schema: updatedSchema, published: false }
       saveDebouncer.maybeExecute({ schema: updated.schema })
       return updated
     })
@@ -146,7 +163,7 @@ function RouteComponent() {
       page.id === selectedPageId ? { ...page, blocks: reorderedBlocks } : page,
     )
     const updatedSchema = { ...form.schema, pages: updatedPages }
-    const updated = { ...form, schema: updatedSchema }
+    const updated = { ...form, schema: updatedSchema, published: false }
     setForm(updated)
     saveDebouncer.maybeExecute({ schema: updated.schema })
   }
@@ -157,7 +174,7 @@ function RouteComponent() {
       page.id === selectedPageId ? { ...page, blocks: [...page.blocks, block] } : page,
     )
     const updatedSchema = { ...form.schema, pages: updatedPages }
-    const updated = { ...form, schema: updatedSchema }
+    const updated = { ...form, schema: updatedSchema, published: false }
     setForm(updated)
     setSelectedBlockId(block.id)
     saveDebouncer.maybeExecute({ schema: updated.schema })
@@ -169,7 +186,7 @@ function RouteComponent() {
       blocks: page.blocks.map((b) => (b.id === blockId ? ({ ...b, ...updates } as Block) : b)),
     }))
     const updatedSchema = { ...form.schema, pages: updatedPages }
-    const updated = { ...form, schema: updatedSchema }
+    const updated = { ...form, schema: updatedSchema, published: false }
     setForm(updated)
     saveDebouncer.maybeExecute({ schema: updated.schema })
   }
@@ -178,6 +195,7 @@ function RouteComponent() {
     const updated = {
       ...form,
       theme: { ...form.theme, ...updates },
+      published: false,
     }
     setForm(updated)
     saveDebouncer.maybeExecute({
@@ -201,6 +219,20 @@ function RouteComponent() {
                 render={<Link to="/workspace/$workspaceId/forms/$id/preview" params={params} target="_blank" />}
               >
                 Preview
+              </Button>
+              <Button
+                size="sm"
+                disabled={form.published || publishFormMutation.isPending}
+                variant={form.published ? 'ghost' : 'default'}
+                onClick={() => {
+                  publishFormMutation.mutate(undefined, {
+                    onSuccess: () => {
+                      setForm((prev) => ({ ...prev, published: true, publishedAt: new Date() }))
+                    },
+                  })
+                }}
+              >
+                Publish
               </Button>
             </div>
           </div>
