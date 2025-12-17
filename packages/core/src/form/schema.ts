@@ -28,7 +28,10 @@ export interface MultipleChoiceBlock {
     choices: Array<{
       id: string
       label: string
-      attachment?: { type: 'emoji'; emoji: string } | { type: 'image'; url: string }
+      media?: {
+        type: 'emoji' | 'image'
+        value: string
+      }
     }>
   }
   validations: {
@@ -105,8 +108,10 @@ export interface ListBlock {
       id: string
       title: string
       subtitle?: string
-      icon?: string
-      attachment?: { type: 'emoji'; value: string } | { type: 'image'; value: string }
+      media?: {
+        type: 'emoji' | 'image'
+        value: string
+      }
     }>
   }
 }

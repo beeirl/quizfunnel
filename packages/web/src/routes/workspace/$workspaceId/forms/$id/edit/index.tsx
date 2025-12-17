@@ -1,7 +1,9 @@
 import { Button } from '@/components/ui/button'
+import { Tabs } from '@/components/ui/tabs'
 import { withActor } from '@/context/auth.withActor'
 import { LeftPanel } from '@/routes/workspace/$workspaceId/forms/$id/edit/-components/left-panel'
 import { Preview } from '@/routes/workspace/$workspaceId/forms/$id/edit/-components/preview'
+import { IconGitBranch as GitBranchIcon, IconLayoutDashboard as LayoutDashboardIcon } from '@tabler/icons-react'
 
 import { Form } from '@shopfunnel/core/form/index'
 import type { Block, FormSchema, Page } from '@shopfunnel/core/form/schema'
@@ -97,6 +99,7 @@ function RouteComponent() {
   const [form, setForm] = React.useState<Form.Info>(() => formQuery.data)
   const [selectedPageId, setSelectedPageId] = React.useState(() => form.schema.pages[0]?.id ?? null)
   const [selectedBlockId, setSelectedBlockId] = React.useState(() => form.schema.pages[0]?.blocks[0]?.id ?? null)
+  const [activeTab, setActiveTab] = React.useState<'builder' | 'logic'>('builder')
 
   const updateFormMutation = useMutation(updateFormMutationOptions(params.workspaceId, params.id))
   const publishFormMutation = useMutation(publishFormMutationOptions(params.workspaceId, params.id))
@@ -206,10 +209,24 @@ function RouteComponent() {
   return (
     <div className="flex h-screen w-screen">
       <div className="relative flex h-full min-h-32 w-full flex-col">
-        <div className="relative z-10 flex h-full w-full flex-1 flex-col">
-          <div className="flex h-12 w-full shrink-0 items-center gap-2 border-b px-4">
-            <div className="flex w-56 items-center gap-2">
-              <span className="truncate text-sm font-medium">{form.title}</span>
+        <Tabs.Root
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as 'builder' | 'logic')}
+          className="relative z-10 flex h-full w-full flex-1 flex-col"
+        >
+          <div className="flex h-12 w-full shrink-0 items-center border-b px-4">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="truncate text-sm font-medium">{form.title}</span>
+              </div>
+              <Tabs.List className="rounded-full" variant="default">
+                <Tabs.Trigger className="rounded-full" value="builder">
+                  <LayoutDashboardIcon />
+                </Tabs.Trigger>
+                <Tabs.Trigger className="rounded-full" value="logic">
+                  <GitBranchIcon />
+                </Tabs.Trigger>
+              </Tabs.List>
             </div>
             <div className="ml-auto flex items-center justify-end gap-1">
               <ThemePopover.Root>
@@ -239,7 +256,7 @@ function RouteComponent() {
               </Button>
             </div>
           </div>
-          <div className="flex flex-1 overflow-hidden">
+          <Tabs.Content value="builder" className="flex flex-1 overflow-hidden">
             <LeftPanel
               pages={form.schema.pages}
               selectedPageId={selectedPageId}
@@ -259,8 +276,11 @@ function RouteComponent() {
               onBlockSelect={handleBlockSelect}
             />
             <RightPanel block={selectedBlock} onBlockUpdate={handleBlockUpdate} />
-          </div>
-        </div>
+          </Tabs.Content>
+          <Tabs.Content value="logic" className="flex flex-1 items-center justify-center text-muted-foreground">
+            Logic coming soon
+          </Tabs.Content>
+        </Tabs.Root>
       </div>
     </div>
   )

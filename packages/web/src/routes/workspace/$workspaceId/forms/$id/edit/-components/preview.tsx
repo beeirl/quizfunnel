@@ -20,7 +20,7 @@ export function Preview({
   selectedBlockId: string | null
   onBlockSelect: (blockId: string | null) => void
 }) {
-  const [displayMode, setDisplayMode] = React.useState<DisplayMode>('desktop')
+  const [displayMode, setDisplayMode] = React.useState<DisplayMode>('mobile')
   const blocks = page?.blocks ?? []
   return (
     <div className="relative flex flex-1 flex-col bg-background">
