@@ -1,8 +1,13 @@
+import { Button } from '@/components/ui/button'
 import { Block } from '@/form/block'
 import { Theme as ThemeComponent } from '@/form/theme'
 import { cn } from '@/lib/utils'
 import type { Page } from '@shopfunnel/core/form/schema'
 import type { FormTheme } from '@shopfunnel/core/form/theme'
+import { IconDeviceDesktop as DesktopIcon, IconDeviceMobile as MobileIcon } from '@tabler/icons-react'
+import * as React from 'react'
+
+type DisplayMode = 'desktop' | 'mobile'
 
 export function Preview({
   page,
@@ -15,11 +20,17 @@ export function Preview({
   selectedBlockId: string | null
   onBlockSelect: (blockId: string | null) => void
 }) {
+  const [displayMode, setDisplayMode] = React.useState<DisplayMode>('desktop')
   const blocks = page?.blocks ?? []
   return (
-    <div className="flex flex-1 flex-col bg-background">
+    <div className="relative flex flex-1 flex-col bg-background">
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="mx-auto flex w-full max-w-xl flex-col gap-3">
+        <div
+          className={cn(
+            'mx-auto flex w-full flex-col gap-3 transition-all duration-300',
+            displayMode === 'desktop' ? 'max-w-xl' : 'max-w-sm',
+          )}
+        >
           {blocks.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <span className="text-lg text-muted-foreground">No blocks on this page</span>
@@ -44,6 +55,14 @@ export function Preview({
           )}
         </div>
       </div>
+      <Button
+        variant="outline"
+        className="absolute right-4 bottom-4"
+        onClick={() => setDisplayMode(displayMode === 'desktop' ? 'mobile' : 'desktop')}
+      >
+        {displayMode === 'desktop' ? <DesktopIcon /> : <MobileIcon />}
+        {displayMode === 'desktop' ? 'Desktop' : 'Mobile'}
+      </Button>
     </div>
   )
 }

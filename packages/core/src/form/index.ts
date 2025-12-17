@@ -7,15 +7,19 @@ import { Identifier } from '../identifier'
 import { fn } from '../utils/fn'
 import { FormTable, FormVersionTable } from './index.sql'
 import type { FormSchema } from './schema'
-import { COLORS, RADII, STYLES, type FormTheme } from './theme'
+import { RADII, type FormTheme } from './theme'
 
 export namespace Form {
   const NEW_VERSION_THRESHOLD = 15 * 60 * 1000
 
   const DEFAULT_THEME: FormTheme = {
-    color: COLORS.find((color) => color.name === 'blue')!,
+    colors: {
+      primary: '#3b82f6',
+      primaryForeground: '#ffffff',
+      background: '#ffffff',
+      foreground: '#0a0a0a',
+    },
     radius: RADII.find((radius) => radius.name === 'medium')!,
-    style: STYLES.find((style) => style.name === 'standard')!,
   }
 
   const DEFAULT_SCHEMA: FormSchema = {

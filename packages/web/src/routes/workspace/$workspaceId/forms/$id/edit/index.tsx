@@ -213,7 +213,9 @@ function RouteComponent() {
             </div>
             <div className="ml-auto flex items-center justify-end gap-1">
               <ThemePopover.Root>
-                <ThemePopover.Trigger render={<Button variant="ghost" />}>Theme</ThemePopover.Trigger>
+                <ThemePopover.Trigger render={<Button variant="ghost" aria-label="Theme" />}>
+                  Design
+                </ThemePopover.Trigger>
                 <ThemePopover.Content align="end" theme={form.theme} onThemeUpdate={handleThemeUpdate} />
               </ThemePopover.Root>
               <Button
