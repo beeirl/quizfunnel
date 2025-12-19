@@ -1,16 +1,16 @@
-export const privateStorageBucket = new sst.cloudflare.Bucket('PrivateStorage')
+import { secret } from './secret'
 
-export const publicStorageBucket = new sst.cloudflare.Bucket('PublicStorage')
+export const storageBucket = new sst.cloudflare.Bucket('Bucket')
 
-new cloudflare.R2ManagedDomain('PublicStorageManagedDomain', {
+const storageManagedDomain = new cloudflare.R2ManagedDomain('StorageManagedDomain', {
   accountId: sst.cloudflare.DEFAULT_ACCOUNT_ID,
-  bucketName: publicStorageBucket.name,
+  bucketName: storageBucket.name,
   enabled: true,
 }).domain
 
-new cloudflare.R2BucketCors('PublicStorageBucketCors', {
+new cloudflare.R2BucketCors('StorageBucketCors', {
   accountId: sst.cloudflare.DEFAULT_ACCOUNT_ID,
-  bucketName: publicStorageBucket.name,
+  bucketName: storageBucket.name,
   rules: [
     {
       allowed: {
@@ -20,4 +20,14 @@ new cloudflare.R2BucketCors('PublicStorageBucketCors', {
       },
     },
   ],
+})
+
+export const storage = new sst.Linkable('Storage', {
+  properties: {
+    name: storageBucket.name,
+    url: $interpolate`https://${storageManagedDomain}`,
+    endpoint: `https://${sst.cloudflare.DEFAULT_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+    accessKeyId: secret.CLOUDFLARE_R2_ACCESS_KEY_ID.value,
+    secretAccessKey: secret.CLOUDFLARE_R2_SECRET_ACCESS_KEY.value,
+  },
 })

@@ -278,7 +278,7 @@ function RouteComponent() {
             <RightPanel block={selectedBlock} onBlockUpdate={handleBlockUpdate} />
           </Tabs.Content>
           <Tabs.Content value="logic" className="flex flex-1 items-center justify-center text-muted-foreground">
-            Logic coming soon
+            Funnel logic
           </Tabs.Content>
         </Tabs.Root>
       </div>

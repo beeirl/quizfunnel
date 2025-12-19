@@ -1,11 +1,13 @@
 import { auth } from './auth'
 import { database } from './database'
 import { allSecrets } from './secret'
-import { privateStorageBucket, publicStorageBucket } from './storage'
+import { domain } from './stage'
+import { storage } from './storage'
 
 export const web = new sst.cloudflare.x.SolidStart('Web', {
   path: 'packages/web',
-  link: [database, privateStorageBucket, publicStorageBucket, ...allSecrets],
+  domain,
+  link: [database, storage, ...allSecrets],
   environment: {
     VITE_AUTH_URL: auth.url.apply((url) => url!),
   },
@@ -14,6 +16,9 @@ export const web = new sst.cloudflare.x.SolidStart('Web', {
       transform: {
         worker: {
           placement: { mode: 'smart' },
+          observability: {
+            enabled: true,
+          },
         },
       },
     },

@@ -14,6 +14,14 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
+    "CLOUDFLARE_R2_ACCESS_KEY_ID": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "CLOUDFLARE_R2_SECRET_ACCESS_KEY": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
     "Database": {
       "database": string
       "host": string
@@ -25,6 +33,14 @@ declare module "sst" {
     "GOOGLE_CLIENT_ID": {
       "type": "sst.sst.Secret"
       "value": string
+    }
+    "Storage": {
+      "accessKeyId": string
+      "endpoint": string
+      "name": string
+      "secretAccessKey": string
+      "type": "sst.sst.Linkable"
+      "url": string
     }
     "Web": {
       "type": "sst.cloudflare.SolidStart"
@@ -38,8 +54,7 @@ declare module "sst" {
   export interface Resource {
     "AuthApi": cloudflare.Service
     "AuthStorage": cloudflare.KVNamespace
-    "PrivateStorage": cloudflare.R2Bucket
-    "PublicStorage": cloudflare.R2Bucket
+    "Bucket": cloudflare.R2Bucket
   }
 }
 

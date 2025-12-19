@@ -13,7 +13,7 @@ export const Route = createFileRoute('/auth/')({
         try {
           const workspaceId = await getLastSeenWorkspaceId()
           if (!workspaceId) return redirect({ to: '/auth/authorize' })
-          return redirect({ to: '/workspaces/$workspaceId', params: { workspaceId } })
+          return redirect({ to: '/workspace/$workspaceId', params: { workspaceId } })
         } catch {
           return redirect({ to: '/auth/authorize' })
         }

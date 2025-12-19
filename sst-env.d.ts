@@ -13,11 +13,23 @@ declare module "sst" {
       "namespaceId": string
       "type": "sst.cloudflare.Kv"
     }
+    "Bucket": {
+      "name": string
+      "type": "sst.cloudflare.Bucket"
+    }
     "CLOUDFLARE_API_TOKEN": {
       "type": "sst.sst.Secret"
       "value": string
     }
     "CLOUDFLARE_DEFAULT_ACCOUNT_ID": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "CLOUDFLARE_R2_ACCESS_KEY_ID": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "CLOUDFLARE_R2_SECRET_ACCESS_KEY": {
       "type": "sst.sst.Secret"
       "value": string
     }
@@ -33,13 +45,13 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
-    "PrivateStorage": {
+    "Storage": {
+      "accessKeyId": string
+      "endpoint": string
       "name": string
-      "type": "sst.cloudflare.Bucket"
-    }
-    "PublicStorage": {
-      "name": string
-      "type": "sst.cloudflare.Bucket"
+      "secretAccessKey": string
+      "type": "sst.sst.Linkable"
+      "url": string
     }
     "Web": {
       "type": "sst.cloudflare.SolidStart"

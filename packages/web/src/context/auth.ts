@@ -2,12 +2,13 @@ import { createClient } from '@openauthjs/openauth/client'
 import { Actor } from '@shopfunnel/core/actor'
 import { Database } from '@shopfunnel/core/database/index'
 import { UserTable } from '@shopfunnel/core/user/index.sql'
+import { redirect } from '@tanstack/react-router'
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm'
 import { useAuthSession } from './auth.session'
 
 export const AuthClient = createClient({
   clientID: 'app',
-  issuer: import.meta.env.VITE_AUTH_URL || 'https://auth.opencode.ai',
+  issuer: import.meta.env.VITE_AUTH_URL,
 })
 
 export async function getActor(workspaceId?: string): Promise<Actor.Info> {
@@ -44,7 +45,7 @@ export async function getActor(workspaceId?: string): Promise<Actor.Info> {
     }
   }
   const accounts = Object.keys(auth.data.account ?? {})
-  console.log('accounts', accounts)
+
   if (accounts.length) {
     const user = await Database.use((tx) =>
       tx
@@ -78,6 +79,5 @@ export async function getActor(workspaceId?: string): Promise<Actor.Info> {
       }
     }
   }
-  throw new Error('No user found')
-  // throw redirect({ to: '/auth/authorize' })
+  throw redirect({ to: '/auth/authorize', reloadDocument: true })
 }
