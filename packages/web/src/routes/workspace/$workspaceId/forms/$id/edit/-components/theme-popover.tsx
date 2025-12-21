@@ -28,7 +28,7 @@ function ThemePopoverContent({ theme, onThemeUpdate, ...props }: ThemePopoverCon
       </Popover.Header>
       <div className="flex flex-col">
         <Field.Root className="px-0">
-          <Field.Label>Primary</Field.Label>
+          <Field.Label>Accent</Field.Label>
           <Field.Control>
             <InputGroup.Root>
               <InputGroup.Addon>
@@ -51,34 +51,6 @@ function ThemePopoverContent({ theme, onThemeUpdate, ...props }: ThemePopoverCon
               <InputGroup.Input
                 value={theme.colors.primary}
                 onChange={(e) => handleColorChange('primary', e.target.value)}
-              />
-            </InputGroup.Root>
-          </Field.Control>
-        </Field.Root>
-        <Field.Root className="px-0">
-          <Field.Label>Primary text</Field.Label>
-          <Field.Control>
-            <InputGroup.Root>
-              <InputGroup.Addon>
-                <ColorPicker.Root>
-                  <ColorPicker.Trigger
-                    render={
-                      <InputGroup.Button
-                        size="icon-xs"
-                        variant="outline"
-                        style={{ backgroundColor: theme.colors.primaryForeground }}
-                      />
-                    }
-                  />
-                  <ColorPicker.Content
-                    value={theme.colors.primaryForeground}
-                    onValueChange={(value) => handleColorChange('primaryForeground', value)}
-                  />
-                </ColorPicker.Root>
-              </InputGroup.Addon>
-              <InputGroup.Input
-                value={theme.colors.primaryForeground}
-                onChange={(e) => handleColorChange('primaryForeground', e.target.value)}
               />
             </InputGroup.Root>
           </Field.Control>
