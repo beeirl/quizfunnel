@@ -1,8 +1,7 @@
 import { Button } from '@/components/ui/button'
-import { Block } from '@/form/block'
-import { Theme as ThemeComponent } from '@/form/theme'
+import { Page } from '@/form/page'
 import { cn } from '@/lib/utils'
-import type { Page } from '@shopfunnel/core/form/schema'
+import type { Page as PageSchema } from '@shopfunnel/core/form/schema'
 import type { FormTheme } from '@shopfunnel/core/form/theme'
 import { IconDeviceDesktop as DesktopIcon, IconDeviceMobile as MobileIcon } from '@tabler/icons-react'
 import * as React from 'react'
@@ -10,18 +9,17 @@ import * as React from 'react'
 type DisplayMode = 'desktop' | 'mobile'
 
 export function Preview({
-  page,
+  pageSchema,
   theme,
   selectedBlockId,
   onBlockSelect,
 }: {
-  page: Page | null
+  pageSchema: PageSchema | null
   theme: FormTheme
   selectedBlockId: string | null
   onBlockSelect: (blockId: string | null) => void
 }) {
   const [displayMode, setDisplayMode] = React.useState<DisplayMode>('mobile')
-  const blocks = page?.blocks ?? []
   return (
     <div className="relative flex flex-1 flex-col bg-background">
       <div className="flex-1 overflow-y-auto p-6" onClick={() => onBlockSelect(null)}>
@@ -31,30 +29,19 @@ export function Preview({
             displayMode === 'desktop' ? 'max-w-xl' : 'max-w-sm',
           )}
         >
-          {blocks.length === 0 ? (
+          {!pageSchema ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <span className="text-lg text-muted-foreground">No blocks on this page</span>
               <span className="mt-1 text-sm text-muted-foreground">Add blocks from the sidebar</span>
             </div>
           ) : (
-            blocks.map((block) => (
-              <div
-                key={block.id}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onBlockSelect(block.id)
-                }}
-                className={cn(
-                  'cursor-pointer rounded-xl border border-transparent p-4 ring ring-transparent transition-all',
-                  'hover:border-ring hover:ring-3 hover:ring-ring/50',
-                  selectedBlockId === block.id && 'border-ring ring-3 ring-ring/50 hover:ring-ring/50',
-                )}
-              >
-                <ThemeComponent theme={theme}>
-                  <Block mode="preview" schema={block} />
-                </ThemeComponent>
-              </div>
-            ))
+            <Page
+              mode="preview"
+              schema={pageSchema}
+              selectedBlockId={selectedBlockId}
+              theme={theme}
+              onBlockSelect={onBlockSelect}
+            />
           )}
         </div>
       </div>

@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils'
 import type { Block as BlockSchema, BlockType } from '@shopfunnel/core/form/schema'
 import {
   IconAdjustmentsHorizontal as AdjustmentsHorizontalIcon,
@@ -275,10 +276,12 @@ export function getBlocks() {
   return BLOCKS
 }
 
-export type BlockComponentProps =
+export type BlockProps =
   | {
       mode: 'preview'
       schema: BlockSchema
+      selected: boolean
+      onSelect?: () => void
     }
   | {
       mode: 'live'
@@ -287,8 +290,24 @@ export type BlockComponentProps =
       onChange?: (value: unknown) => void
     }
 
-export function Block(props: BlockComponentProps) {
+export function Block(props: BlockProps) {
   const block = getBlock(props.schema.type)
-  if (!block) return null
+  if (props.mode === 'preview') {
+    return (
+      <div
+        className={cn(
+          'relative cursor-pointer transition-all',
+          'before:absolute before:-inset-3 before:rounded-2xl before:border before:border-transparent before:ring-3 before:ring-transparent before:transition-all hover:before:border-ring hover:before:ring-ring/50',
+          props.selected && 'before:border-ring before:ring-ring/50',
+        )}
+        onClick={(e) => {
+          e.stopPropagation()
+          props.onSelect?.()
+        }}
+      >
+        <block.component {...props} />
+      </div>
+    )
+  }
   return <block.component {...props} />
 }

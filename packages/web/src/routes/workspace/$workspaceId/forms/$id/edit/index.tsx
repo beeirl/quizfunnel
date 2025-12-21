@@ -130,7 +130,6 @@ function RouteComponent() {
   const [form, setForm] = React.useState<Form.Info>(formQuery.data)
   const [selectedPageId, setSelectedPageId] = React.useState<string | null>(form.schema.pages[0]?.id ?? null)
   const [selectedBlockId, setSelectedBlockId] = React.useState<string | null>(null)
-  const [activeTab, setActiveTab] = React.useState<'builder' | 'logic'>('builder')
 
   const updateFormMutation = useMutation(updateFormMutationOptions(params.workspaceId, params.id))
   const publishFormMutation = useMutation(publishFormMutationOptions(params.workspaceId, params.id))
@@ -313,7 +312,7 @@ function RouteComponent() {
           </Resizable.PanelGroup>
         </Panel>
         <Preview
-          page={selectedPageSchema}
+          pageSchema={selectedPageSchema}
           theme={form.theme}
           selectedBlockId={selectedBlockId}
           onBlockSelect={handleBlockSelect}
