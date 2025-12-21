@@ -79,7 +79,7 @@ export function PagesPane({
     <Pane.Root className="h-full">
       <Pane.Header>
         <Pane.Title>Pages</Pane.Title>
-        <Button className="-mr-2" size="icon-sm" variant="ghost" onClick={onPageAdd}>
+        <Button className="-mr-2" size="icon" variant="ghost" onClick={onPageAdd}>
           <PlusIcon />
         </Button>
       </Pane.Header>

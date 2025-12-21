@@ -178,7 +178,7 @@ export function MultipleChoiceBlockPane({
         <Pane.Group>
           <Pane.GroupHeader>
             <Pane.GroupLabel>Choices</Pane.GroupLabel>
-            <Button size="icon-sm" variant="ghost" onClick={handleChoiceAdd}>
+            <Button size="icon" variant="ghost" onClick={handleChoiceAdd}>
               <PlusIcon />
             </Button>
           </Pane.GroupHeader>

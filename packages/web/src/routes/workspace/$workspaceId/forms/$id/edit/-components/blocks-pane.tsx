@@ -57,7 +57,7 @@ export function BlocksPane({
       <Pane.Header>
         <Pane.Title>Blocks</Pane.Title>
         <AddBlockDialog.Root onBlockAdd={onBlockAdd}>
-          <AddBlockDialog.Trigger render={<Button className="-mr-2" size="icon-sm" variant="ghost" />}>
+          <AddBlockDialog.Trigger render={<Button className="-mr-2" size="icon" variant="ghost" />}>
             <PlusIcon />
           </AddBlockDialog.Trigger>
           <AddBlockDialog.Popup />
