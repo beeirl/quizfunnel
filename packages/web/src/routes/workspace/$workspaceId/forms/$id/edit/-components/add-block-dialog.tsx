@@ -10,9 +10,10 @@ import { IconSearch as SearchIcon, IconSearchOff as SearchOffIcon } from '@table
 import * as React from 'react'
 import { ulid } from 'ulid'
 
-const ADD_DATA = {
-  short_text: {
-    type: 'short_text',
+const ADD_BLOCK_DATA = {
+  short_text: () => ({
+    id: ulid(),
+    type: 'short_text' as const,
     properties: {
       label: 'Your question here',
       placeholder: '',
@@ -20,9 +21,10 @@ const ADD_DATA = {
     validations: {
       required: false,
     },
-  },
-  multiple_choice: {
-    type: 'multiple_choice',
+  }),
+  multiple_choice: () => ({
+    id: ulid(),
+    type: 'multiple_choice' as const,
     properties: {
       label: 'Your question here',
       choices: [{ id: ulid(), label: 'Choice 1' }],
@@ -30,9 +32,10 @@ const ADD_DATA = {
     validations: {
       required: false,
     },
-  },
-  dropdown: {
-    type: 'dropdown',
+  }),
+  dropdown: () => ({
+    id: ulid(),
+    type: 'dropdown' as const,
     properties: {
       label: 'Your question here',
       options: [{ id: ulid(), label: 'Option 1' }],
@@ -40,52 +43,58 @@ const ADD_DATA = {
     validations: {
       required: false,
     },
-  },
-  slider: {
-    type: 'slider',
+  }),
+  slider: () => ({
+    id: ulid(),
+    type: 'slider' as const,
     properties: {
       label: 'Your question here',
       minValue: 0,
       maxValue: 100,
       step: 1,
     },
-  },
-  heading: {
-    type: 'heading',
+  }),
+  heading: () => ({
+    id: ulid(),
+    type: 'heading' as const,
     properties: {
       text: 'Your heading here',
     },
-  },
-  paragraph: {
-    type: 'paragraph',
+  }),
+  paragraph: () => ({
+    id: ulid(),
+    type: 'paragraph' as const,
     properties: {
       text: 'Your text here',
     },
-  },
-  gauge: {
-    type: 'gauge',
+  }),
+  gauge: () => ({
+    id: ulid(),
+    type: 'gauge' as const,
     properties: {
       value: '50',
       minValue: 0,
       maxValue: 100,
     },
-  },
-  list: {
-    type: 'list',
+  }),
+  list: () => ({
+    id: ulid(),
+    type: 'list' as const,
     properties: {
       orientation: 'vertical' as const,
       textPlacement: 'right' as const,
       size: 'sm' as const,
       items: [{ id: ulid(), title: 'Item', media: { type: 'emoji' as const, value: '✓' } }],
     },
-  },
-  progress: {
-    type: 'progress',
+  }),
+  progress: () => ({
+    id: ulid(),
+    type: 'progress' as const,
     properties: {},
-  },
+  }),
 }
 
-const PREVIEW_DATA: Record<Block['type'], Block> = {
+const PREVIEW_BLOCK_DATA: Record<Block['type'], Block> = {
   short_text: {
     id: '',
     type: 'short_text',
@@ -216,7 +225,7 @@ function AddBlockDialogPopup() {
   const [highlightedBlockType, setHighlightedBlockType] = React.useState<Block['type'] | undefined>(blockTypeValues[0])
 
   const handleBlockAdd = (type: Block['type']) => {
-    onBlockAdd({ id: ulid(), ...ADD_DATA[type] } as Block)
+    onBlockAdd(ADD_BLOCK_DATA[type]() as Block)
     setOpen(false)
   }
 
@@ -282,7 +291,7 @@ function AddBlockDialogPopup() {
                     <Badge variant="secondary" className="mb-4">
                       Preview
                     </Badge>
-                    <FormBlock static block={PREVIEW_DATA[highlightedBlockType]} />
+                    <FormBlock static block={PREVIEW_BLOCK_DATA[highlightedBlockType]} />
                   </div>
                 </div>
 

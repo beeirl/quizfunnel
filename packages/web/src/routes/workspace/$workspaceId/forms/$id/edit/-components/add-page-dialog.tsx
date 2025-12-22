@@ -2,17 +2,26 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
 import { Empty } from '@/components/ui/empty'
-import { FormBlock, getFormBlockType } from '@/form/block'
+import { FormBlock } from '@/form/block'
 import { cn } from '@/lib/utils'
 import { Combobox } from '@base-ui/react/combobox'
 import type { Block, Page } from '@shopfunnel/core/form/types'
-import { IconSearch as SearchIcon, IconSearchOff as SearchOffIcon } from '@tabler/icons-react'
+import {
+  IconAdjustmentsHorizontal as AdjustmentsHorizontalIcon,
+  IconChevronDown as ChevronDownIcon,
+  IconFile as FileIcon,
+  IconListLetters as ListLettersIcon,
+  IconMenu as MenuIcon,
+  IconSearch as SearchIcon,
+  IconSearchOff as SearchOffIcon,
+} from '@tabler/icons-react'
 import * as React from 'react'
 import { ulid } from 'ulid'
 
-const ADD_DATA = {
-  short_text: {
-    type: 'short_text',
+const ADD_BLOCK_DATA = {
+  short_text: () => ({
+    id: ulid(),
+    type: 'short_text' as const,
     properties: {
       label: 'Your question here',
       placeholder: '',
@@ -20,9 +29,10 @@ const ADD_DATA = {
     validations: {
       required: false,
     },
-  },
-  multiple_choice: {
-    type: 'multiple_choice',
+  }),
+  multiple_choice: () => ({
+    id: ulid(),
+    type: 'multiple_choice' as const,
     properties: {
       label: 'Your question here',
       choices: [{ id: ulid(), label: 'Choice 1' }],
@@ -30,9 +40,10 @@ const ADD_DATA = {
     validations: {
       required: false,
     },
-  },
-  dropdown: {
-    type: 'dropdown',
+  }),
+  dropdown: () => ({
+    id: ulid(),
+    type: 'dropdown' as const,
     properties: {
       label: 'Your question here',
       options: [{ id: ulid(), label: 'Option 1' }],
@@ -40,19 +51,20 @@ const ADD_DATA = {
     validations: {
       required: false,
     },
-  },
-  slider: {
-    type: 'slider',
+  }),
+  slider: () => ({
+    id: ulid(),
+    type: 'slider' as const,
     properties: {
       label: 'Your question here',
       minValue: 0,
       maxValue: 100,
       step: 1,
     },
-  },
-} as const
+  }),
+}
 
-const PREVIEW_DATA: Record<string, Block> = {
+const PREVIEW_BLOCK_DATA: Record<string, Block> = {
   short_text: {
     id: '',
     type: 'short_text',
@@ -103,6 +115,7 @@ const PREVIEW_DATA: Record<string, Block> = {
 
 interface PageTemplate {
   id: string
+  icon: React.ComponentType<{ className?: string }>
   blocks: Block['type'][]
   name: string
   description: string
@@ -111,7 +124,20 @@ interface PageTemplate {
 
 const PAGE_TEMPLATES: PageTemplate[] = [
   {
+    id: 'blank',
+    icon: FileIcon,
+    blocks: [],
+    name: 'Blank',
+    description: 'Start with an empty page and add blocks as needed.',
+    defaultPageProperties: {
+      buttonAction: 'next',
+      buttonText: 'Continue',
+      showButton: true,
+    },
+  },
+  {
     id: 'short_text',
+    icon: MenuIcon,
     blocks: ['short_text'],
     name: 'Short Text',
     description: 'Collect brief text responses like names, emails, or short answers.',
@@ -123,6 +149,7 @@ const PAGE_TEMPLATES: PageTemplate[] = [
   },
   {
     id: 'multiple_choice',
+    icon: ListLettersIcon,
     blocks: ['multiple_choice'],
     name: 'Multiple Choice',
     description: 'Let users select from a list of predefined options. Auto-advances on selection.',
@@ -134,6 +161,7 @@ const PAGE_TEMPLATES: PageTemplate[] = [
   },
   {
     id: 'dropdown',
+    icon: ChevronDownIcon,
     blocks: ['dropdown'],
     name: 'Dropdown',
     description: 'Present many options in a compact dropdown menu. Ideal for long lists.',
@@ -145,6 +173,7 @@ const PAGE_TEMPLATES: PageTemplate[] = [
   },
   {
     id: 'slider',
+    icon: AdjustmentsHorizontalIcon,
     blocks: ['slider'],
     name: 'Slider',
     description: 'Allow users to select a value within a defined range using a draggable slider.',
@@ -197,9 +226,7 @@ function AddPageDialogPopup() {
     const template = getPageTemplate(templateId)
     const page: Page = {
       id: ulid(),
-      blocks: template.blocks.map((type) => {
-        return { id: ulid(), ...ADD_DATA[type] } as Block
-      }),
+      blocks: template.blocks.map((type) => ADD_BLOCK_DATA[type]()),
       properties: template.defaultPageProperties,
     }
     onPageAdd(page)
@@ -232,9 +259,6 @@ function AddPageDialogPopup() {
             <Combobox.List className="flex w-full flex-col gap-0.5 overflow-y-auto p-2 data-empty:hidden md:max-w-[250px] md:border-r md:border-border">
               {(templateId: string) => {
                 const template = getPageTemplate(templateId)
-                if (!template || !template.blocks[0]) return null
-                const firstBlock = getFormBlockType(template.blocks[0])
-                const IconComponent = firstBlock.icon
                 return (
                   <Combobox.Item
                     key={templateId}
@@ -249,7 +273,7 @@ function AddPageDialogPopup() {
                       highlightedTemplateId === templateId && 'bg-secondary',
                     )}
                   >
-                    <IconComponent className="size-4 text-muted-foreground" />
+                    <template.icon className="size-4 text-muted-foreground" />
                     <span className="flex-1 truncate text-sm font-medium">{template.name}</span>
                   </Combobox.Item>
                 )
@@ -268,7 +292,7 @@ function AddPageDialogPopup() {
                       Preview
                     </Badge>
                     {highlightedTemplate.blocks.map((blockType) => (
-                      <FormBlock key={blockType} static block={PREVIEW_DATA[blockType]!} />
+                      <FormBlock key={blockType} static block={PREVIEW_BLOCK_DATA[blockType]!} />
                     ))}
                   </div>
                 </div>

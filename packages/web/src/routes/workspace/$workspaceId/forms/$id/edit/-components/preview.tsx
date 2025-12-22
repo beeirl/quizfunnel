@@ -1,8 +1,6 @@
-import { Button } from '@/components/ui/button'
 import { FormPage } from '@/form/page'
 import { FormRoot } from '@/form/root'
 import type { Page, Theme } from '@shopfunnel/core/form/types'
-import { IconDeviceDesktop as DesktopIcon, IconDeviceMobile as MobileIcon } from '@tabler/icons-react'
 import * as React from 'react'
 
 type DisplayMode = 'desktop' | 'mobile'
@@ -29,14 +27,14 @@ export function Preview({
       ) : (
         <FormPage mode="edit" page={page} selectedBlockId={selectedBlockId} onBlockSelect={onBlockSelect} />
       )}
-      <Button
+      {/* <Button
         variant="outline"
         className="absolute right-4 bottom-4"
         onClick={() => setDisplayMode(displayMode === 'desktop' ? 'mobile' : 'desktop')}
       >
         {displayMode === 'desktop' ? <DesktopIcon /> : <MobileIcon />}
         {displayMode === 'desktop' ? 'Desktop' : 'Mobile'}
-      </Button>
+      </Button> */}
     </FormRoot>
   )
 }
