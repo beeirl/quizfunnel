@@ -38,7 +38,7 @@ export function MultipleChoiceBlock(props: MultipleChoiceBlockProps) {
             isDisabled={props.static}
             className={cn(
               // Base
-              'relative flex h-14 cursor-pointer items-center gap-3.5 rounded-(--sf-radius) px-4 text-left text-base transition-all outline-none',
+              'overlfow-hidden relative flex h-14 cursor-pointer items-center rounded-(--sf-radius) px-4 text-left text-base transition-all outline-none',
               'border border-(--sf-color-primary)/50 bg-(--sf-color-primary)/15 text-(--sf-color-primary)',
               // Hover
               'hover:scale-[1.01] hover:border-(--sf-color-primary)/70 hover:bg-(--sf-color-primary)/30',
@@ -59,7 +59,14 @@ export function MultipleChoiceBlock(props: MultipleChoiceBlockProps) {
               }
             }}
           >
-            {choice.media?.type === 'emoji' && <span className="text-xl">{choice.media.value}</span>}
+            {choice.media && (
+              <div className="-ml-4 flex aspect-square h-full items-center justify-center">
+                {choice.media.type === 'emoji' && <span className="text-3xl">{choice.media.value}</span>}
+                {choice.media.type === 'image' && (
+                  <img className="size-full object-cover" src={choice.media.value} alt="" />
+                )}
+              </div>
+            )}
             <span className="flex-1 text-base font-semibold">{choice.label}</span>
           </ReactAriaListboxItem>
         ))}

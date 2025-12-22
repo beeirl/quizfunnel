@@ -11,7 +11,7 @@ type FormPageProps = {
   | {
       mode: 'edit'
       selectedBlockId: string | null
-      onBlockSelect: (blockId: string | null) => void
+      onBlockSelect: (id: string | null) => void
     }
   | {
       mode: 'preview' | 'live'
