@@ -26,7 +26,7 @@ export function FormPage(props: FormPageProps) {
   return (
     <BaseForm
       className="mx-auto flex w-full max-w-md flex-1 flex-col px-8 py-11"
-      errors={props.mode === 'live' ? props.errors : undefined}
+      errors={props.mode !== 'edit' ? props.errors : undefined}
       onSubmit={(e) => {
         e.preventDefault()
         e.stopPropagation()
@@ -56,11 +56,11 @@ export function FormPage(props: FormPageProps) {
             }
           >
             <FormBlock
-              static={props.mode !== 'live'}
+              static={props.mode === 'edit'}
               block={block}
               index={index}
-              value={props.mode === 'live' ? props.values[block.id] : undefined}
-              onValueChange={props.mode === 'live' ? (value) => props.onBlockValueChange?.(block.id, value) : undefined}
+              value={props.mode !== 'edit' ? props.values[block.id] : undefined}
+              onValueChange={props.mode !== 'edit' ? (value) => props.onBlockValueChange?.(block.id, value) : undefined}
             />
           </div>
         ))}
@@ -70,11 +70,11 @@ export function FormPage(props: FormPageProps) {
           className={cn(
             'h-12 rounded-(--sf-radius) text-base font-semibold transition-all outline-none not-first:mt-6',
             'bg-(--sf-color-primary) text-(--sf-color-primary-foreground) hover:bg-(--sf-color-primary)/90',
-            'focus:ring-2 focus:ring-(--sf-color-primary) focus:ring-offset-2',
-            props.mode !== 'live' && 'pointer-events-none',
+            'focus-visible:ring-2 focus-visible:ring-(--sf-color-primary) focus-visible:ring-offset-2',
+            props.mode === 'edit' && 'pointer-events-none',
           )}
-          disabled={props.mode !== 'live'}
-          onClick={props.mode === 'live' ? props.onButtonClick : undefined}
+          disabled={props.mode === 'edit'}
+          onClick={props.mode !== 'edit' ? props.onButtonClick : undefined}
         >
           {props.page.properties.buttonText}
         </BaseButton>
