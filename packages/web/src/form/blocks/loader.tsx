@@ -5,7 +5,6 @@ import * as React from 'react'
 export interface LoaderBlockProps {
   data: LoaderBlockData
   index: number
-  static?: boolean
 }
 
 // Custom easing keyframes that simulate "calculating" feel
@@ -46,14 +45,18 @@ function interpolateProgress(normalizedTime: number): number {
 export function LoaderBlock(props: LoaderBlockProps) {
   const { description, duration } = props.data.properties
 
-  const [progress, setProgress] = React.useState(props.static ? 68 : 0)
+  const [progress, setProgress] = React.useState(0)
 
   React.useEffect(() => {
     const durationMs = duration * 1000
-    const startTime = performance.now()
+    let startTime: number | null = null
     let animationId: number
 
     function animate(currentTime: number) {
+      if (startTime === null) {
+        startTime = currentTime
+      }
+
       const elapsed = currentTime - startTime
       const normalizedTime = Math.min(elapsed / durationMs, 1)
       const currentProgress = interpolateProgress(normalizedTime)
@@ -70,7 +73,7 @@ export function LoaderBlock(props: LoaderBlockProps) {
     return () => {
       cancelAnimationFrame(animationId)
     }
-  }, [props.static, duration])
+  }, [duration])
 
   return (
     <div className={cn('flex w-full flex-col items-center py-6', props.index > 0 && 'mt-6')}>

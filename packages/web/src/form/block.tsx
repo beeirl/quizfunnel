@@ -2,13 +2,12 @@ import type { Block } from '@shopfunnel/core/form/types'
 import {
   IconAdjustmentsHorizontal as AdjustmentsHorizontalIcon,
   IconChevronDown as ChevronDownIcon,
-  IconDots as DotsIcon,
   IconGauge as GaugeIcon,
   IconHeading as HeadingIcon,
   IconLetterCase as LetterCaseIcon,
   IconListDetails as ListDetailsIcon,
   IconListLetters as ListLettersIcon,
-  IconLoader2 as Loader2Icon,
+  IconLoader as LoaderIcon,
   IconMenu as MenuIcon,
   IconPhoto as PhotoIcon,
 } from '@tabler/icons-react'
@@ -21,7 +20,7 @@ import { ListBlock, ListBlockProps } from './blocks/list'
 import { LoaderBlock, LoaderBlockProps } from './blocks/loader'
 import { MultipleChoiceBlock, MultipleChoiceBlockProps } from './blocks/multiple-choice'
 import { ParagraphBlock, ParagraphBlockProps } from './blocks/paragraph'
-import { ProgressBlock, ProgressBlockProps } from './blocks/progress'
+
 import { ShortTextBlock, ShortTextBlockProps } from './blocks/short-text'
 import { SliderBlock, SliderBlockProps } from './blocks/slider'
 
@@ -107,14 +106,7 @@ const FORM_BLOCK_TYPES: FormBlockType[] = [
     icon: ListDetailsIcon,
     render: ({ block, ...rest }) => <ListBlock {...({ data: block, ...rest } as ListBlockProps)} />,
   },
-  {
-    type: 'progress',
-    name: 'Progress',
-    description: `Show users how far along they are in completing the form.`,
-    category: 'display',
-    icon: DotsIcon,
-    render: ({ block, ...rest }) => <ProgressBlock {...({ data: block, ...rest } as ProgressBlockProps)} />,
-  },
+
   {
     type: 'image',
     name: 'Image',
@@ -128,8 +120,8 @@ const FORM_BLOCK_TYPES: FormBlockType[] = [
     name: 'Loader',
     description: `Display an animated loading bar that fills up over time.`,
     category: 'display',
-    icon: Loader2Icon,
-    render: ({ block, ...rest }) => <LoaderBlock {...({ data: block, ...rest } as LoaderBlockProps)} />,
+    icon: LoaderIcon,
+    render: (props: FormBlockProps) => <LoaderBlock {...({ data: props.block, ...props } as LoaderBlockProps)} />,
   },
 ]
 

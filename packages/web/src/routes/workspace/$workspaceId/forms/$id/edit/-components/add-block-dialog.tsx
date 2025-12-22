@@ -87,11 +87,7 @@ const ADD_BLOCK_DATA = {
       items: [{ id: ulid(), title: 'Item', media: { type: 'emoji' as const, value: '✓' } }],
     },
   }),
-  progress: () => ({
-    id: ulid(),
-    type: 'progress' as const,
-    properties: {},
-  }),
+
   image: () => ({
     id: ulid(),
     type: 'image' as const,
@@ -193,11 +189,7 @@ const PREVIEW_BLOCK_DATA: Record<Block['type'], Block> = {
       ],
     },
   },
-  progress: {
-    id: '',
-    type: 'progress',
-    properties: {},
-  },
+
   image: {
     id: '',
     type: 'image',
