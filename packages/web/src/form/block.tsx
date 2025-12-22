@@ -20,9 +20,8 @@ import { ListBlock, ListBlockProps } from './blocks/list'
 import { LoaderBlock, LoaderBlockProps } from './blocks/loader'
 import { MultipleChoiceBlock, MultipleChoiceBlockProps } from './blocks/multiple-choice'
 import { ParagraphBlock, ParagraphBlockProps } from './blocks/paragraph'
-
-import { ShortTextBlock, ShortTextBlockProps } from './blocks/short-text'
 import { SliderBlock, SliderBlockProps } from './blocks/slider'
+import { TextInputBlock, TextInputBlockProps } from './blocks/text-input'
 
 export interface FormBlockProps {
   static?: boolean
@@ -43,12 +42,12 @@ interface FormBlockType {
 
 const FORM_BLOCK_TYPES: FormBlockType[] = [
   {
-    type: 'short_text',
-    name: 'Short Text',
+    type: 'text_input',
+    name: 'Text Input',
     description: `Use this to insert a question combined with a short text answer. Add an answer label or placeholder text for guidance.`,
     category: 'input',
     icon: MenuIcon,
-    render: ({ block, ...rest }) => <ShortTextBlock {...({ data: block, ...rest } as ShortTextBlockProps)} />,
+    render: ({ block, ...rest }) => <TextInputBlock {...({ data: block, ...rest } as TextInputBlockProps)} />,
   },
   {
     type: 'multiple_choice',

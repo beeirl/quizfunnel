@@ -6,7 +6,7 @@ import { ImageBlockPane } from './block-panes/image'
 import { LoaderBlockPane } from './block-panes/loader'
 import { MultipleChoiceBlockPane } from './block-panes/multiple-choice'
 import { ParagraphBlockPane } from './block-panes/paragraph'
-import { ShortTextBlockPane } from './block-panes/short-text'
+import { TextInputBlockPane } from './block-panes/text-input'
 
 export function BlockPane({
   data,
@@ -18,8 +18,8 @@ export function BlockPane({
   onImageUpload: (file: File) => Promise<string>
 }) {
   switch (data.type) {
-    case 'short_text':
-      return <ShortTextBlockPane data={data} onDataUpdate={onDataUpdate} />
+    case 'text_input':
+      return <TextInputBlockPane data={data} onDataUpdate={onDataUpdate} />
     case 'multiple_choice':
       return <MultipleChoiceBlockPane data={data} onDataUpdate={onDataUpdate} onImageUpload={onImageUpload} />
     case 'dropdown':

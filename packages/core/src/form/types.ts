@@ -2,9 +2,9 @@
 // Block
 // ============================================
 
-export interface ShortTextBlock {
+export interface TextInputBlock {
   id: string
-  type: 'short_text'
+  type: 'text_input'
   properties: {
     label: string
     description?: string
@@ -12,7 +12,6 @@ export interface ShortTextBlock {
   }
   validations: {
     required?: boolean
-    email?: boolean
     minLength?: number
     maxLength?: number
   }
@@ -137,7 +136,7 @@ export interface ImageBlock {
 }
 
 export type Block =
-  | ShortTextBlock
+  | TextInputBlock
   | MultipleChoiceBlock
   | DropdownBlock
   | SliderBlock

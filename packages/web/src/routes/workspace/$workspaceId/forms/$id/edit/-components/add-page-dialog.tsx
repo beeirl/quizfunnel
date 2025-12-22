@@ -19,9 +19,9 @@ import * as React from 'react'
 import { ulid } from 'ulid'
 
 const ADD_BLOCK_DATA = {
-  short_text: () => ({
+  text_input: () => ({
     id: ulid(),
-    type: 'short_text' as const,
+    type: 'text_input' as const,
     properties: {
       label: 'Your question here',
       placeholder: '',
@@ -65,9 +65,9 @@ const ADD_BLOCK_DATA = {
 }
 
 const PREVIEW_BLOCK_DATA: Record<string, Block> = {
-  short_text: {
+  text_input: {
     id: '',
-    type: 'short_text',
+    type: 'text_input',
     properties: {
       label: 'What is your name?',
       placeholder: 'Enter your name...',
@@ -136,11 +136,11 @@ const PAGE_TEMPLATES: PageTemplate[] = [
     },
   },
   {
-    id: 'short_text',
+    id: 'text_input',
     icon: MenuIcon,
-    blocks: ['short_text'],
-    name: 'Short Text',
-    description: 'Collect brief text responses like names, emails, or short answers.',
+    blocks: ['text_input'],
+    name: 'Text Input',
+    description: 'Collect brief text responses like names or short answers.',
     defaultPageProperties: {
       buttonAction: 'next',
       buttonText: 'Continue',

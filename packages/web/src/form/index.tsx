@@ -227,7 +227,7 @@ export function Form({ form, mode = 'live' }: FormProps) {
 // Helper Functions
 // ============================================
 
-const INPUT_BLOCK_TYPES = ['short_text', 'multiple_choice', 'dropdown', 'slider'] as const
+const INPUT_BLOCK_TYPES = ['text_input', 'multiple_choice', 'dropdown', 'slider'] as const
 
 type InputBlock = Extract<Block, { type: (typeof INPUT_BLOCK_TYPES)[number] }>
 
@@ -372,10 +372,6 @@ const validatePage = (data: Page, state: State) => {
       const empty =
         value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0)
       return empty ? 'Required' : null
-    },
-    email: (value) => {
-      if (!value) return null
-      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value)) ? null : 'Invalid email'
     },
     minLength: (value, min) => {
       if (!value) return null

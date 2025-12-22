@@ -11,9 +11,9 @@ import * as React from 'react'
 import { ulid } from 'ulid'
 
 const ADD_BLOCK_DATA = {
-  short_text: () => ({
+  text_input: () => ({
     id: ulid(),
-    type: 'short_text' as const,
+    type: 'text_input' as const,
     properties: {
       label: 'Your question here',
       placeholder: '',
@@ -106,9 +106,9 @@ const ADD_BLOCK_DATA = {
 }
 
 const PREVIEW_BLOCK_DATA: Record<Block['type'], Block> = {
-  short_text: {
+  text_input: {
     id: '',
-    type: 'short_text',
+    type: 'text_input',
     properties: {
       label: 'What is your name?',
       placeholder: 'Enter your name...',

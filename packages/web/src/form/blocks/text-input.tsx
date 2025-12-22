@@ -1,16 +1,16 @@
 import { Field } from '@/form/components/field'
 import { cn } from '@/lib/utils'
 import { Input as BaseInput } from '@base-ui/react/input'
-import type { ShortTextBlock as ShortTextBlockData } from '@shopfunnel/core/form/types'
+import type { TextInputBlock as TextInputBlockData } from '@shopfunnel/core/form/types'
 
-export interface ShortTextBlockProps {
-  data: ShortTextBlockData
+export interface TextInputBlockProps {
+  data: TextInputBlockData
   static?: boolean
   value?: string
   onValueChange?: (value: string) => void
 }
 
-export function ShortTextBlock(props: ShortTextBlockProps) {
+export function TextInputBlock(props: TextInputBlockProps) {
   return (
     <Field
       static={props.static}
@@ -34,7 +34,7 @@ export function ShortTextBlock(props: ShortTextBlockProps) {
         autoFocus
         disabled={props.static}
         placeholder={props.data.properties.placeholder}
-        type={props.data.validations.email ? 'email' : 'text'}
+        type="text"
         value={props.static ? undefined : (props.value ?? '')}
         onValueChange={props.static ? undefined : props.onValueChange}
       />

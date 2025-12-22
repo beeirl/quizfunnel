@@ -1,16 +1,16 @@
 import { Input } from '@/components/ui/input'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import { getFormBlockType } from '@/form/block'
-import type { ShortTextBlock as ShortTextBlockData } from '@shopfunnel/core/form/types'
+import type { TextInputBlock as TextInputBlockData } from '@shopfunnel/core/form/types'
 import { Field } from '../field'
 import { Pane } from '../pane'
 
-export function ShortTextBlockPane({
+export function TextInputBlockPane({
   data,
   onDataUpdate,
 }: {
-  data: ShortTextBlockData
-  onDataUpdate: (data: Partial<ShortTextBlockData>) => void
+  data: TextInputBlockData
+  onDataUpdate: (data: Partial<TextInputBlockData>) => void
 }) {
   const block = getFormBlockType(data.type)
   return (
@@ -57,18 +57,6 @@ export function ShortTextBlockPane({
                 onValueChange={(value: boolean) =>
                   onDataUpdate({ validations: { ...data.validations, required: value } })
                 }
-              >
-                <SegmentedControl.Segment value={false}>No</SegmentedControl.Segment>
-                <SegmentedControl.Segment value={true}>Yes</SegmentedControl.Segment>
-              </SegmentedControl.Root>
-            </Field.Control>
-          </Field.Root>
-          <Field.Root>
-            <Field.Label>Email</Field.Label>
-            <Field.Control>
-              <SegmentedControl.Root
-                value={data.validations.email ?? false}
-                onValueChange={(value: boolean) => onDataUpdate({ validations: { ...data.validations, email: value } })}
               >
                 <SegmentedControl.Segment value={false}>No</SegmentedControl.Segment>
                 <SegmentedControl.Segment value={true}>Yes</SegmentedControl.Segment>
