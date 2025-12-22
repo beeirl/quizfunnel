@@ -1,29 +1,21 @@
+import { ImageDropzone as Dropzone } from '@/components/ui/dropzone'
 import { Popover } from '@/components/ui/popover'
 import { Tabs } from '@/components/ui/tabs'
-import { cn } from '@/lib/utils'
-import {
-  IconLoader2 as LoaderIcon,
-  IconMoodSmile as MoodSmileIcon,
-  IconPhoto as PhotoIcon,
-  IconUpload as UploadIcon,
-} from '@tabler/icons-react'
+import { IconLoader2 as LoaderIcon, IconMoodSmile as MoodSmileIcon, IconPhoto as PhotoIcon } from '@tabler/icons-react'
 import { EmojiPicker } from 'frimousse'
 import * as React from 'react'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const ACCEPTED_FORMATS = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-const ACCEPTED_EXTENSIONS = '.jpg,.jpeg,.png,.gif,.webp'
 
 interface ImageDropzoneProps {
   onImageUpload?: (file: File) => Promise<void>
 }
 
 function ImageDropzone({ onImageUpload }: ImageDropzoneProps) {
-  const [isDragging, setIsDragging] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null)
   const [isUploading, setIsUploading] = React.useState(false)
-  const inputRef = React.useRef<HTMLInputElement>(null)
 
   const validateFile = (file: File): string | null => {
     if (!ACCEPTED_FORMATS.includes(file.type)) {
@@ -43,7 +35,6 @@ function ImageDropzone({ onImageUpload }: ImageDropzoneProps) {
     }
     setError(null)
 
-    // Create preview URL
     const url = URL.createObjectURL(file)
     setPreviewUrl(url)
     setIsUploading(true)
@@ -59,84 +50,17 @@ function ImageDropzone({ onImageUpload }: ImageDropzoneProps) {
     }
   }
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(true)
-  }
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(false)
-  }
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(false)
-
-    const file = e.dataTransfer.files[0]
-    if (file) {
-      handleFile(file)
-    }
-  }
-
-  const handleClick = () => {
-    inputRef.current?.click()
-  }
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      handleFile(file)
-    }
-  }
-
-  // Show preview with spinner during upload
-  if (previewUrl) {
-    return (
-      <div className="flex flex-col gap-2 p-2">
-        <div className="relative flex h-[200px] items-center justify-center rounded-lg bg-muted">
-          <img src={previewUrl} alt="Preview" className="max-h-full max-w-full rounded-lg object-contain" />
-          {isUploading && (
-            <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-background/50">
-              <LoaderIcon className="size-8 animate-spin text-primary" />
-            </div>
-          )}
-        </div>
-        {error && <p className="text-xs text-destructive">{error}</p>}
-      </div>
-    )
-  }
-
   return (
     <div className="flex flex-col gap-2 p-2">
-      <div
-        onClick={handleClick}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        className={cn(
-          'flex h-[200px] cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed transition-colors',
-          isDragging ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-muted-foreground/50',
+      <div className="relative">
+        <Dropzone className="h-[200px]" value={previewUrl} onValueChange={handleFile} />
+        {isUploading && (
+          <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-background/50">
+            <LoaderIcon className="size-8 animate-spin text-primary" />
+          </div>
         )}
-      >
-        <div
-          className={cn(
-            'flex size-10 items-center justify-center rounded-full transition-colors',
-            isDragging ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
-          )}
-        >
-          <UploadIcon className="size-5" />
-        </div>
-        <div className="text-center">
-          <p className="text-sm font-medium">Drop an image here or click to upload</p>
-          <p className="text-xs text-muted-foreground">JPEG, PNG, GIF, WebP up to 5MB</p>
-        </div>
       </div>
       {error && <p className="text-xs text-destructive">{error}</p>}
-      <input ref={inputRef} type="file" accept={ACCEPTED_EXTENSIONS} onChange={handleInputChange} className="hidden" />
     </div>
   )
 }

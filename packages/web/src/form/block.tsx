@@ -4,6 +4,7 @@ import {
   IconChevronDown as ChevronDownIcon,
   IconGauge as GaugeIcon,
   IconHeading as HeadingIcon,
+  IconLayoutGrid as LayoutGridIcon,
   IconLetterCase as LetterCaseIcon,
   IconListDetails as ListDetailsIcon,
   IconListLetters as ListLettersIcon,
@@ -20,6 +21,7 @@ import { ListBlock, ListBlockProps } from './blocks/list'
 import { LoaderBlock, LoaderBlockProps } from './blocks/loader'
 import { MultipleChoiceBlock, MultipleChoiceBlockProps } from './blocks/multiple-choice'
 import { ParagraphBlock, ParagraphBlockProps } from './blocks/paragraph'
+import { PictureChoiceBlock, PictureChoiceBlockProps } from './blocks/picture-choice'
 import { SliderBlock, SliderBlockProps } from './blocks/slider'
 import { TextInputBlock, TextInputBlockProps } from './blocks/text-input'
 
@@ -56,6 +58,14 @@ const FORM_BLOCK_TYPES: FormBlockType[] = [
     category: 'input',
     icon: ListLettersIcon,
     render: ({ block, ...rest }) => <MultipleChoiceBlock {...({ data: block, ...rest } as MultipleChoiceBlockProps)} />,
+  },
+  {
+    type: 'picture_choice',
+    name: 'Picture Choice',
+    description: `Display image-based choices in a grid. Users select one option from visually rich cards.`,
+    category: 'input',
+    icon: LayoutGridIcon,
+    render: ({ block, ...rest }) => <PictureChoiceBlock {...({ data: block, ...rest } as PictureChoiceBlockProps)} />,
   },
   {
     type: 'dropdown',

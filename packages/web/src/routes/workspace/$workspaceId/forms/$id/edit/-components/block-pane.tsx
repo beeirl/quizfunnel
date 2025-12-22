@@ -6,6 +6,7 @@ import { ImageBlockPane } from './block-panes/image'
 import { LoaderBlockPane } from './block-panes/loader'
 import { MultipleChoiceBlockPane } from './block-panes/multiple-choice'
 import { ParagraphBlockPane } from './block-panes/paragraph'
+import { PictureChoiceBlockPane } from './block-panes/picture-choice'
 import { TextInputBlockPane } from './block-panes/text-input'
 
 export function BlockPane({
@@ -22,6 +23,8 @@ export function BlockPane({
       return <TextInputBlockPane data={data} onDataUpdate={onDataUpdate} />
     case 'multiple_choice':
       return <MultipleChoiceBlockPane data={data} onDataUpdate={onDataUpdate} onImageUpload={onImageUpload} />
+    case 'picture_choice':
+      return <PictureChoiceBlockPane data={data} onDataUpdate={onDataUpdate} onImageUpload={onImageUpload} />
     case 'dropdown':
       return <DropdownBlockPane data={data} onDataUpdate={onDataUpdate} />
     case 'gauge':

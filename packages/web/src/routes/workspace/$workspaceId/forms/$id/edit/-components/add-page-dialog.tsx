@@ -10,6 +10,7 @@ import {
   IconAdjustmentsHorizontal as AdjustmentsHorizontalIcon,
   IconChevronDown as ChevronDownIcon,
   IconFile as FileIcon,
+  IconLayoutGrid as LayoutGridIcon,
   IconListLetters as ListLettersIcon,
   IconMenu as MenuIcon,
   IconSearch as SearchIcon,
@@ -36,6 +37,20 @@ const ADD_BLOCK_DATA = {
     properties: {
       label: 'Your question here',
       choices: [{ id: ulid(), label: 'Choice 1' }],
+    },
+    validations: {
+      required: false,
+    },
+  }),
+  picture_choice: () => ({
+    id: ulid(),
+    type: 'picture_choice' as const,
+    properties: {
+      label: 'Your question here',
+      choices: [
+        { id: ulid(), label: 'Choice 1' },
+        { id: ulid(), label: 'Choice 2' },
+      ],
     },
     validations: {
       required: false,
@@ -83,6 +98,18 @@ const PREVIEW_BLOCK_DATA: Record<string, Block> = {
         { id: '1', label: 'United States' },
         { id: '2', label: 'Canada' },
         { id: '3', label: 'United Kingdom' },
+      ],
+    },
+    validations: {},
+  },
+  picture_choice: {
+    id: '',
+    type: 'picture_choice',
+    properties: {
+      label: 'How old are you?',
+      choices: [
+        { id: '1', label: '20 - 29 Years Old', media: { type: 'image', value: '/img1.png' } },
+        { id: '2', label: '30 - 39 Years Old', media: { type: 'image', value: '/img2.jpg' } },
       ],
     },
     validations: {},
@@ -153,6 +180,18 @@ const PAGE_TEMPLATES: PageTemplate[] = [
     blocks: ['multiple_choice'],
     name: 'Multiple Choice',
     description: 'Let users select from a list of predefined options. Auto-advances on selection.',
+    defaultPageProperties: {
+      buttonAction: 'next',
+      buttonText: 'Continue',
+      showButton: false,
+    },
+  },
+  {
+    id: 'picture_choice',
+    icon: LayoutGridIcon,
+    blocks: ['picture_choice'],
+    name: 'Picture Choice',
+    description: 'Display image-based choices in a grid. Users select one option from visually rich cards.',
     defaultPageProperties: {
       buttonAction: 'next',
       buttonText: 'Continue',

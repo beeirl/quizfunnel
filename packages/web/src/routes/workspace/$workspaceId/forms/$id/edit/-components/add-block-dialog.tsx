@@ -33,6 +33,20 @@ const ADD_BLOCK_DATA = {
       required: false,
     },
   }),
+  picture_choice: () => ({
+    id: ulid(),
+    type: 'picture_choice' as const,
+    properties: {
+      label: 'Your question here',
+      choices: [
+        { id: ulid(), label: 'Choice 1' },
+        { id: ulid(), label: 'Choice 2' },
+      ],
+    },
+    validations: {
+      required: false,
+    },
+  }),
   dropdown: () => ({
     id: ulid(),
     type: 'dropdown' as const,
@@ -124,6 +138,18 @@ const PREVIEW_BLOCK_DATA: Record<Block['type'], Block> = {
         { id: '1', label: 'United States' },
         { id: '2', label: 'Canada' },
         { id: '3', label: 'United Kingdom' },
+      ],
+    },
+    validations: {},
+  },
+  picture_choice: {
+    id: '',
+    type: 'picture_choice',
+    properties: {
+      label: 'How old are you?',
+      choices: [
+        { id: '1', label: '20 - 29 Years Old', media: { type: 'image', value: '/img1.png' } },
+        { id: '2', label: '30 - 39 Years Old', media: { type: 'image', value: '/img2.jpg' } },
       ],
     },
     validations: {},

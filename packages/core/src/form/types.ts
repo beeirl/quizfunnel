@@ -40,6 +40,27 @@ export interface MultipleChoiceBlock {
   }
 }
 
+export interface PictureChoiceBlock {
+  id: string
+  type: 'picture_choice'
+  properties: {
+    label: string
+    description?: string
+    choices: Array<{
+      id: string
+      label: string
+      description?: string
+      media?: {
+        type: 'image'
+        value: string
+      }
+    }>
+  }
+  validations: {
+    required?: boolean
+  }
+}
+
 export interface DropdownBlock {
   id: string
   type: 'dropdown'
@@ -138,6 +159,7 @@ export interface ImageBlock {
 export type Block =
   | TextInputBlock
   | MultipleChoiceBlock
+  | PictureChoiceBlock
   | DropdownBlock
   | SliderBlock
   | HeadingBlock
