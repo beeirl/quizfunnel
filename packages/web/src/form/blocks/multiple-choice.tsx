@@ -38,7 +38,7 @@ export function MultipleChoiceBlock(props: MultipleChoiceBlockProps) {
             isDisabled={props.static}
             className={cn(
               // Base
-              'relative flex h-14 cursor-pointer items-center gap-3.5 rounded-(--sf-radius) px-4 text-left text-base transition-all',
+              'relative flex h-14 cursor-pointer items-center gap-3.5 rounded-(--sf-radius) px-4 text-left text-base transition-all outline-none',
               'border border-(--sf-color-primary)/50 bg-(--sf-color-primary)/15 text-(--sf-color-primary)',
               // Hover
               'hover:scale-[1.01] hover:border-(--sf-color-primary)/70 hover:bg-(--sf-color-primary)/30',
