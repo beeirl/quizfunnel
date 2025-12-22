@@ -6,6 +6,7 @@ import { IconCheck as CheckIcon, IconChevronDown as ChevronDownIcon } from '@tab
 
 export interface DropdownBlockProps {
   data: DropdownBlockData
+  index: number
   static?: boolean
   value?: string
   onValueChange?: (value: string) => void
@@ -20,6 +21,7 @@ export function DropdownBlock(props: DropdownBlockProps) {
 
   return (
     <Field
+      className={cn(props.index > 0 && 'mt-6')}
       static={props.static}
       name={props.data.id}
       label={props.data.properties.label}

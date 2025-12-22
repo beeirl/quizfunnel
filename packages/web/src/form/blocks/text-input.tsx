@@ -5,6 +5,7 @@ import type { TextInputBlock as TextInputBlockData } from '@shopfunnel/core/form
 
 export interface TextInputBlockProps {
   data: TextInputBlockData
+  index: number
   static?: boolean
   value?: string
   onValueChange?: (value: string) => void
@@ -13,6 +14,7 @@ export interface TextInputBlockProps {
 export function TextInputBlock(props: TextInputBlockProps) {
   return (
     <Field
+      className={cn(props.index > 0 && 'mt-6')}
       static={props.static}
       name={props.data.id}
       label={props.data.properties.label}

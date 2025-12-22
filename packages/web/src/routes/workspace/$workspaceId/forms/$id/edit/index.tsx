@@ -5,6 +5,11 @@ import { Preview } from '@/routes/workspace/$workspaceId/forms/$id/edit/-compone
 import { Form } from '@shopfunnel/core/form/index'
 import type { Block, Info, Page, Theme } from '@shopfunnel/core/form/types'
 import { Identifier } from '@shopfunnel/core/identifier'
+import {
+  IconExternalLink as ExternalLinkIcon,
+  IconEye as EyeIcon,
+  IconPalette as PaletteIcon,
+} from '@tabler/icons-react'
 import { useDebouncer } from '@tanstack/react-pacer'
 import { mutationOptions, queryOptions, useMutation, useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
@@ -268,15 +273,30 @@ function RouteComponent() {
         </div>
         <div className="ml-auto flex items-center justify-end gap-1">
           <ThemePopover.Root>
-            <ThemePopover.Trigger render={<Button variant="ghost" aria-label="Theme" />}>Design</ThemePopover.Trigger>
+            <ThemePopover.Trigger render={<Button variant="ghost" size="icon" aria-label="Design" />}>
+              <PaletteIcon />
+            </ThemePopover.Trigger>
             <ThemePopover.Content align="end" theme={form.theme} onThemeUpdate={handleThemeUpdate} />
           </ThemePopover.Root>
+          <div className="mx-1 h-4 w-px bg-border" />
           <Button
             variant="ghost"
+            size="icon"
+            aria-label="Preview"
             render={<Link to="/workspace/$workspaceId/forms/$id/preview" params={params} target="_blank" />}
           >
-            Preview
+            <EyeIcon />
           </Button>
+          <div className="mx-1 h-4 w-px bg-border" />
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Open form"
+            render={<a href={`/f/${form.shortId}`} target="_blank" rel="noopener noreferrer" />}
+          >
+            <ExternalLinkIcon />
+          </Button>
+          <div className="mx-1 h-4 w-px bg-border" />
           <Button
             disabled={form.published || publishFormMutation.isPending}
             variant={form.published ? 'ghost' : 'default'}

@@ -1,10 +1,16 @@
+import { cn } from '@/lib/utils'
 import type { ParagraphBlock as ParagraphBlockData } from '@shopfunnel/core/form/types'
 
 export interface ParagraphBlockProps {
   data: ParagraphBlockData
+  index: number
   static?: boolean
 }
 
 export function ParagraphBlock(props: ParagraphBlockProps) {
-  return <p className="text-base text-muted-foreground">{props.data.properties.text}</p>
+  return (
+    <div className={cn(props.index > 0 && 'mt-3')}>
+      <p className="text-base text-(--sf-color-foreground)">{props.data.properties.text}</p>
+    </div>
+  )
 }
