@@ -117,12 +117,6 @@ export interface ListBlock {
   }
 }
 
-export interface ProgressBlock {
-  id: string
-  type: 'progress'
-  properties: {}
-}
-
 export interface LoaderBlock {
   id: string
   type: 'loader'
@@ -150,7 +144,6 @@ export type Block =
   | ParagraphBlock
   | GaugeBlock
   | ListBlock
-  | ProgressBlock
   | ImageBlock
   | LoaderBlock
 
