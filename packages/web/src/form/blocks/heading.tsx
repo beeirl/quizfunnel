@@ -1,8 +1,8 @@
 import type { HeadingBlock as HeadingBlockData } from '@shopfunnel/core/form/types'
 
 export interface HeadingBlockProps {
-  static: boolean
   data: HeadingBlockData
+  static?: boolean
 }
 
 export function HeadingBlock(props: HeadingBlockProps) {

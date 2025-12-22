@@ -1,8 +1,8 @@
 import type { ProgressBlock as ProgressBlockData } from '@shopfunnel/core/form/types'
 
 export interface ProgressBlockProps {
-  static: boolean
   data: ProgressBlockData
+  static?: boolean
 }
 
 export function ProgressBlock(_props: ProgressBlockProps) {

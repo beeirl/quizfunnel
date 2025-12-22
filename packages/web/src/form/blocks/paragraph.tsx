@@ -1,8 +1,8 @@
 import type { ParagraphBlock as ParagraphBlockData } from '@shopfunnel/core/form/types'
 
 export interface ParagraphBlockProps {
-  static: boolean
   data: ParagraphBlockData
+  static?: boolean
 }
 
 export function ParagraphBlock(props: ParagraphBlockProps) {

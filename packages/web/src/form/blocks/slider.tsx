@@ -2,8 +2,8 @@ import { Field } from '@/form/components/field'
 import type { SliderBlock as SliderBlockData } from '@shopfunnel/core/form/types'
 
 export interface SliderBlockProps {
-  static: boolean
   data: SliderBlockData
+  static?: boolean
   value?: number
   onValueChange?: (value: number) => void
 }

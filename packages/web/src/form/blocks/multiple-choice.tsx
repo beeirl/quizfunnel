@@ -4,8 +4,8 @@ import type { MultipleChoiceBlock as MultipleChoiceBlockData } from '@shopfunnel
 import { ListBox as ReactAriaListbox, ListBoxItem as ReactAriaListboxItem } from 'react-aria-components'
 
 export interface MultipleChoiceBlockProps {
-  static: boolean
   data: MultipleChoiceBlockData
+  static?: boolean
   value?: string | string[] | null
   onValueChange?: (value: string | string[] | null) => void
 }

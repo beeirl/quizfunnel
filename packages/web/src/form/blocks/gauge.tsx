@@ -1,8 +1,8 @@
 import type { GaugeBlock as GaugeBlockData } from '@shopfunnel/core/form/types'
 
 export interface GaugeBlockProps {
-  static: boolean
   data: GaugeBlockData
+  static?: boolean
 }
 
 export function GaugeBlock(_props: GaugeBlockProps) {

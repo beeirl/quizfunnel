@@ -4,8 +4,8 @@ import { Input as BaseInput } from '@base-ui/react/input'
 import type { ShortTextBlock as ShortTextBlockData } from '@shopfunnel/core/form/types'
 
 export interface ShortTextBlockProps {
-  static: boolean
   data: ShortTextBlockData
+  static?: boolean
   value?: string
   onValueChange?: (value: string) => void
 }

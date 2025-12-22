@@ -5,8 +5,8 @@ import type { DropdownBlock as DropdownBlockData } from '@shopfunnel/core/form/t
 import { IconCheck as CheckIcon, IconChevronDown as ChevronDownIcon } from '@tabler/icons-react'
 
 export interface DropdownBlockProps {
-  static: boolean
   data: DropdownBlockData
+  static?: boolean
   value?: string
   onValueChange?: (value: string) => void
 }

@@ -37,9 +37,10 @@ interface RuleEvaluationResult {
 
 export interface FormProps {
   form: Info
+  preview?: boolean
 }
 
-export function Form({ form }: FormProps) {
+export function Form({ form, preview }: FormProps) {
   const storageKey = `form-${form.id}-values`
 
   const stateRef = React.useRef<State>({
@@ -204,7 +205,6 @@ export function Form({ form }: FormProps) {
         >
           {currentPage && (
             <FormPage
-              static={false}
               page={currentPage.page}
               values={currentPage.values}
               onButtonClick={triggerButtonAction}

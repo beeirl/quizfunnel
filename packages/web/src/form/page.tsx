@@ -3,7 +3,7 @@ import { FormBlock } from './block'
 import { Button } from './components/button'
 
 export interface FormPageProps {
-  static: boolean
+  static?: boolean
   page: Page
   values?: Record<string, unknown>
   onButtonClick?: () => void

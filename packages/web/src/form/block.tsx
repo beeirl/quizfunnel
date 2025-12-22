@@ -22,7 +22,7 @@ import { ShortTextBlock, ShortTextBlockProps } from './blocks/short-text'
 import { SliderBlock, SliderBlockProps } from './blocks/slider'
 
 export interface FormBlockProps {
-  static: boolean
+  static?: boolean
   block: Block
   value?: unknown
   onValueChange?: (value: unknown) => void
