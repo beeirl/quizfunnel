@@ -1,22 +1,32 @@
+import { cn } from '@/lib/utils'
+import { Button as BaseButton } from '@base-ui/react/button'
 import { Form as BaseForm } from '@base-ui/react/form'
 import type { Page } from '@shopfunnel/core/form/types'
 import { FormBlock } from './block'
-import { Button } from './components/button'
 
-export interface FormPageProps {
-  static?: boolean
+type FormPageProps = {
+  mode: 'edit' | 'preview' | 'live'
   page: Page
-  values?: Record<string, unknown>
-  errors?: Record<string, string>
-  onButtonClick?: () => void
-  onBlockValueChange?: (id: string, value: unknown) => void
-}
+} & (
+  | {
+      mode: 'edit'
+      selectedBlockId: string | null
+      onBlockSelect: (blockId: string | null) => void
+    }
+  | {
+      mode: 'preview' | 'live'
+      values: Record<string, unknown>
+      errors: Record<string, string>
+      onButtonClick?: () => void
+      onBlockValueChange?: (id: string, value: unknown) => void
+    }
+)
 
 export function FormPage(props: FormPageProps) {
   return (
     <BaseForm
       className="mx-auto flex w-full max-w-md flex-1 flex-col px-8 py-11"
-      errors={props.errors}
+      errors={props.mode === 'live' ? props.errors : undefined}
       onSubmit={(e) => {
         e.preventDefault()
         e.stopPropagation()
@@ -24,19 +34,48 @@ export function FormPage(props: FormPageProps) {
     >
       <div className="flex-1">
         {props.page.blocks.map((block) => (
-          <FormBlock
+          <div
             key={block.id}
-            static={props.static}
-            block={block}
-            value={props.values?.[block.id]}
-            onValueChange={props.static ? undefined : (value) => props.onBlockValueChange?.(block.id, value)}
-          />
+            className={
+              props.mode === 'edit'
+                ? cn(
+                    'relative cursor-pointer',
+                    'before:absolute before:-inset-3 before:rounded-lg before:border before:border-transparent before:ring-3 before:ring-transparent before:transition-all hover:before:border-(--sf-color-primary)/50 hover:before:ring-(--sf-color-primary)/20',
+                    props.selectedBlockId === block.id &&
+                      'before:border-(--sf-color-primary)/40 before:ring-(--sf-color-primary)/25',
+                  )
+                : undefined
+            }
+            onClick={
+              props.mode === 'edit'
+                ? (e) => {
+                    e.stopPropagation()
+                    props.onBlockSelect(block.id)
+                  }
+                : undefined
+            }
+          >
+            <FormBlock
+              static={props.mode !== 'live'}
+              block={block}
+              value={props.mode === 'live' ? props.values[block.id] : undefined}
+              onValueChange={props.mode === 'live' ? (value) => props.onBlockValueChange?.(block.id, value) : undefined}
+            />
+          </div>
         ))}
       </div>
       {props.page.properties.showButton && (
-        <Button static={props.static} onClick={props.static ? undefined : props.onButtonClick}>
+        <BaseButton
+          className={cn(
+            'h-12 rounded-(--sf-radius) text-base font-semibold transition-all outline-none not-first:mt-6',
+            'bg-(--sf-color-primary) text-(--sf-color-primary-foreground) hover:bg-(--sf-color-primary)/90',
+            'focus:ring-2 focus:ring-(--sf-color-primary) focus:ring-offset-2',
+            props.mode !== 'live' && 'pointer-events-none',
+          )}
+          onClick={props.mode === 'live' ? props.onButtonClick : undefined}
+        >
           {props.page.properties.buttonText}
-        </Button>
+        </BaseButton>
       )}
     </BaseForm>
   )

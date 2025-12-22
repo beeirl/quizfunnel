@@ -43,7 +43,7 @@ function RouteComponent() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <FormComponent form={form} />
+      <FormComponent mode="preview" form={form} />
     </div>
   )
 }

@@ -37,10 +37,10 @@ interface RuleEvaluationResult {
 
 export interface FormProps {
   form: Info
-  preview?: boolean
+  mode?: 'preview' | 'live'
 }
 
-export function Form({ form, preview }: FormProps) {
+export function Form({ form, mode = 'live' }: FormProps) {
   const storageKey = `form-${form.id}-values`
 
   const stateRef = React.useRef<State>({
@@ -62,7 +62,7 @@ export function Form({ form, preview }: FormProps) {
   const [formCompleted, setFormCompleted] = React.useState(false)
 
   React.useEffect(() => {
-    if (preview) return
+    if (mode === 'preview') return
 
     const storedValues = localStorage.getItem(storageKey)
     if (!storedValues) return
@@ -80,7 +80,7 @@ export function Form({ form, preview }: FormProps) {
     } catch {
       // Invalid stored data, ignore
     }
-  }, [storageKey, form, preview])
+  }, [storageKey, form, mode])
 
   function setValue(blockId: string, value: unknown) {
     const currentPageData = form.pages[stateRef.current.currentPageIndex]
@@ -91,7 +91,7 @@ export function Form({ form, preview }: FormProps) {
       ...stateRef.current,
       values: { ...stateRef.current.values, [blockId]: value },
     }
-    if (!preview) {
+    if (mode === 'live') {
       localStorage.setItem(storageKey, JSON.stringify(stateRef.current.values))
     }
 
@@ -209,6 +209,7 @@ export function Form({ form, preview }: FormProps) {
         >
           {currentPage && (
             <FormPage
+              mode={mode}
               page={currentPage.page}
               values={currentPage.values}
               errors={currentPage.errors}

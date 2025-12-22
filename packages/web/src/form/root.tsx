@@ -6,11 +6,12 @@ export interface FormRootProps {
   theme: Theme
   children: React.ReactNode
   className?: string
+  onClick?: () => void
 }
 
-export function FormRoot({ theme, children, className }: FormRootProps) {
+export function FormRoot({ theme, children, className, onClick }: FormRootProps) {
   return (
-    <div className={cn('relative', className)}>
+    <div className={cn('relative', className)} onClick={onClick}>
       <style>{`
         :root {
           --sf-color-primary: ${theme.colors.primary};

@@ -20,14 +20,14 @@ export function Preview({
 }) {
   const [displayMode, setDisplayMode] = React.useState<DisplayMode>('mobile')
   return (
-    <FormRoot className="relative flex flex-1 flex-col overflow-auto" theme={theme}>
+    <FormRoot className="relative flex flex-1 flex-col overflow-auto" theme={theme} onClick={() => onBlockSelect(null)}>
       {!page ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <span className="text-lg text-muted-foreground">No blocks on this page</span>
           <span className="mt-1 text-sm text-muted-foreground">Add blocks from the sidebar</span>
         </div>
       ) : (
-        <FormPage static page={page} />
+        <FormPage mode="edit" page={page} selectedBlockId={selectedBlockId} onBlockSelect={onBlockSelect} />
       )}
       <Button
         variant="outline"
