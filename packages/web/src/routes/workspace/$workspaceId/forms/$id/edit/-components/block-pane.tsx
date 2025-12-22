@@ -1,4 +1,5 @@
 import type { Block as BlockData } from '@shopfunnel/core/form/types'
+import { DropdownBlockPane } from './block-panes/dropdown'
 import { GaugeBlockPane } from './block-panes/gauge'
 import { HeadingBlockPane } from './block-panes/heading'
 import { ImageBlockPane } from './block-panes/image'
@@ -21,6 +22,8 @@ export function BlockPane({
       return <ShortTextBlockPane data={data} onDataUpdate={onDataUpdate} />
     case 'multiple_choice':
       return <MultipleChoiceBlockPane data={data} onDataUpdate={onDataUpdate} onImageUpload={onImageUpload} />
+    case 'dropdown':
+      return <DropdownBlockPane data={data} onDataUpdate={onDataUpdate} />
     case 'gauge':
       return <GaugeBlockPane data={data} onDataUpdate={onDataUpdate} />
     case 'image':
