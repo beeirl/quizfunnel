@@ -1,8 +1,8 @@
 import type { Block, ComparisonCondition, Condition, Info, Page, Variables } from '@shopfunnel/core/form/types'
 import { AnimatePresence, motion } from 'motion/react'
 import * as React from 'react'
-import { FormRoot } from './group'
 import { FormPage } from './page'
+import { FormRoot } from './root'
 
 // ============================================
 // Types

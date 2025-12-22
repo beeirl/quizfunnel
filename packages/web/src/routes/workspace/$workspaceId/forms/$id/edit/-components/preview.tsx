@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
-import { FormRoot } from '@/form/group'
 import { FormPage } from '@/form/page'
+import { FormRoot } from '@/form/root'
 import type { Page, Theme } from '@shopfunnel/core/form/types'
 import { IconDeviceDesktop as DesktopIcon, IconDeviceMobile as MobileIcon } from '@tabler/icons-react'
 import * as React from 'react'
