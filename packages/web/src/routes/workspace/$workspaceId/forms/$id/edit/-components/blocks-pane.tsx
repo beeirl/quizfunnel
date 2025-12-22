@@ -31,7 +31,7 @@ function BlockItem({
     <div
       ref={ref}
       className={cn(
-        'bg-backround group flex h-9 cursor-grab items-center gap-2 rounded-lg border border-border pr-1 pl-2.5 transition-all hover:border-ring/50',
+        'group flex h-9 cursor-grab items-center gap-2 rounded-lg border border-border bg-background pr-1 pl-2.5 transition-all hover:border-ring/50',
         selected && 'border-ring ring-2 ring-ring/50 hover:border-ring',
       )}
       onClick={onSelect}
