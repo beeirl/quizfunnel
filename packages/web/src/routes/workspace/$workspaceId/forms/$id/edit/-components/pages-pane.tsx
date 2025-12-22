@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'
 import { move } from '@dnd-kit/helpers'
 import { DragDropProvider } from '@dnd-kit/react'
 import { useSortable } from '@dnd-kit/react/sortable'
-import type { Page } from '@shopfunnel/core/form/schema'
+import type { Page } from '@shopfunnel/core/form/types'
 import { IconPlus as PlusIcon, IconTrash as TrashIcon } from '@tabler/icons-react'
 import { AddPageDialog } from './add-page-dialog'
 import { Pane } from './pane'
@@ -12,11 +12,13 @@ import { Pane } from './pane'
 function PageItem({
   page,
   index,
+  selected,
   onSelect,
   onDelete,
 }: {
   page: Page
   index: number
+  selected: boolean
   onSelect: () => void
   onDelete: () => void
 }) {
@@ -26,7 +28,10 @@ function PageItem({
     <div
       ref={ref}
       onClick={onSelect}
-      className={cn('group flex cursor-grab flex-col rounded-lg border border-b bg-background')}
+      className={cn(
+        'group flex cursor-grab flex-col rounded-lg border border-border bg-background transition-all hover:border-ring/50',
+        selected && 'border-ring ring-3 ring-ring/50 hover:border-ring',
+      )}
     >
       <div className="px-1 pt-1">
         <div className="flex aspect-video items-center justify-center rounded-md bg-muted">
@@ -64,13 +69,15 @@ function PageItem({
 }
 
 export function PagesPane({
-  pageSchemas,
+  pages,
+  selectedPageId,
   onPageSelect,
   onPagesReorder,
   onPageAdd,
   onPageDelete,
 }: {
-  pageSchemas: Page[]
+  pages: Page[]
+  selectedPageId: string | null
   onPageSelect: (pageId: string) => void
   onPagesReorder: (pages: Page[]) => void
   onPageAdd: (page: Page) => void
@@ -88,18 +95,19 @@ export function PagesPane({
         </AddPageDialog.Root>
       </Pane.Header>
       <Pane.Content>
-        {pageSchemas.length === 0 ? (
+        {pages.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <span className="text-sm text-muted-foreground">No pages yet</span>
           </div>
         ) : (
-          <DragDropProvider onDragEnd={(event) => onPagesReorder(move(pageSchemas, event))}>
+          <DragDropProvider onDragEnd={(event) => onPagesReorder(move(pages, event))}>
             <Pane.Group className="flex flex-col gap-1.5">
-              {pageSchemas.map((page, index) => (
+              {pages.map((page, index) => (
                 <PageItem
                   key={page.id}
                   page={page}
                   index={index}
+                  selected={selectedPageId === page.id}
                   onSelect={() => onPageSelect(page.id)}
                   onDelete={() => onPageDelete(page.id)}
                 />

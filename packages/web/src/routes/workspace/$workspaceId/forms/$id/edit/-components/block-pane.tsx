@@ -1,20 +1,20 @@
-import { Block as BlockSchema } from '@shopfunnel/core/form/schema'
+import type { Block as BlockData } from '@shopfunnel/core/form/types'
 import { MultipleChoiceBlockPane } from './block-panes/multiple-choice'
 import { ShortTextBlockPane } from './block-panes/short-text'
 
 export function BlockPane({
-  schema,
-  onSchemaUpdate,
+  data,
+  onDataUpdate,
   onImageUpload,
 }: {
-  schema: BlockSchema
-  onSchemaUpdate: (schema: Partial<BlockSchema>) => void
+  data: BlockData
+  onDataUpdate: (data: Partial<BlockData>) => void
   onImageUpload: (file: File) => Promise<string>
 }) {
-  switch (schema.type) {
+  switch (data.type) {
     case 'short_text':
-      return <ShortTextBlockPane schema={schema} onSchemaUpdate={onSchemaUpdate} />
+      return <ShortTextBlockPane data={data} onDataUpdate={onDataUpdate} />
     case 'multiple_choice':
-      return <MultipleChoiceBlockPane schema={schema} onSchemaUpdate={onSchemaUpdate} onImageUpload={onImageUpload} />
+      return <MultipleChoiceBlockPane data={data} onDataUpdate={onDataUpdate} onImageUpload={onImageUpload} />
   }
 }

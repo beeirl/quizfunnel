@@ -1,0 +1,34 @@
+import type { Page } from '@shopfunnel/core/form/types'
+import { FormBlock } from './block'
+import { Button } from './components/button'
+
+export interface FormPageProps {
+  static: boolean
+  page: Page
+  values?: Record<string, unknown>
+  onButtonClick?: () => void
+  onBlockValueChange?: (id: string, value: unknown) => void
+}
+
+export function FormPage(props: FormPageProps) {
+  return (
+    <div className="@container flex h-full flex-col">
+      <div className="flex-1">
+        {props.page.blocks.map((block) => (
+          <FormBlock
+            key={block.id}
+            static={props.static}
+            block={block}
+            value={props.values?.[block.id]}
+            onValueChange={props.static ? undefined : (value) => props.onBlockValueChange?.(block.id, value)}
+          />
+        ))}
+      </div>
+      {props.page.properties.showButton && (
+        <Button static={props.static} onClick={props.static ? undefined : props.onButtonClick}>
+          {props.page.properties.buttonText}
+        </Button>
+      )}
+    </div>
+  )
+}

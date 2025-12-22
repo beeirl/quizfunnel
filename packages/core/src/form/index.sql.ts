@@ -1,7 +1,6 @@
 import { int, json, mysqlTable, primaryKey, uniqueIndex, varchar } from 'drizzle-orm/mysql-core'
 import { id, timestamp, timestampColumns, workspaceColumns, workspaceIndexes } from '../database/types'
-import type { FormSchema } from './schema'
-import type { FormTheme } from './theme'
+import type { Page, Rule, Theme, Variables } from './types'
 
 export const FormTable = mysqlTable(
   'form',
@@ -24,8 +23,10 @@ export const FormVersionTable = mysqlTable(
     workspaceId: id('workspace_id').notNull(),
     formId: id('form_id').notNull(),
     version: int('version').notNull(),
-    schema: json('schema').$type<FormSchema>().notNull(),
-    theme: json('theme').$type<FormTheme>().notNull(),
+    pages: json('pages').$type<Page[]>().notNull(),
+    rules: json('rules').$type<Rule[]>().notNull(),
+    variables: json('variables').$type<Variables>().notNull(),
+    theme: json('theme').$type<Theme>().notNull(),
   },
   (table) => [primaryKey({ columns: [table.workspaceId, table.formId, table.version] })],
 )

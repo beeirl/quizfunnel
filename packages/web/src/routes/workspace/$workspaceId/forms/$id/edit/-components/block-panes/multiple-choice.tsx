@@ -2,11 +2,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { InputGroup } from '@/components/ui/input-group'
 import { SegmentedControl } from '@/components/ui/segmented-control'
-import { getBlock } from '@/form/block'
+import { getFormBlockType } from '@/form/block'
 import { move } from '@dnd-kit/helpers'
 import { DragDropProvider } from '@dnd-kit/react'
 import { useSortable } from '@dnd-kit/react/sortable'
-import type { MultipleChoiceBlock as MultipleChoiceBlockSchema } from '@shopfunnel/core/form/schema'
+import type { MultipleChoiceBlock as MultipleChoiceBlockData } from '@shopfunnel/core/form/types'
 import {
   IconGripVertical as GripVerticalIcon,
   IconPhoto as PhotoIcon,
@@ -19,7 +19,7 @@ import { Field } from '../field'
 import { MediaPicker } from '../media-picker'
 import { Pane } from '../pane'
 
-type Choice = MultipleChoiceBlockSchema['properties']['choices'][number]
+type Choice = MultipleChoiceBlockData['properties']['choices'][number]
 
 function ChoiceItem({
   choice,
@@ -94,32 +94,32 @@ function ChoiceItem({
 }
 
 export function MultipleChoiceBlockPane({
-  schema,
-  onSchemaUpdate,
+  data,
+  onDataUpdate,
   onImageUpload,
 }: {
-  schema: MultipleChoiceBlockSchema
-  onSchemaUpdate: (schema: Partial<MultipleChoiceBlockSchema>) => void
+  data: MultipleChoiceBlockData
+  onDataUpdate: (data: Partial<MultipleChoiceBlockData>) => void
   onImageUpload: (file: File) => Promise<string>
 }) {
-  const block = getBlock(schema.type)
-  const choices = schema.properties.choices
+  const block = getFormBlockType(data.type)
+  const choices = data.properties.choices
 
   const choiceInputRefs = React.useRef<Map<string, HTMLInputElement>>(new Map())
 
   const handleChoiceUpdate = (choiceId: string, updates: Partial<Choice>) => {
-    onSchemaUpdate({
+    onDataUpdate({
       properties: {
-        ...schema.properties,
+        ...data.properties,
         choices: choices.map((c) => (c.id === choiceId ? { ...c, ...updates } : c)),
       },
     })
   }
 
   const handleChoiceDelete = (choiceId: string) => {
-    onSchemaUpdate({
+    onDataUpdate({
       properties: {
-        ...schema.properties,
+        ...data.properties,
         choices: choices.filter((c) => c.id !== choiceId),
       },
     })
@@ -127,9 +127,9 @@ export function MultipleChoiceBlockPane({
 
   const handleChoiceAdd = () => {
     const id = ulid()
-    onSchemaUpdate({
+    onDataUpdate({
       properties: {
-        ...schema.properties,
+        ...data.properties,
         choices: [
           ...choices,
           {
@@ -147,9 +147,9 @@ export function MultipleChoiceBlockPane({
   }
 
   const handleChoicesReorder = (newChoices: Choice[]) => {
-    onSchemaUpdate({
+    onDataUpdate({
       properties: {
-        ...schema.properties,
+        ...data.properties,
         choices: newChoices,
       },
     })
@@ -167,8 +167,8 @@ export function MultipleChoiceBlockPane({
           </Pane.GroupHeader>
           <Input
             placeholder="Your question here..."
-            value={schema.properties.label}
-            onValueChange={(value) => onSchemaUpdate({ properties: { ...schema.properties, label: value } })}
+            value={data.properties.label}
+            onValueChange={(value) => onDataUpdate({ properties: { ...data.properties, label: value } })}
           />
         </Pane.Group>
         <Pane.Separator />
@@ -178,10 +178,10 @@ export function MultipleChoiceBlockPane({
           </Pane.GroupHeader>
           <Input
             placeholder="Enter description..."
-            value={schema.properties.description ?? ''}
+            value={data.properties.description ?? ''}
             onValueChange={(value) =>
-              onSchemaUpdate({
-                properties: { ...schema.properties, description: value || undefined },
+              onDataUpdate({
+                properties: { ...data.properties, description: value || undefined },
               })
             }
           />
@@ -225,9 +225,9 @@ export function MultipleChoiceBlockPane({
             <Field.Label>Mode</Field.Label>
             <Field.Control>
               <SegmentedControl.Root
-                value={schema.properties.multiple ?? false}
+                value={data.properties.multiple ?? false}
                 onValueChange={(value: boolean) =>
-                  onSchemaUpdate({ properties: { ...schema.properties, multiple: value } })
+                  onDataUpdate({ properties: { ...data.properties, multiple: value } })
                 }
               >
                 <SegmentedControl.Segment value={false}>Single</SegmentedControl.Segment>
@@ -239,9 +239,9 @@ export function MultipleChoiceBlockPane({
             <Field.Label>Required</Field.Label>
             <Field.Control>
               <SegmentedControl.Root
-                value={schema.validations.required ?? false}
+                value={data.validations.required ?? false}
                 onValueChange={(value: boolean) =>
-                  onSchemaUpdate({ validations: { ...schema.validations, required: value } })
+                  onDataUpdate({ validations: { ...data.validations, required: value } })
                 }
               >
                 <SegmentedControl.Segment value={false}>No</SegmentedControl.Segment>

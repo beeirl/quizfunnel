@@ -1,35 +1,35 @@
 import { Button } from '@/components/ui/button'
-import { getBlock } from '@/form/block'
+import { getFormBlockType } from '@/form/block'
 import { cn } from '@/lib/utils'
 import { move } from '@dnd-kit/helpers'
 import { DragDropProvider } from '@dnd-kit/react'
 import { useSortable } from '@dnd-kit/react/sortable'
-import type { Block } from '@shopfunnel/core/form/schema'
+import type { Block } from '@shopfunnel/core/form/types'
 import { IconPlus as PlusIcon } from '@tabler/icons-react'
 import { AddBlockDialog } from './add-block-dialog'
 import { Pane } from './pane'
 
 function BlockItem({
-  schema,
+  data,
   index,
   selected,
   onSelect,
 }: {
-  schema: Block
+  data: Block
   index: number
   selected: boolean
   onSelect: () => void
 }) {
-  const block = getBlock(schema.type)
+  const block = getFormBlockType(data.type)
 
-  const { ref } = useSortable({ id: schema.id, index })
+  const { ref } = useSortable({ id: data.id, index })
 
   return (
     <div
       ref={ref}
       className={cn(
-        'bg-backround flex h-9 cursor-grab items-center gap-2.5 rounded-lg border border-border px-2.5 transition-all hover:bg-accent',
-        selected && 'border-ring ring-2 ring-ring/50',
+        'bg-backround flex h-9 cursor-grab items-center gap-2.5 rounded-lg border border-border px-2.5 transition-all hover:border-ring/50',
+        selected && 'border-ring ring-2 ring-ring/50 hover:border-ring',
       )}
       onClick={onSelect}
     >
@@ -40,13 +40,13 @@ function BlockItem({
 }
 
 export function BlocksPane({
-  blockSchemas,
+  blocks,
   selectedBlockId,
   onBlockSelect,
   onBlocksReorder,
   onBlockAdd,
 }: {
-  blockSchemas: Block[]
+  blocks: Block[]
   selectedBlockId: string | null
   onBlockSelect: (blockId: string | null) => void
   onBlocksReorder: (blocks: Block[]) => void
@@ -64,20 +64,20 @@ export function BlocksPane({
         </AddBlockDialog.Root>
       </Pane.Header>
       <Pane.Content>
-        {blockSchemas.length === 0 ? (
+        {blocks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <span className="text-sm text-muted-foreground">No blocks yet</span>
           </div>
         ) : (
-          <DragDropProvider onDragEnd={(event) => onBlocksReorder(move(blockSchemas, event))}>
+          <DragDropProvider onDragEnd={(event) => onBlocksReorder(move(blocks, event))}>
             <Pane.Group className="flex flex-col gap-1.5">
-              {blockSchemas.map((blockSchema, index) => (
+              {blocks.map((block, index) => (
                 <BlockItem
-                  key={blockSchema.id}
-                  schema={blockSchema}
+                  key={block.id}
+                  data={block}
                   index={index}
-                  selected={selectedBlockId === blockSchema.id}
-                  onSelect={() => onBlockSelect(blockSchema.id)}
+                  selected={selectedBlockId === block.id}
+                  onSelect={() => onBlockSelect(block.id)}
                 />
               ))}
             </Pane.Group>

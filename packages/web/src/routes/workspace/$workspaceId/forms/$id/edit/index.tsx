@@ -3,8 +3,7 @@ import { Resizable } from '@/components/ui/resizable'
 import { withActor } from '@/context/auth.withActor'
 import { Preview } from '@/routes/workspace/$workspaceId/forms/$id/edit/-components/preview'
 import { Form } from '@shopfunnel/core/form/index'
-import type { Block, FormSchema, Page } from '@shopfunnel/core/form/schema'
-import type { FormTheme } from '@shopfunnel/core/form/theme'
+import type { Block, Info, Page, Theme } from '@shopfunnel/core/form/types'
 import { Identifier } from '@shopfunnel/core/identifier'
 import { useDebouncer } from '@tanstack/react-pacer'
 import { mutationOptions, queryOptions, useMutation, useSuspenseQuery } from '@tanstack/react-query'
@@ -45,8 +44,8 @@ const updateForm = createServerFn({ method: 'POST' })
     z.object({
       workspaceId: Identifier.schema('workspace'),
       formId: Identifier.schema('form'),
-      schema: z.custom<FormSchema>().optional(),
-      theme: z.custom<FormTheme>().optional(),
+      pages: z.custom<Page[]>().optional(),
+      theme: z.custom<Theme>().optional(),
     }),
   )
   .handler(({ data }) => {
@@ -54,7 +53,7 @@ const updateForm = createServerFn({ method: 'POST' })
       () =>
         Form.update({
           id: data.formId,
-          schema: data.schema,
+          pages: data.pages,
           theme: data.theme,
         }),
       data.workspaceId,
@@ -63,8 +62,7 @@ const updateForm = createServerFn({ method: 'POST' })
 
 const updateFormMutationOptions = (workspaceId: string, formId: string) =>
   mutationOptions({
-    mutationFn: (data: { schema?: FormSchema; theme?: FormTheme }) =>
-      updateForm({ data: { workspaceId, formId, ...data } }),
+    mutationFn: (data: { pages?: Page[]; theme?: Theme }) => updateForm({ data: { workspaceId, formId, ...data } }),
   })
 
 const publishForm = createServerFn({ method: 'POST' })
@@ -126,57 +124,54 @@ function RouteComponent() {
   const params = Route.useParams()
 
   const formQuery = useSuspenseQuery(getFormQueryOptions(params.workspaceId, params.id))
-
-  const [form, setForm] = React.useState<Form.Info>(formQuery.data)
-  const [selectedPageId, setSelectedPageId] = React.useState<string | null>(form.schema.pages[0]?.id ?? null)
-  const [selectedBlockId, setSelectedBlockId] = React.useState<string | null>(null)
-
   const updateFormMutation = useMutation(updateFormMutationOptions(params.workspaceId, params.id))
   const publishFormMutation = useMutation(publishFormMutationOptions(params.workspaceId, params.id))
 
   const saveDebouncer = useDebouncer(
-    (data: { schema: FormSchema; theme?: FormTheme }) => {
+    (data: { pages: Page[]; theme?: Theme }) => {
       updateFormMutation.mutate(data)
     },
     { wait: 1000 },
   )
 
-  const selectedPageSchema = form.schema.pages.find((page) => page.id === selectedPageId) ?? null
-  const selectedBlockSchema = selectedPageSchema?.blocks.find((b) => b.id === selectedBlockId) ?? null
+  const [form, setForm] = React.useState<Info>(formQuery.data)
+
+  const [selectedPageId, setSelectedPageId] = React.useState<string | null>(form.pages[0]?.id ?? null)
+  const selectedPages = form.pages.find((page) => page.id === selectedPageId) ?? null
+
+  const [selectedBlockId, setSelectedBlockId] = React.useState<string | null>(null)
+  const selectedBlocks = selectedPages?.blocks.find((b) => b.id === selectedBlockId) ?? null
 
   const handlePageSelect = (pageId: string) => {
     setSelectedPageId(pageId)
-    const page = form.schema.pages.find((p) => p.id === pageId)
+    const page = form.pages.find((p) => p.id === pageId)
     setSelectedBlockId(page?.blocks[0]?.id ?? null)
   }
 
   const handlePagesReorder = (reorderedPages: Page[]) => {
-    const updatedSchema = { ...form.schema, pages: reorderedPages }
-    const updated = { ...form, schema: updatedSchema, published: false }
+    const updated = { ...form, pages: reorderedPages, published: false }
     setForm(updated)
-    saveDebouncer.maybeExecute({ schema: updated.schema })
+    saveDebouncer.maybeExecute({ pages: updated.pages })
   }
 
   const handlePageAdd = (page: Page) => {
-    const updatedSchema = { ...form.schema, pages: [...form.schema.pages, page] }
-    const updated = { ...form, schema: updatedSchema, published: false }
+    const updated = { ...form, pages: [...form.pages, page], published: false }
     setForm(updated)
     setSelectedPageId(page.id)
     setSelectedBlockId(page.blocks[0]?.id ?? null)
-    saveDebouncer.maybeExecute({ schema: updated.schema })
+    saveDebouncer.maybeExecute({ pages: updated.pages })
   }
 
   const handlePageDelete = (pageId: string) => {
     setForm((prev) => {
-      const pageIndex = prev.schema.pages.findIndex((page) => page.id === pageId)
-      const updatedPages = prev.schema.pages.filter((page) => page.id !== pageId)
+      const pageIndex = prev.pages.findIndex((page) => page.id === pageId)
+      const updatedPages = prev.pages.filter((page) => page.id !== pageId)
       const newIndex = Math.max(0, pageIndex - 1)
       const newSelectedPage = updatedPages[newIndex] ?? null
       setSelectedPageId(newSelectedPage?.id ?? null)
       setSelectedBlockId(newSelectedPage?.blocks[0]?.id ?? null)
-      const updatedSchema = { ...prev.schema, pages: updatedPages }
-      const updated = { ...prev, schema: updatedSchema, published: false }
-      saveDebouncer.maybeExecute({ schema: updated.schema })
+      const updated = { ...prev, pages: updatedPages, published: false }
+      saveDebouncer.maybeExecute({ pages: updated.pages })
       return updated
     })
   }
@@ -185,58 +180,54 @@ function RouteComponent() {
     setSelectedBlockId(blockId)
   }
 
-  const handlePageUpdate = (pageId: string, updates: Partial<Page>) => {
-    const updatedPages = form.schema.pages.map((page) => (page.id === pageId ? { ...page, ...updates } : page))
-    const updatedSchema = { ...form.schema, pages: updatedPages }
-    const updated = { ...form, schema: updatedSchema, published: false }
-    setForm(updated)
-    saveDebouncer.maybeExecute({ schema: updated.schema })
+  const handlePageUpdate = (id: string, updatedPage: Partial<Page>) => {
+    const updatedPages = form.pages.map((page) => (page.id === id ? ({ ...page, ...updatedPage } as Page) : page))
+    const updatedForm = { ...form, pages: updatedPages, published: false }
+    setForm(updatedForm)
+    saveDebouncer.maybeExecute({ pages: updatedForm.pages })
   }
 
   const handleBlocksReorder = (reorderedBlocks: Block[]) => {
     if (!selectedPageId) return
-    const updatedPages = form.schema.pages.map((page) =>
+    const updatedPages = form.pages.map((page) =>
       page.id === selectedPageId ? { ...page, blocks: reorderedBlocks } : page,
     )
-    const updatedSchema = { ...form.schema, pages: updatedPages }
-    const updated = { ...form, schema: updatedSchema, published: false }
-    setForm(updated)
-    saveDebouncer.maybeExecute({ schema: updated.schema })
+    const updatedForm = { ...form, pages: updatedPages, published: false }
+    setForm(updatedForm)
+    saveDebouncer.maybeExecute({ pages: updatedForm.pages })
   }
 
-  const handleBlockAdd = (block: Block) => {
+  const handleBlockAdd = (addedBlock: Block) => {
     if (!selectedPageId) return
-    const updatedPages = form.schema.pages.map((page) =>
-      page.id === selectedPageId ? { ...page, blocks: [...page.blocks, block] } : page,
+    const updatedPages = form.pages.map((page) =>
+      page.id === selectedPageId ? { ...page, blocks: [...page.blocks, addedBlock] } : page,
     )
-    const updatedSchema = { ...form.schema, pages: updatedPages }
-    const updated = { ...form, schema: updatedSchema, published: false }
-    setForm(updated)
-    setSelectedBlockId(block.id)
-    saveDebouncer.maybeExecute({ schema: updated.schema })
+    const updatedForm = { ...form, pages: updatedPages, published: false }
+    setForm(updatedForm)
+    setSelectedBlockId(addedBlock.id)
+    saveDebouncer.maybeExecute({ pages: updatedForm.pages })
   }
 
-  const handleBlockUpdate = (blockId: string, updates: Partial<Block>) => {
-    const updatedPages = form.schema.pages.map((page) => ({
+  const handleBlockUpdate = (id: string, updatedBlock: Partial<Block>) => {
+    const updatedPages = form.pages.map((page) => ({
       ...page,
-      blocks: page.blocks.map((b) => (b.id === blockId ? ({ ...b, ...updates } as Block) : b)),
+      blocks: page.blocks.map((block) => (block.id === id ? ({ ...block, ...updatedBlock } as Block) : block)),
     }))
-    const updatedSchema = { ...form.schema, pages: updatedPages }
-    const updated = { ...form, schema: updatedSchema, published: false }
-    setForm(updated)
-    saveDebouncer.maybeExecute({ schema: updated.schema })
+    const updatedForm = { ...form, pages: updatedPages, published: false }
+    setForm(updatedForm)
+    saveDebouncer.maybeExecute({ pages: updatedForm.pages })
   }
 
-  const handleThemeUpdate = (updates: Partial<FormTheme>) => {
-    const updated = {
+  const handleThemeUpdate = (updatedTheme: Partial<Theme>) => {
+    const updatedForm = {
       ...form,
-      theme: { ...form.theme, ...updates },
+      theme: { ...form.theme, ...updatedTheme },
       published: false,
     }
-    setForm(updated)
+    setForm(updatedForm)
     saveDebouncer.maybeExecute({
-      schema: updated.schema,
-      theme: updated.theme,
+      pages: updatedForm.pages,
+      theme: updatedForm.theme,
     })
   }
 
@@ -288,7 +279,8 @@ function RouteComponent() {
           <Resizable.PanelGroup direction="vertical">
             <Resizable.Panel defaultSize={selectedPageId ? 40 : 100} minSize={20}>
               <PagesPane
-                pageSchemas={form.schema.pages}
+                pages={form.pages}
+                selectedPageId={selectedPageId}
                 onPageSelect={handlePageSelect}
                 onPagesReorder={handlePagesReorder}
                 onPageAdd={handlePageAdd}
@@ -300,7 +292,7 @@ function RouteComponent() {
                 <Resizable.Handle />
                 <Resizable.Panel defaultSize={60} minSize={20}>
                   <BlocksPane
-                    blockSchemas={selectedPageSchema?.blocks ?? []}
+                    blocks={selectedPages?.blocks ?? []}
                     selectedBlockId={selectedBlockId}
                     onBlockSelect={handleBlockSelect}
                     onBlocksReorder={handleBlocksReorder}
@@ -312,25 +304,25 @@ function RouteComponent() {
           </Resizable.PanelGroup>
         </Panel>
         <Preview
-          pageSchema={selectedPageSchema}
+          page={selectedPages}
           theme={form.theme}
           selectedBlockId={selectedBlockId}
           onBlockSelect={handleBlockSelect}
         />
-        {selectedBlockSchema ? (
+        {selectedBlocks ? (
           <Panel className="w-[350px]">
             <BlockPane
-              schema={selectedBlockSchema}
-              onSchemaUpdate={(schema) => handleBlockUpdate(selectedBlockSchema.id, schema)}
+              data={selectedBlocks}
+              onDataUpdate={(data) => handleBlockUpdate(selectedBlocks.id, data)}
               onImageUpload={handleImageUpload}
             />
           </Panel>
-        ) : selectedPageSchema ? (
+        ) : selectedPages ? (
           <Panel className="w-[350px]">
             <PagePane
-              pageSchema={selectedPageSchema}
-              pageIndex={form.schema.pages.findIndex((p) => p.id === selectedPageId)}
-              onPageSchemaUpdate={(updates) => handlePageUpdate(selectedPageSchema.id, updates)}
+              page={selectedPages}
+              index={form.pages.findIndex((p) => p.id === selectedPageId)}
+              onPageUpdate={(page) => handlePageUpdate(selectedPages.id, page)}
             />
           </Panel>
         ) : null}

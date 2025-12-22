@@ -7,13 +7,12 @@ import { File } from '../file'
 import { Identifier } from '../identifier'
 import { fn } from '../utils/fn'
 import { FormFileTable, FormTable, FormVersionTable } from './index.sql'
-import type { FormSchema } from './schema'
-import { RADII, type FormTheme } from './theme'
+import { Info, Page, RADII, Rule, Variables, type Theme } from './types'
 
 export namespace Form {
   const NEW_VERSION_THRESHOLD = 15 * 60 * 1000
 
-  const DEFAULT_THEME: FormTheme = {
+  const DEFAULT_THEME: Theme = {
     colors: {
       primary: '#3b82f6',
       primaryForeground: '#ffffff',
@@ -21,23 +20,6 @@ export namespace Form {
       foreground: '#0a0a0a',
     },
     radius: RADII.find((radius) => radius.name === 'medium')!,
-  }
-
-  const DEFAULT_SCHEMA: FormSchema = {
-    pages: [],
-    rules: [],
-    variables: {},
-  }
-
-  export type Info = {
-    id: string
-    shortId: string
-    title: string
-    schema: FormSchema
-    theme: FormTheme
-    createdAt: Date
-    published: boolean
-    publishedAt: Date | null
   }
 
   export const getCurrentVersion = fn(Identifier.schema('form'), (id) =>
@@ -105,7 +87,9 @@ export namespace Form {
         workspaceId: Actor.workspace(),
         formId: id,
         version: currentVersion,
-        schema: DEFAULT_SCHEMA,
+        pages: [],
+        rules: [],
+        variables: {},
         theme: DEFAULT_THEME,
       })
     })
@@ -143,8 +127,10 @@ export namespace Form {
     z.object({
       id: Identifier.schema('form'),
       title: z.string().min(1).max(255).optional(),
-      schema: z.custom<FormSchema>().optional(),
-      theme: z.custom<FormTheme>().optional(),
+      pages: z.custom<Page[]>().optional(),
+      rules: z.custom<Rule[]>().optional(),
+      variables: z.custom<Variables>().optional(),
+      theme: z.custom<Theme>().optional(),
     }),
     async (input) => {
       await Database.use(async (tx) => {
@@ -182,7 +168,9 @@ export namespace Form {
             workspaceId: Actor.workspace(),
             formId: input.id,
             version: newVersion,
-            schema: input.schema ?? currentVersion.schema,
+            pages: input.pages ?? currentVersion.pages,
+            rules: input.rules ?? currentVersion.rules,
+            variables: input.variables ?? currentVersion.variables,
             theme: input.theme ?? currentVersion.theme,
           })
 
@@ -197,7 +185,9 @@ export namespace Form {
           await tx
             .update(FormVersionTable)
             .set({
-              schema: input.schema,
+              pages: input.pages,
+              rules: input.rules,
+              variables: input.variables,
               theme: input.theme,
             })
             .where(
@@ -265,7 +255,9 @@ export namespace Form {
           id: group[0].form.id,
           shortId: group[0].form.shortId,
           title: group[0].form.title,
-          schema: group[0].form_version.schema,
+          pages: group[0].form_version.pages,
+          rules: group[0].form_version.rules,
+          variables: group[0].form_version.variables,
           theme: group[0].form_version.theme,
           published: group[0].form.currentVersion === group[0].form.publishedVersion,
           createdAt: group[0].form.createdAt,

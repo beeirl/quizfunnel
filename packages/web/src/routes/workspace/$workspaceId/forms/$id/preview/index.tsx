@@ -1,6 +1,5 @@
 import { withActor } from '@/context/auth.withActor'
 import { Form as FormComponent } from '@/form'
-import { Theme } from '@/form/theme'
 import { Form } from '@shopfunnel/core/form/index'
 import { Identifier } from '@shopfunnel/core/identifier'
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query'
@@ -42,13 +41,5 @@ function RouteComponent() {
   const formQuery = useSuspenseQuery(getFormQueryOptions(params.workspaceId, params.id))
   const form = formQuery.data
 
-  return (
-    <Theme theme={form.theme}>
-      <div className="min-h-screen w-full p-6">
-        <div className="mx-auto max-w-md">
-          <FormComponent form={form} mode="preview" />
-        </div>
-      </div>
-    </Theme>
-  )
+  return <FormComponent form={form} />
 }

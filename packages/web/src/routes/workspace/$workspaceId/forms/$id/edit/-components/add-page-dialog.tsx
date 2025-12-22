@@ -2,15 +2,15 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
 import { Empty } from '@/components/ui/empty'
-import { Block, getBlock } from '@/form/block'
+import { FormBlock, getFormBlockType } from '@/form/block'
 import { cn } from '@/lib/utils'
 import { Combobox } from '@base-ui/react/combobox'
-import type { Block as BlockSchema, BlockType, Page } from '@shopfunnel/core/form/schema'
+import type { Block, Page } from '@shopfunnel/core/form/types'
 import { IconSearch as SearchIcon, IconSearchOff as SearchOffIcon } from '@tabler/icons-react'
 import * as React from 'react'
 import { ulid } from 'ulid'
 
-const ADD_SCHEMAS = {
+const ADD_DATA = {
   short_text: {
     type: 'short_text',
     properties: {
@@ -52,7 +52,7 @@ const ADD_SCHEMAS = {
   },
 } as const
 
-const PREVIEW_SCHEMAS: Record<string, BlockSchema> = {
+const PREVIEW_DATA: Record<string, Block> = {
   short_text: {
     id: '',
     type: 'short_text',
@@ -103,7 +103,7 @@ const PREVIEW_SCHEMAS: Record<string, BlockSchema> = {
 
 interface PageTemplate {
   id: string
-  blocks: BlockType[]
+  blocks: Block['type'][]
   name: string
   description: string
   defaultPageProperties: Page['properties']
@@ -198,7 +198,7 @@ function AddPageDialogPopup() {
     const page: Page = {
       id: ulid(),
       blocks: template.blocks.map((type) => {
-        return { id: ulid(), ...ADD_SCHEMAS[type] }
+        return { id: ulid(), ...ADD_DATA[type] } as Block
       }),
       properties: template.defaultPageProperties,
     }
@@ -233,7 +233,7 @@ function AddPageDialogPopup() {
               {(templateId: string) => {
                 const template = getPageTemplate(templateId)
                 if (!template || !template.blocks[0]) return null
-                const firstBlock = getBlock(template.blocks[0])
+                const firstBlock = getFormBlockType(template.blocks[0])
                 const IconComponent = firstBlock.icon
                 return (
                   <Combobox.Item
@@ -268,7 +268,7 @@ function AddPageDialogPopup() {
                       Preview
                     </Badge>
                     {highlightedTemplate.blocks.map((blockType) => (
-                      <Block mode="preview" schema={PREVIEW_SCHEMAS[blockType]!} />
+                      <FormBlock key={blockType} static block={PREVIEW_DATA[blockType]!} />
                     ))}
                   </div>
                 </div>

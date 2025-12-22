@@ -1,42 +1,36 @@
-import { Select as BaseSelect } from '@base-ui/react/select'
-import type { DropdownBlock } from '@shopfunnel/core/form/schema'
-import { IconCheck as CheckIcon, IconChevronDown as ChevronDownIcon } from '@tabler/icons-react'
-
 import { Field } from '@/form/components/field'
 import { cn } from '@/lib/utils'
+import { Select as BaseSelect } from '@base-ui/react/select'
+import type { DropdownBlock as DropdownBlockData } from '@shopfunnel/core/form/types'
+import { IconCheck as CheckIcon, IconChevronDown as ChevronDownIcon } from '@tabler/icons-react'
 
-export type DropdownProps =
-  | {
-      mode: 'preview'
-      schema: DropdownBlock
-    }
-  | {
-      mode: 'live'
-      schema: DropdownBlock
-      value?: string
-      onChange?: (value: string) => void
-    }
+export interface DropdownBlockProps {
+  static: boolean
+  data: DropdownBlockData
+  value?: string
+  onValueChange?: (value: string) => void
+}
 
 const triggerClassName =
   'flex w-full items-center justify-between rounded-[var(--radius)] border-2 border-border bg-background px-4 py-3 text-left text-lg text-foreground'
 const iconClassName = 'size-3.5 text-muted-foreground'
 
-export function Dropdown(props: DropdownProps) {
-  const options = props.schema.properties.options.map((option) => ({
+export function DropdownBlock(props: DropdownBlockProps) {
+  const options = props.data.properties.options.map((option) => ({
     id: option.id,
     label: option.label,
     value: option.id,
   }))
 
   return (
-    <Field mode={props.mode} label={props.schema.properties.label} description={props.schema.properties.description}>
-      {props.mode === 'preview' ? (
+    <Field static={props.static} label={props.data.properties.label} description={props.data.properties.description}>
+      {props.static ? (
         <div className={triggerClassName}>
           <span className="text-muted-foreground">Select an option...</span>
           <ChevronDownIcon className={iconClassName} />
         </div>
       ) : (
-        <BaseSelect.Root items={options} value={props.value} onValueChange={props.onChange}>
+        <BaseSelect.Root items={options} value={props.value} onValueChange={props.onValueChange}>
           <BaseSelect.Trigger
             className={cn(triggerClassName, 'transition-colors focus:border-primary focus:outline-none')}
           >

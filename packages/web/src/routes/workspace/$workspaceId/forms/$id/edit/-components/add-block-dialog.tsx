@@ -2,15 +2,15 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
 import { Empty } from '@/components/ui/empty'
-import { Block, getBlock, getBlocks } from '@/form/block'
+import { FormBlock, getFormBlockType, getFormBlockTypes } from '@/form/block'
 import { cn } from '@/lib/utils'
 import { Combobox } from '@base-ui/react/combobox'
-import type { Block as BlockData, BlockType } from '@shopfunnel/core/form/schema'
+import type { Block } from '@shopfunnel/core/form/types'
 import { IconSearch as SearchIcon, IconSearchOff as SearchOffIcon } from '@tabler/icons-react'
 import * as React from 'react'
 import { ulid } from 'ulid'
 
-const ADD_SCHEMAS = {
+const ADD_DATA = {
   short_text: {
     type: 'short_text',
     properties: {
@@ -85,7 +85,7 @@ const ADD_SCHEMAS = {
   },
 }
 
-const PREVIEW_SCHEMAS: Record<BlockType, BlockData> = {
+const PREVIEW_DATA: Record<Block['type'], Block> = {
   short_text: {
     id: '',
     type: 'short_text',
@@ -177,7 +177,7 @@ const PREVIEW_SCHEMAS: Record<BlockType, BlockData> = {
 }
 
 const AddBlockDialogContext = React.createContext<{
-  onBlockAdd: (block: BlockData) => void
+  onBlockAdd: (block: Block) => void
   setOpen: React.Dispatch<React.SetStateAction<boolean>>
 } | null>(null)
 
@@ -194,7 +194,7 @@ function AddBlockDialogRoot({
   onBlockAdd,
 }: {
   children: React.ReactNode
-  onBlockAdd: (block: BlockData) => void
+  onBlockAdd: (block: Block) => void
 }) {
   const [open, setOpen] = React.useState(false)
 
@@ -210,23 +210,23 @@ function AddBlockDialogRoot({
 function AddBlockDialogPopup() {
   const { onBlockAdd, setOpen } = useAddBlockDialogContext()
 
-  const blocks = getBlocks().filter((b) => b.category === 'display')
-  const blockTypes = blocks.map((b) => b.type)
+  const blocks = getFormBlockTypes().filter((b) => b.category === 'display')
+  const blockTypeValues = blocks.map((b) => b.type)
 
-  const [highlightedBlockType, setHighlightedBlockType] = React.useState<BlockType | undefined>(blockTypes[0])
+  const [highlightedBlockType, setHighlightedBlockType] = React.useState<Block['type'] | undefined>(blockTypeValues[0])
 
-  const handleBlockAdd = (type: BlockType) => {
-    onBlockAdd({ id: ulid(), ...ADD_SCHEMAS[type] } as BlockData)
+  const handleBlockAdd = (type: Block['type']) => {
+    onBlockAdd({ id: ulid(), ...ADD_DATA[type] } as Block)
     setOpen(false)
   }
 
   return (
     <Dialog.Content showCloseButton={false} className="max-w-2xl gap-0 p-0 sm:max-w-2xl">
-      <Combobox.Root<BlockType>
+      <Combobox.Root<Block['type']>
         inline
         autoHighlight
         highlightItemOnHover={false}
-        items={blockTypes}
+        items={blockTypeValues}
         onItemHighlighted={setHighlightedBlockType}
       >
         <div className="flex flex-col">
@@ -244,8 +244,8 @@ function AddBlockDialogPopup() {
           </div>
           <div className="flex h-[650px] max-h-[calc(90vh-48px)]">
             <Combobox.List className="flex w-full flex-col gap-0.5 overflow-y-auto p-2 data-empty:hidden md:max-w-[250px] md:border-r md:border-border">
-              {(type: BlockType) => {
-                const block = getBlock(type)
+              {(type: Block['type']) => {
+                const block = getFormBlockType(type)
                 return (
                   <Combobox.Item
                     key={type}
@@ -270,15 +270,19 @@ function AddBlockDialogPopup() {
               <div className="hidden flex-1 flex-col md:flex">
                 <div className="flex flex-1 flex-col overflow-y-auto">
                   <div className="border-b border-border px-6 pt-5 pb-6">
-                    <h2 className="mb-2 text-xl font-bold text-foreground">{getBlock(highlightedBlockType)?.name}</h2>
-                    <p className="text-sm text-muted-foreground">{getBlock(highlightedBlockType)?.description}</p>
+                    <h2 className="mb-2 text-xl font-bold text-foreground">
+                      {getFormBlockType(highlightedBlockType)?.name}
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      {getFormBlockType(highlightedBlockType)?.description}
+                    </p>
                   </div>
 
                   <div className="flex-1 px-6 pt-5 pb-6">
                     <Badge variant="secondary" className="mb-4">
                       Preview
                     </Badge>
-                    <Block mode="preview" schema={PREVIEW_SCHEMAS[highlightedBlockType]} selected={false} />
+                    <FormBlock static block={PREVIEW_DATA[highlightedBlockType]} />
                   </div>
                 </div>
 

@@ -1,5 +1,5 @@
 // ============================================
-// Block Types
+// Block
 // ============================================
 
 export interface ShortTextBlock {
@@ -133,13 +133,6 @@ export type Block =
   | ListBlock
   | ProgressBlock
 
-export type BlockType = Block['type']
-
-export type BlockOfType<T extends BlockType> = Extract<Block, { type: T }>
-
-export type InputBlock = ShortTextBlock | MultipleChoiceBlock | DropdownBlock | SliderBlock
-export type DisplayBlock = HeadingBlock | ParagraphBlock | GaugeBlock | ListBlock | ProgressBlock
-
 // ============================================
 // Page
 // ============================================
@@ -205,11 +198,43 @@ export interface Rule {
 }
 
 // ============================================
-// Form Schema
+// Theme
 // ============================================
 
-export interface FormSchema {
+export interface Colors {
+  primary: string
+  primaryForeground: string
+  background: string
+  foreground: string
+}
+
+export const RADII = [
+  { name: 'none', value: '0' },
+  { name: 'small', value: '0.45rem' },
+  { name: 'medium', value: '0.625rem' },
+  { name: 'large', value: '0.875rem' },
+] as const
+
+export type Radius = (typeof RADII)[number]
+
+export interface Theme {
+  colors: Colors
+  radius: Radius
+}
+
+// ============================================
+// Info
+// ============================================
+
+export interface Info {
+  id: string
+  shortId: string
+  title: string
   pages: Page[]
   rules: Rule[]
   variables: Variables
+  theme: Theme
+  published: boolean
+  createdAt: Date
+  publishedAt: Date | null
 }

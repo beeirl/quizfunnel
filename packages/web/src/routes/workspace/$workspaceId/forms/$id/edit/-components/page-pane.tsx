@@ -1,22 +1,22 @@
 import { Input } from '@/components/ui/input'
 import { SegmentedControl } from '@/components/ui/segmented-control'
-import type { Page } from '@shopfunnel/core/form/schema'
+import type { Page } from '@shopfunnel/core/form/types'
 import { Field } from './field'
 import { Pane } from './pane'
 
 export function PagePane({
-  pageSchema,
-  pageIndex,
-  onPageSchemaUpdate,
+  page,
+  index,
+  onPageUpdate,
 }: {
-  pageSchema: Page
-  pageIndex: number
-  onPageSchemaUpdate: (updates: Partial<Page>) => void
+  page: Page
+  index: number
+  onPageUpdate: (page: Partial<Page>) => void
 }) {
   return (
     <Pane.Root>
       <Pane.Header>
-        <Pane.Title>Page {pageIndex + 1}</Pane.Title>
+        <Pane.Title>Page {index + 1}</Pane.Title>
       </Pane.Header>
       <Pane.Content>
         <Pane.Group>
@@ -27,9 +27,9 @@ export function PagePane({
             <Field.Label>Show</Field.Label>
             <Field.Control>
               <SegmentedControl.Root
-                value={pageSchema.properties.showButton}
+                value={page.properties.showButton}
                 onValueChange={(value: boolean) =>
-                  onPageSchemaUpdate({ properties: { ...pageSchema.properties, showButton: value } })
+                  onPageUpdate({ properties: { ...page.properties, showButton: value } })
                 }
               >
                 <SegmentedControl.Segment value={false}>No</SegmentedControl.Segment>
@@ -37,16 +37,14 @@ export function PagePane({
               </SegmentedControl.Root>
             </Field.Control>
           </Field.Root>
-          {pageSchema.properties.showButton && (
+          {page.properties.showButton && (
             <>
               <Field.Root>
                 <Field.Label>Text</Field.Label>
                 <Field.Control>
                   <Input
-                    value={pageSchema.properties.buttonText}
-                    onValueChange={(value) =>
-                      onPageSchemaUpdate({ properties: { ...pageSchema.properties, buttonText: value } })
-                    }
+                    value={page.properties.buttonText}
+                    onValueChange={(value) => onPageUpdate({ properties: { ...page.properties, buttonText: value } })}
                   />
                 </Field.Control>
               </Field.Root>
@@ -54,9 +52,9 @@ export function PagePane({
                 <Field.Label>Action</Field.Label>
                 <Field.Control>
                   <SegmentedControl.Root
-                    value={pageSchema.properties.buttonAction}
+                    value={page.properties.buttonAction}
                     onValueChange={(value: 'next' | 'redirect') =>
-                      onPageSchemaUpdate({ properties: { ...pageSchema.properties, buttonAction: value } })
+                      onPageUpdate({ properties: { ...page.properties, buttonAction: value } })
                     }
                   >
                     <SegmentedControl.Segment value="next">Next</SegmentedControl.Segment>
@@ -64,16 +62,16 @@ export function PagePane({
                   </SegmentedControl.Root>
                 </Field.Control>
               </Field.Root>
-              {pageSchema.properties.buttonAction === 'redirect' && (
+              {page.properties.buttonAction === 'redirect' && (
                 <Field.Root>
                   <Field.Label>URL</Field.Label>
                   <Field.Control>
                     <Input
                       placeholder="https://..."
-                      value={pageSchema.properties.redirectUrl ?? ''}
+                      value={page.properties.redirectUrl ?? ''}
                       onValueChange={(value) =>
-                        onPageSchemaUpdate({
-                          properties: { ...pageSchema.properties, redirectUrl: value || undefined },
+                        onPageUpdate({
+                          properties: { ...page.properties, redirectUrl: value || undefined },
                         })
                       }
                     />

@@ -1,18 +1,18 @@
 import { Input } from '@/components/ui/input'
 import { SegmentedControl } from '@/components/ui/segmented-control'
-import { getBlock } from '@/form/block'
-import type { ShortTextBlock as ShortTextBlockSchema } from '@shopfunnel/core/form/schema'
+import { getFormBlockType } from '@/form/block'
+import type { ShortTextBlock as ShortTextBlockData } from '@shopfunnel/core/form/types'
 import { Field } from '../field'
 import { Pane } from '../pane'
 
 export function ShortTextBlockPane({
-  schema,
-  onSchemaUpdate,
+  data,
+  onDataUpdate,
 }: {
-  schema: ShortTextBlockSchema
-  onSchemaUpdate: (schema: Partial<ShortTextBlockSchema>) => void
+  data: ShortTextBlockData
+  onDataUpdate: (data: Partial<ShortTextBlockData>) => void
 }) {
-  const block = getBlock(schema.type)
+  const block = getFormBlockType(data.type)
   return (
     <Pane.Root>
       <Pane.Header>
@@ -25,8 +25,8 @@ export function ShortTextBlockPane({
           </Pane.GroupHeader>
           <Input
             placeholder="Your question here..."
-            value={schema.properties.label}
-            onValueChange={(value) => onSchemaUpdate({ properties: { ...schema.properties, label: value } })}
+            value={data.properties.label}
+            onValueChange={(value) => onDataUpdate({ properties: { ...data.properties, label: value } })}
           />
         </Pane.Group>
         <Pane.Separator />
@@ -36,10 +36,10 @@ export function ShortTextBlockPane({
           </Pane.GroupHeader>
           <Input
             placeholder="Enter description..."
-            value={schema.properties.description ?? ''}
+            value={data.properties.description ?? ''}
             onValueChange={(value) =>
-              onSchemaUpdate({
-                properties: { ...schema.properties, description: value || undefined },
+              onDataUpdate({
+                properties: { ...data.properties, description: value || undefined },
               })
             }
           />
@@ -53,9 +53,9 @@ export function ShortTextBlockPane({
             <Field.Label>Required</Field.Label>
             <Field.Control>
               <SegmentedControl.Root
-                value={schema.validations.required ?? false}
+                value={data.validations.required ?? false}
                 onValueChange={(value: boolean) =>
-                  onSchemaUpdate({ validations: { ...schema.validations, required: value } })
+                  onDataUpdate({ validations: { ...data.validations, required: value } })
                 }
               >
                 <SegmentedControl.Segment value={false}>No</SegmentedControl.Segment>
@@ -67,10 +67,8 @@ export function ShortTextBlockPane({
             <Field.Label>Email</Field.Label>
             <Field.Control>
               <SegmentedControl.Root
-                value={schema.validations.email ?? false}
-                onValueChange={(value: boolean) =>
-                  onSchemaUpdate({ validations: { ...schema.validations, email: value } })
-                }
+                value={data.validations.email ?? false}
+                onValueChange={(value: boolean) => onDataUpdate({ validations: { ...data.validations, email: value } })}
               >
                 <SegmentedControl.Segment value={false}>No</SegmentedControl.Segment>
                 <SegmentedControl.Segment value={true}>Yes</SegmentedControl.Segment>
