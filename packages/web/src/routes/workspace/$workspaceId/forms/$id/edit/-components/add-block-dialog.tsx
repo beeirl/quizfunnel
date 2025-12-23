@@ -15,7 +15,7 @@ const ADD_BLOCK_DATA = {
     id: ulid(),
     type: 'text_input' as const,
     properties: {
-      label: 'Your question here',
+      name: 'Text Input',
       placeholder: '',
     },
     validations: {
@@ -26,7 +26,7 @@ const ADD_BLOCK_DATA = {
     id: ulid(),
     type: 'multiple_choice' as const,
     properties: {
-      label: 'Your question here',
+      name: 'Multiple Choice',
       choices: [{ id: ulid(), label: 'Choice 1' }],
     },
     validations: {
@@ -37,7 +37,7 @@ const ADD_BLOCK_DATA = {
     id: ulid(),
     type: 'picture_choice' as const,
     properties: {
-      label: 'Your question here',
+      name: 'Picture Choice',
       choices: [
         { id: ulid(), label: 'Choice 1' },
         { id: ulid(), label: 'Choice 2' },
@@ -51,7 +51,7 @@ const ADD_BLOCK_DATA = {
     id: ulid(),
     type: 'dropdown' as const,
     properties: {
-      label: 'Your question here',
+      name: 'Dropdown',
       options: [{ id: ulid(), label: 'Option 1' }],
     },
     validations: {
@@ -116,7 +116,7 @@ const PREVIEW_BLOCK_DATA: Record<Block['type'], Block> = {
     id: '',
     type: 'text_input',
     properties: {
-      label: 'What is your name?',
+      name: 'Text Input',
       placeholder: 'Enter your name...',
     },
     validations: {},
@@ -125,7 +125,7 @@ const PREVIEW_BLOCK_DATA: Record<Block['type'], Block> = {
     id: '',
     type: 'multiple_choice',
     properties: {
-      label: 'Where are you from?',
+      name: 'Multiple Choice',
       choices: [
         { id: '1', label: 'United States' },
         { id: '2', label: 'Canada' },
@@ -138,7 +138,7 @@ const PREVIEW_BLOCK_DATA: Record<Block['type'], Block> = {
     id: '',
     type: 'picture_choice',
     properties: {
-      label: 'How old are you?',
+      name: 'Picture Choice',
       choices: [
         { id: '1', label: '20 - 29 Years Old', media: { type: 'image', value: '/img1.png' } },
         { id: '2', label: '30 - 39 Years Old', media: { type: 'image', value: '/img2.jpg' } },
@@ -150,7 +150,7 @@ const PREVIEW_BLOCK_DATA: Record<Block['type'], Block> = {
     id: '',
     type: 'dropdown',
     properties: {
-      label: 'Select your country',
+      name: 'Dropdown',
       options: [
         { id: '1', label: 'United States' },
         { id: '2', label: 'Canada' },

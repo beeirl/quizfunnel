@@ -6,8 +6,7 @@ export interface TextInputBlock {
   id: string
   type: 'text_input'
   properties: {
-    label: string
-    description?: string
+    name: string
     placeholder?: string
   }
   validations: {
@@ -21,8 +20,7 @@ export interface MultipleChoiceBlock {
   id: string
   type: 'multiple_choice'
   properties: {
-    label: string
-    description?: string
+    name: string
     multiple?: boolean
     choices: Array<{
       id: string
@@ -45,8 +43,7 @@ export interface PictureChoiceBlock {
   id: string
   type: 'picture_choice'
   properties: {
-    label: string
-    description?: string
+    name: string
     multiple?: boolean
     choices: Array<{
       id: string
@@ -67,8 +64,7 @@ export interface DropdownBlock {
   id: string
   type: 'dropdown'
   properties: {
-    label: string
-    description?: string
+    name: string
     placeholder?: string
     options: Array<{
       id: string

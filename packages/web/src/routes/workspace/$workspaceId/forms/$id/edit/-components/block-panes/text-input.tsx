@@ -21,27 +21,12 @@ export function TextInputBlockPane({
       <Pane.Content>
         <Pane.Group>
           <Pane.GroupHeader>
-            <Pane.GroupLabel>Question</Pane.GroupLabel>
+            <Pane.GroupLabel>Name</Pane.GroupLabel>
           </Pane.GroupHeader>
           <Input
-            placeholder="Your question here..."
-            value={data.properties.label}
-            onValueChange={(value) => onDataUpdate({ properties: { ...data.properties, label: value } })}
-          />
-        </Pane.Group>
-        <Pane.Separator />
-        <Pane.Group>
-          <Pane.GroupHeader>
-            <Pane.GroupLabel>Description</Pane.GroupLabel>
-          </Pane.GroupHeader>
-          <Input
-            placeholder="Enter description..."
-            value={data.properties.description ?? ''}
-            onValueChange={(value) =>
-              onDataUpdate({
-                properties: { ...data.properties, description: value || undefined },
-              })
-            }
+            placeholder="Enter name..."
+            value={data.properties.name}
+            onValueChange={(value) => onDataUpdate({ properties: { ...data.properties, name: value } })}
           />
         </Pane.Group>
         <Pane.Separator />

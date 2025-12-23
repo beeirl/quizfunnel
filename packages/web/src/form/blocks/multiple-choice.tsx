@@ -13,13 +13,7 @@ export interface MultipleChoiceBlockProps {
 
 export function MultipleChoiceBlock(props: MultipleChoiceBlockProps) {
   return (
-    <Field
-      className={cn(props.index > 0 && 'mt-6')}
-      static={props.static}
-      name={props.data.id}
-      label={props.data.properties.label}
-      description={props.data.properties.description}
-    >
+    <Field className={cn(props.index > 0 && 'mt-6')} static={props.static} name={props.data.id}>
       <ReactAriaListbox
         className="flex flex-col gap-2"
         disallowEmptySelection={props.static ? false : !props.data.properties.multiple}

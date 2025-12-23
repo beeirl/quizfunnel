@@ -13,13 +13,7 @@ export interface TextInputBlockProps {
 
 export function TextInputBlock(props: TextInputBlockProps) {
   return (
-    <Field
-      className={cn(props.index > 0 && 'mt-6')}
-      static={props.static}
-      name={props.data.id}
-      label={props.data.properties.label}
-      description={props.data.properties.description}
-    >
+    <Field className={cn(props.index > 0 && 'mt-6')} static={props.static} name={props.data.id}>
       <BaseInput
         className={cn(
           // Base

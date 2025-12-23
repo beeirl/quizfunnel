@@ -19,12 +19,22 @@ import {
 import * as React from 'react'
 import { ulid } from 'ulid'
 
+const INPUT_BLOCK_TYPES = ['text_input', 'multiple_choice', 'picture_choice', 'dropdown']
+
 const ADD_BLOCK_DATA = {
+  heading: () => ({
+    id: ulid(),
+    type: 'heading' as const,
+    properties: {
+      text: 'Your question here',
+      alignment: 'left' as const,
+    },
+  }),
   text_input: () => ({
     id: ulid(),
     type: 'text_input' as const,
     properties: {
-      label: 'Your question here',
+      name: 'Text Input',
       placeholder: '',
     },
     validations: {
@@ -35,7 +45,7 @@ const ADD_BLOCK_DATA = {
     id: ulid(),
     type: 'multiple_choice' as const,
     properties: {
-      label: 'Your question here',
+      name: 'Multiple Choice',
       choices: [{ id: ulid(), label: 'Choice 1' }],
     },
     validations: {
@@ -46,7 +56,7 @@ const ADD_BLOCK_DATA = {
     id: ulid(),
     type: 'picture_choice' as const,
     properties: {
-      label: 'Your question here',
+      name: 'Picture Choice',
       choices: [
         { id: ulid(), label: 'Choice 1' },
         { id: ulid(), label: 'Choice 2' },
@@ -60,7 +70,7 @@ const ADD_BLOCK_DATA = {
     id: ulid(),
     type: 'dropdown' as const,
     properties: {
-      label: 'Your question here',
+      name: 'Dropdown',
       options: [{ id: ulid(), label: 'Option 1' }],
     },
     validations: {
@@ -82,7 +92,7 @@ const PREVIEW_BLOCK_DATA: Record<string, Block> = {
     id: '',
     type: 'text_input',
     properties: {
-      label: 'What is your name?',
+      name: 'Text Input',
       placeholder: 'Enter your name...',
     },
     validations: {},
@@ -91,7 +101,7 @@ const PREVIEW_BLOCK_DATA: Record<string, Block> = {
     id: '',
     type: 'multiple_choice',
     properties: {
-      label: 'Where are you from?',
+      name: 'Multiple Choice',
       choices: [
         { id: '1', label: 'United States' },
         { id: '2', label: 'Canada' },
@@ -104,7 +114,7 @@ const PREVIEW_BLOCK_DATA: Record<string, Block> = {
     id: '',
     type: 'picture_choice',
     properties: {
-      label: 'How old are you?',
+      name: 'Picture Choice',
       choices: [
         { id: '1', label: '20 - 29 Years Old' },
         { id: '2', label: '30 - 39 Years Old' },
@@ -116,7 +126,7 @@ const PREVIEW_BLOCK_DATA: Record<string, Block> = {
     id: '',
     type: 'dropdown',
     properties: {
-      label: 'Select your country',
+      name: 'Dropdown',
       options: [
         { id: '1', label: 'United States' },
         { id: '2', label: 'Canada' },
@@ -259,9 +269,19 @@ function AddPageDialogPopup() {
 
   const handlePageAdd = (templateId: string) => {
     const template = getPageTemplate(templateId)
+
+    const blocks: Block[] = []
+    template.blocks.forEach((type) => {
+      // For input blocks, prepend a heading block
+      if (INPUT_BLOCK_TYPES.includes(type)) {
+        blocks.push(ADD_BLOCK_DATA.heading())
+      }
+      blocks.push(ADD_BLOCK_DATA[type]() as Block)
+    })
+
     const page: Page = {
       id: ulid(),
-      blocks: template.blocks.map((type) => ADD_BLOCK_DATA[type]()),
+      blocks,
       properties: template.defaultPageProperties,
     }
     onPageAdd(page)

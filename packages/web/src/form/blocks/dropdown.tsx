@@ -20,13 +20,7 @@ export function DropdownBlock(props: DropdownBlockProps) {
   }))
 
   return (
-    <Field
-      className={cn(props.index > 0 && 'mt-6')}
-      static={props.static}
-      name={props.data.id}
-      label={props.data.properties.label}
-      description={props.data.properties.description}
-    >
+    <Field className={cn(props.index > 0 && 'mt-6')} static={props.static} name={props.data.id}>
       <BaseSelect.Root
         disabled={props.static}
         value={props.static ? undefined : (props.value ?? null)}
