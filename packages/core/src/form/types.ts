@@ -243,6 +243,7 @@ export type Radius = (typeof RADII)[number]
 export interface Theme {
   colors: Colors
   radius: Radius
+  logo?: string
 }
 
 // ============================================

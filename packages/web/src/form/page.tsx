@@ -46,62 +46,66 @@ export function FormPage(props: FormPageProps) {
   const isButtonDisabled = props.mode === 'edit' || (hasLoader && !loaderComplete)
 
   return (
-    <BaseForm
-      className="mx-auto flex w-full max-w-md flex-1 flex-col px-8 py-11"
-      errors={props.mode !== 'edit' ? props.errors : undefined}
-      onSubmit={(e) => {
-        e.preventDefault()
-        e.stopPropagation()
-      }}
-    >
-      <div className="flex-1">
-        {props.page.blocks.map((block, index) => (
-          <div
-            key={block.id}
-            className={
-              props.mode === 'edit'
-                ? cn(
-                    'relative cursor-pointer',
-                    'before:absolute before:-inset-2 before:rounded-[calc(var(--sf-radius)+4px)] before:border before:border-transparent before:ring-3 before:ring-transparent before:transition-all hover:before:border-(--sf-color-primary)/50 hover:before:ring-(--sf-color-primary)/20',
-                    props.selectedBlockId === block.id &&
-                      'before:border-(--sf-color-primary)/40 before:ring-(--sf-color-primary)/25',
-                  )
-                : undefined
-            }
-            onClick={
-              props.mode === 'edit'
-                ? (e) => {
-                    e.stopPropagation()
-                    props.onBlockSelect(block.id)
-                  }
-                : undefined
-            }
+    <div className="px-8 py-11">
+      <BaseForm
+        className="mx-auto flex w-full max-w-md flex-1 flex-col"
+        errors={props.mode !== 'edit' ? props.errors : undefined}
+        onSubmit={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+        }}
+      >
+        <div className="flex-1">
+          {props.page.blocks.map((block, index) => (
+            <div
+              key={block.id}
+              className={
+                props.mode === 'edit'
+                  ? cn(
+                      'relative cursor-pointer',
+                      'before:absolute before:-inset-2 before:rounded-[calc(var(--sf-radius)+4px)] before:border before:border-transparent before:ring-3 before:ring-transparent before:transition-all hover:before:border-(--sf-color-primary)/50 hover:before:ring-(--sf-color-primary)/20',
+                      props.selectedBlockId === block.id &&
+                        'before:border-(--sf-color-primary)/40 before:ring-(--sf-color-primary)/25',
+                    )
+                  : undefined
+              }
+              onClick={
+                props.mode === 'edit'
+                  ? (e) => {
+                      e.stopPropagation()
+                      props.onBlockSelect(block.id)
+                    }
+                  : undefined
+              }
+            >
+              <FormBlock
+                static={props.mode === 'edit'}
+                block={block}
+                index={index}
+                value={props.mode !== 'edit' ? props.values[block.id] : undefined}
+                onValueChange={
+                  props.mode !== 'edit' ? (value) => props.onBlockValueChange?.(block.id, value) : undefined
+                }
+                onLoaderComplete={() => setLoaderComplete(true)}
+              />
+            </div>
+          ))}
+        </div>
+        {props.page.properties.showButton && (
+          <BaseButton
+            className={cn(
+              'h-12 rounded-(--sf-radius) text-base font-semibold transition-all outline-none not-first:mt-6',
+              'bg-(--sf-color-primary) text-(--sf-color-primary-foreground) hover:bg-(--sf-color-primary)/90',
+              'focus-visible:ring-2 focus-visible:ring-(--sf-color-primary) focus-visible:ring-offset-2',
+              isButtonDisabled && 'pointer-events-none opacity-50',
+            )}
+            disabled={isButtonDisabled}
+            onClick={props.mode !== 'edit' ? props.onButtonClick : undefined}
           >
-            <FormBlock
-              static={props.mode === 'edit'}
-              block={block}
-              index={index}
-              value={props.mode !== 'edit' ? props.values[block.id] : undefined}
-              onValueChange={props.mode !== 'edit' ? (value) => props.onBlockValueChange?.(block.id, value) : undefined}
-              onLoaderComplete={() => setLoaderComplete(true)}
-            />
-          </div>
-        ))}
-      </div>
-      {props.page.properties.showButton && (
-        <BaseButton
-          className={cn(
-            'h-12 rounded-(--sf-radius) text-base font-semibold transition-all outline-none not-first:mt-6',
-            'bg-(--sf-color-primary) text-(--sf-color-primary-foreground) hover:bg-(--sf-color-primary)/90',
-            'focus-visible:ring-2 focus-visible:ring-(--sf-color-primary) focus-visible:ring-offset-2',
-            isButtonDisabled && 'pointer-events-none opacity-50',
-          )}
-          disabled={isButtonDisabled}
-          onClick={props.mode !== 'edit' ? props.onButtonClick : undefined}
-        >
-          {props.page.properties.buttonText}
-        </BaseButton>
-      )}
-    </BaseForm>
+            {props.page.properties.buttonText}
+          </BaseButton>
+        )}
+      </BaseForm>
+    </div>
   )
 }

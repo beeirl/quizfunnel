@@ -3,15 +3,20 @@ import { InputGroup } from '@/components/ui/input-group'
 import { Popover } from '@/components/ui/popover'
 import { Select } from '@/components/ui/select'
 import { RADII, type Colors, type Theme } from '@shopfunnel/core/form/types'
+import { IconUpload as UploadIcon, IconX as XIcon } from '@tabler/icons-react'
 import * as React from 'react'
 import { Field } from './field'
 
 interface ThemePopoverContentProps extends React.ComponentProps<typeof Popover.Content> {
   theme: Theme
   onThemeUpdate: (updates: Partial<Theme>) => void
+  onImageUpload?: (file: File) => Promise<string>
 }
 
-function ThemePopoverContent({ theme, onThemeUpdate, ...props }: ThemePopoverContentProps) {
+function ThemePopoverContent({ theme, onThemeUpdate, onImageUpload, ...props }: ThemePopoverContentProps) {
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
+  const [isUploading, setIsUploading] = React.useState(false)
+
   const handleColorChange = (key: keyof Colors, value: string) => {
     onThemeUpdate({
       colors: {
@@ -21,12 +26,61 @@ function ThemePopoverContent({ theme, onThemeUpdate, ...props }: ThemePopoverCon
     })
   }
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !onImageUpload) return
+
+    setIsUploading(true)
+    try {
+      const url = await onImageUpload(file)
+      onThemeUpdate({ logo: url })
+    } finally {
+      setIsUploading(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  const handleLogoRemove = () => {
+    onThemeUpdate({ logo: undefined })
+  }
+
   return (
     <Popover.Content className="w-[350px]" {...props}>
       <Popover.Header>
         <Popover.Title>Theme</Popover.Title>
       </Popover.Header>
       <div className="flex flex-col">
+        <Field.Root className="px-0">
+          <Field.Label>Logo</Field.Label>
+          <Field.Control>
+            <InputGroup.Root>
+              <InputGroup.Addon>
+                {theme.logo ? (
+                  <img src={theme.logo} alt="Logo" className="size-6 rounded object-contain" />
+                ) : (
+                  <UploadIcon className="size-4" />
+                )}
+              </InputGroup.Addon>
+              <InputGroup.Input
+                readOnly
+                placeholder="Upload logo"
+                value={isUploading ? 'Uploading...' : theme.logo ? 'Logo uploaded' : ''}
+                className="cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+              />
+              {theme.logo && (
+                <InputGroup.Addon align="inline-end">
+                  <InputGroup.Button size="icon-xs" variant="ghost" onClick={handleLogoRemove}>
+                    <XIcon className="size-4" />
+                  </InputGroup.Button>
+                </InputGroup.Addon>
+              )}
+            </InputGroup.Root>
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+          </Field.Control>
+        </Field.Root>
         <Field.Root className="px-0">
           <Field.Label>Accent</Field.Label>
           <Field.Control>

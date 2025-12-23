@@ -51,6 +51,8 @@ export function Form({ form, mode = 'live' }: FormProps) {
 
   const historyRef = React.useRef<HistoryEntry[]>([])
 
+  const [currentPageIndex, setCurrentPageIndex] = React.useState(0)
+
   const [currentPage, setCurrentPage] = React.useState<CurrentPage | undefined>(() => {
     const page = form.pages[stateRef.current.currentPageIndex]
     if (!page) return undefined
@@ -166,6 +168,7 @@ export function Form({ form, mode = 'live' }: FormProps) {
 
     // Update page index and render next page
     stateRef.current = { ...stateRef.current, currentPageIndex: nextIndex }
+    setCurrentPageIndex(nextIndex)
 
     // Evaluate rules for the new page to handle any initial hidden blocks
     const nextPageEvaluation = evaluatePageRules(nextPageData.id, form, stateRef.current)
@@ -185,6 +188,7 @@ export function Form({ form, mode = 'live' }: FormProps) {
       currentPageIndex: prevHistoryEntry.pageIndex,
       variables: { ...prevHistoryEntry.variables },
     }
+    setCurrentPageIndex(prevHistoryEntry.pageIndex)
 
     // Get the previous page data and evaluate rules for hidden blocks (but don't apply math ops to state)
     const prevPageData = form.pages[prevHistoryEntry.pageIndex]
@@ -196,8 +200,27 @@ export function Form({ form, mode = 'live' }: FormProps) {
 
   if (formCompleted) return null
 
+  const progress = form.pages.length > 0 ? ((currentPageIndex + 1) / form.pages.length) * 100 : 0
+
   return (
     <FormRoot className="flex flex-1 flex-col" theme={form.theme}>
+      <header className="w-full px-8 pt-4">
+        <div className="mx-auto flex w-full max-w-md flex-col gap-3.5">
+          {form.theme.logo && (
+            <div className="flex justify-center">
+              <img src={form.theme.logo} alt="Logo" className="h-11 w-auto object-contain" />
+            </div>
+          )}
+          <div className="h-1.5 w-full rounded-(--sf-radius) bg-(--sf-color-foreground)/10">
+            <motion.div
+              className="h-full rounded-(--sf-radius) bg-(--sf-color-primary)"
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+            />
+          </div>
+        </div>
+      </header>
       <AnimatePresence mode="wait">
         <motion.div
           key={currentPage?.page.id}

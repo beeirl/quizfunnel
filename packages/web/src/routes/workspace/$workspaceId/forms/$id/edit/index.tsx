@@ -276,7 +276,12 @@ function RouteComponent() {
             <ThemePopover.Trigger render={<Button variant="ghost" size="icon" aria-label="Design" />}>
               <PaletteIcon />
             </ThemePopover.Trigger>
-            <ThemePopover.Content align="end" theme={form.theme} onThemeUpdate={handleThemeUpdate} />
+            <ThemePopover.Content
+              align="end"
+              theme={form.theme}
+              onThemeUpdate={handleThemeUpdate}
+              onImageUpload={handleImageUpload}
+            />
           </ThemePopover.Root>
           <div className="mx-1 h-4 w-px bg-border" />
           <Button
