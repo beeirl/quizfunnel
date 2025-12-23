@@ -227,6 +227,20 @@ export function PictureChoiceBlockPane({
             <Pane.GroupLabel>Validation</Pane.GroupLabel>
           </Pane.GroupHeader>
           <Field.Root>
+            <Field.Label>Mode</Field.Label>
+            <Field.Control>
+              <SegmentedControl.Root
+                value={data.properties.multiple ?? false}
+                onValueChange={(value: boolean) =>
+                  onDataUpdate({ properties: { ...data.properties, multiple: value } })
+                }
+              >
+                <SegmentedControl.Segment value={false}>Single</SegmentedControl.Segment>
+                <SegmentedControl.Segment value={true}>Multiple</SegmentedControl.Segment>
+              </SegmentedControl.Root>
+            </Field.Control>
+          </Field.Root>
+          <Field.Root>
             <Field.Label>Required</Field.Label>
             <Field.Control>
               <SegmentedControl.Root

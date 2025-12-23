@@ -56,7 +56,7 @@ export function PictureChoiceBlock(props: PictureChoiceBlockProps) {
               // Hover
               'hover:scale-[1.02] hover:border-(--sf-color-primary)/50',
               // Focus
-              'data-focused:ring-2 data-focused:ring-(--sf-color-primary) data-focused:ring-offset-2',
+              'data-focused-visible:ring-2 data-focused-visible:ring-(--sf-color-primary) data-focused-visible:ring-offset-2',
               // Selected
               'data-selected:border-2 data-selected:border-(--sf-color-primary) data-selected:hover:border-(--sf-color-primary)',
               props.static && 'pointer-events-none',
