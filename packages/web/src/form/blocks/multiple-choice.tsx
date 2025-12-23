@@ -40,8 +40,8 @@ export function MultipleChoiceBlock(props: MultipleChoiceBlockProps) {
             isDisabled={props.static}
             className={cn(
               // Base
-              choice.media ? 'h-18' : 'h-14',
-              'overlfow-hidden relative flex cursor-pointer items-center rounded-(--sf-radius) px-4 text-left text-base transition-all outline-none',
+              choice.media ? 'min-h-18' : 'min-h-14',
+              'relative flex cursor-pointer items-center overflow-hidden rounded-(--sf-radius) px-4 py-3 text-left text-base transition-all outline-none',
               'border border-(--sf-color-primary)/50 bg-(--sf-color-primary)/15 text-(--sf-color-primary)',
               // Hover
               'hover:scale-[1.01] hover:border-(--sf-color-primary)/70 hover:bg-(--sf-color-primary)/30',
@@ -70,7 +70,10 @@ export function MultipleChoiceBlock(props: MultipleChoiceBlockProps) {
                 )}
               </div>
             )}
-            <span className="flex-1 text-base font-semibold">{choice.label}</span>
+            <div className="flex flex-1 flex-col justify-center">
+              <span className="text-base font-semibold">{choice.label}</span>
+              {choice.description && <span className="text-sm text-(--sf-color-primary)/70">{choice.description}</span>}
+            </div>
           </ReactAriaListboxItem>
         ))}
       </ReactAriaListbox>
