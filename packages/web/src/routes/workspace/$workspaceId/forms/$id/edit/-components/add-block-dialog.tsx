@@ -63,6 +63,7 @@ const ADD_BLOCK_DATA = {
     type: 'heading' as const,
     properties: {
       text: 'Your heading here',
+      alignment: 'left' as const,
     },
   }),
   paragraph: () => ({
@@ -70,6 +71,7 @@ const ADD_BLOCK_DATA = {
     type: 'paragraph' as const,
     properties: {
       text: 'Your text here',
+      alignment: 'left' as const,
     },
   }),
   gauge: () => ({
@@ -162,6 +164,7 @@ const PREVIEW_BLOCK_DATA: Record<Block['type'], Block> = {
     type: 'heading',
     properties: {
       text: 'Welcome to our form',
+      alignment: 'left',
     },
   },
   paragraph: {
@@ -169,6 +172,7 @@ const PREVIEW_BLOCK_DATA: Record<Block['type'], Block> = {
     type: 'paragraph',
     properties: {
       text: 'This is a paragraph block with some descriptive text.',
+      alignment: 'left',
     },
   },
   gauge: {

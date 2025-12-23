@@ -10,7 +10,14 @@ export interface ParagraphBlockProps {
 export function ParagraphBlock(props: ParagraphBlockProps) {
   return (
     <div className={cn(props.index > 0 && 'mt-3')}>
-      <p className="text-base text-(--sf-color-foreground)">{props.data.properties.text}</p>
+      <p
+        className={cn(
+          'text-base text-(--sf-color-foreground)',
+          props.data.properties.alignment === 'center' && 'text-center',
+        )}
+      >
+        {props.data.properties.text}
+      </p>
     </div>
   )
 }

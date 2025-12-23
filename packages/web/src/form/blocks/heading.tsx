@@ -10,7 +10,14 @@ export interface HeadingBlockProps {
 export function HeadingBlock(props: HeadingBlockProps) {
   return (
     <div className={cn(props.index > 0 && 'mt-3')}>
-      <h2 className="text-2xl font-bold text-foreground">{props.data.properties.text}</h2>
+      <h2
+        className={cn(
+          'text-2xl font-bold text-foreground',
+          props.data.properties.alignment === 'center' && 'text-center',
+        )}
+      >
+        {props.data.properties.text}
+      </h2>
     </div>
   )
 }

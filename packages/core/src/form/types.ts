@@ -85,6 +85,7 @@ export interface HeadingBlock {
   type: 'heading'
   properties: {
     text: string
+    alignment: 'left' | 'center'
   }
 }
 
@@ -93,6 +94,7 @@ export interface ParagraphBlock {
   type: 'paragraph'
   properties: {
     text: string
+    alignment: 'left' | 'center'
   }
 }
 
