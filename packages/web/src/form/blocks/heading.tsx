@@ -12,7 +12,7 @@ export function HeadingBlock(props: HeadingBlockProps) {
     <div className={cn(props.index > 0 && 'mt-3')}>
       <h2
         className={cn(
-          'text-2xl font-bold text-foreground',
+          'text-2xl font-bold tracking-tight text-balance text-(--sf-color-foreground)',
           props.data.properties.alignment === 'center' && 'text-center',
         )}
       >

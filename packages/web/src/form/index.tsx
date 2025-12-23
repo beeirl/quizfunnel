@@ -208,7 +208,7 @@ export function Form({ form, mode = 'live' }: FormProps) {
         <div className="mx-auto flex w-full max-w-md flex-col gap-3.5">
           {form.theme.logo && (
             <div className="flex justify-center">
-              <img src={form.theme.logo} alt="Logo" className="h-11 w-auto object-contain" />
+              <img src={form.theme.logo} alt="Logo" className="h-9 w-auto object-contain" />
             </div>
           )}
           <div className="h-1.5 w-full rounded-(--sf-radius) bg-(--sf-color-foreground)/10">

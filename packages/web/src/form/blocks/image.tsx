@@ -14,7 +14,6 @@ export function ImageBlock(props: ImageBlockProps) {
       className={cn(
         'w-full overflow-hidden rounded-(--sf-radius)',
         !props.data.properties.url && 'flex aspect-video items-center justify-center bg-(--sf-color-primary)/10',
-        props.index > 0 && 'mt-6',
       )}
     >
       {props.data.properties.url && <img src={props.data.properties.url} alt="" className="h-auto w-full" />}

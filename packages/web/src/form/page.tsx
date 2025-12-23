@@ -46,55 +46,59 @@ export function FormPage(props: FormPageProps) {
   const isButtonDisabled = props.mode === 'edit' || (hasLoader && !loaderComplete)
 
   return (
-    <div className="px-8 py-11">
-      <BaseForm
-        className="mx-auto flex w-full max-w-md flex-1 flex-col"
-        errors={props.mode !== 'edit' ? props.errors : undefined}
-        onSubmit={(e) => {
-          e.preventDefault()
-          e.stopPropagation()
-        }}
-      >
-        <div className="flex-1">
-          {props.page.blocks.map((block, index) => (
-            <div
-              key={block.id}
-              className={
-                props.mode === 'edit'
-                  ? cn(
-                      'relative cursor-pointer',
-                      'before:absolute before:-inset-2 before:rounded-[calc(var(--sf-radius)+4px)] before:border before:border-transparent before:ring-3 before:ring-transparent before:transition-all hover:before:border-(--sf-color-primary)/50 hover:before:ring-(--sf-color-primary)/20',
-                      props.selectedBlockId === block.id &&
-                        'before:border-(--sf-color-primary)/40 before:ring-(--sf-color-primary)/25',
-                    )
-                  : undefined
-              }
-              onClick={
-                props.mode === 'edit'
-                  ? (e) => {
-                      e.stopPropagation()
-                      props.onBlockSelect(block.id)
-                    }
-                  : undefined
-              }
-            >
-              <FormBlock
-                static={props.mode === 'edit'}
-                block={block}
-                index={index}
-                value={props.mode !== 'edit' ? props.values[block.id] : undefined}
-                onValueChange={
-                  props.mode !== 'edit' ? (value) => props.onBlockValueChange?.(block.id, value) : undefined
+    <div className="flex min-h-full flex-1 flex-col">
+      <div className="flex-1 px-8 pt-11">
+        <BaseForm
+          className="mx-auto flex w-full max-w-md flex-1 flex-col"
+          errors={props.mode !== 'edit' ? props.errors : undefined}
+          onSubmit={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+          }}
+        >
+          <div className="flex-1">
+            {props.page.blocks.map((block, index) => (
+              <div
+                key={block.id}
+                className={
+                  props.mode === 'edit'
+                    ? cn(
+                        'relative cursor-pointer',
+                        'before:absolute before:-inset-2 before:rounded-[calc(var(--sf-radius)+4px)] before:border before:border-transparent before:ring-3 before:ring-transparent before:transition-all hover:before:border-(--sf-color-primary)/50 hover:before:ring-(--sf-color-primary)/20',
+                        props.selectedBlockId === block.id &&
+                          'before:border-(--sf-color-primary)/40 before:ring-(--sf-color-primary)/25',
+                      )
+                    : undefined
                 }
-                onLoaderComplete={() => setLoaderComplete(true)}
-              />
-            </div>
-          ))}
-        </div>
-        {props.page.properties.showButton && (
+                onClick={
+                  props.mode === 'edit'
+                    ? (e) => {
+                        e.stopPropagation()
+                        props.onBlockSelect(block.id)
+                      }
+                    : undefined
+                }
+              >
+                <FormBlock
+                  static={props.mode === 'edit'}
+                  block={block}
+                  index={index}
+                  value={props.mode !== 'edit' ? props.values[block.id] : undefined}
+                  onValueChange={
+                    props.mode !== 'edit' ? (value) => props.onBlockValueChange?.(block.id, value) : undefined
+                  }
+                  onLoaderComplete={() => setLoaderComplete(true)}
+                />
+              </div>
+            ))}
+          </div>
+        </BaseForm>
+      </div>
+      {props.page.properties.showButton && (
+        <div className="sticky bottom-0 px-8 pt-4 pb-5">
           <BaseButton
             className={cn(
-              'h-12 rounded-(--sf-radius) text-base font-semibold transition-all outline-none not-first:mt-6',
+              'mx-auto block h-12 w-full max-w-md rounded-(--sf-radius) text-base font-semibold transition-all outline-none',
               'bg-(--sf-color-primary) text-(--sf-color-primary-foreground) hover:bg-(--sf-color-primary)/90',
               'focus-visible:ring-2 focus-visible:ring-(--sf-color-primary) focus-visible:ring-offset-2',
               isButtonDisabled && 'pointer-events-none opacity-50',
@@ -104,8 +108,8 @@ export function FormPage(props: FormPageProps) {
           >
             {props.page.properties.buttonText}
           </BaseButton>
-        )}
-      </BaseForm>
+        </div>
+      )}
     </div>
   )
 }
