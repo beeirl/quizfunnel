@@ -334,79 +334,70 @@ export function Form({ form, mode = 'live', onComplete, onNext }: FormProps) {
 
   return (
     <div
-      className="relative bg-(--sf-color-background)"
+      className="relative flex min-h-dvh flex-col bg-background px-6"
       style={
         {
           '--primary': form.theme.colors.primary,
           '--primary-foreground': form.theme.colors.primaryForeground,
           '--muted': '#F5F5F5',
           '--muted-foreground': '#737373',
-          '--background': form.theme.colors.background,
-          '--foreground': form.theme.colors.foreground,
+          '--background': '#FFFFFF',
+          '--foreground': '#0A0A0A',
           '--border': '#E5E5E5',
           '--ring': '#A1A1A1',
           '--radius': form.theme.radius.value,
         } as React.CSSProperties
       }
     >
-      <header className="w-full px-8 pt-4">
-        <div className="mx-auto flex w-full max-w-md flex-col gap-3.5">
-          {form.theme.logo && (
-            <div className="flex justify-center">
-              <img src={form.theme.logo} alt="Logo" className="h-9 w-auto object-contain" />
-            </div>
-          )}
-          <div className="h-1.5 w-full rounded-(--sf-radius) bg-(--sf-color-foreground)/10">
-            <motion.div
-              className="h-full rounded-(--sf-radius) bg-(--sf-color-primary)"
-              initial={{ width: 0 }}
-              animate={{ width: `${((currentPageIndex + 1) / form.pages.length) * 100}%` }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-            />
+      <div className="mx-auto flex w-full max-w-sm flex-1 flex-col">
+        {form.theme.logo && (
+          <div className="flex h-auto w-full justify-center py-4">
+            <img src={form.theme.logo} alt="Logo" className="h-9 w-auto object-contain" />
           </div>
+        )}
+        <div className="h-1.5 w-full rounded-(--radius) bg-muted">
+          <motion.div
+            className="h-full rounded-(--radius) bg-primary"
+            initial={{ width: 0 }}
+            animate={{ width: `${((currentPageIndex + 1) / form.pages.length) * 100}%` }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+          />
         </div>
-      </header>
-
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={completed ? 'completed' : currentPage.id}
-          className="flex min-h-full flex-1 flex-col"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 20 }}
-          transition={{ duration: 0.3, ease: 'easeOut' }}
-        >
-          {!completed && (
-            <>
-              <div className="flex-1 px-8 pt-11">
-                <div className="mx-auto flex w-full max-w-sm flex-1 flex-col">
-                  <div className="flex-1">
-                    {resolvedBlocks.map((block, index) => (
-                      <div key={block.id}>
-                        <Block
-                          block={block}
-                          index={index}
-                          value={values[block.id]}
-                          onValueChange={(value) => handleBlockValueChange(block.id, value)}
-                          onLoadingValueChange={(value) => handleBlockLoadingValueChange(block.id, value)}
-                        />
-                        {errors[block.id] && (
-                          <span className="mt-2 block text-sm text-red-500">{errors[block.id]}</span>
-                        )}
-                      </div>
-                    ))}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={completed ? 'completed' : currentPage.id}
+            className="flex flex-1 flex-col"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+          >
+            {!completed && (
+              <>
+                <div className="pt-8">
+                  {resolvedBlocks.map((block, index) => (
+                    <div key={block.id}>
+                      <Block
+                        block={block}
+                        index={index}
+                        value={values[block.id]}
+                        onValueChange={(value) => handleBlockValueChange(block.id, value)}
+                        onLoadingValueChange={(value) => handleBlockLoadingValueChange(block.id, value)}
+                      />
+                      {errors[block.id] && <span className="mt-2 block text-sm text-red-500">{errors[block.id]}</span>}
+                    </div>
+                  ))}
+                </div>
+                {!shouldAutoAdvance(visibleBlocks) && (
+                  <div className="sticky bottom-0 mt-auto w-full pt-4 pb-5">
+                    <NextButton onClick={() => next(values)}>{currentPage.properties.buttonText}</NextButton>
                   </div>
-                </div>
-              </div>
-              {!shouldAutoAdvance(visibleBlocks) && (
-                <div className="sticky bottom-0 px-8 pt-4 pb-5">
-                  <NextButton onClick={() => next(values)}>{currentPage.properties.buttonText}</NextButton>
-                </div>
-              )}
-            </>
-          )}
-        </motion.div>
-      </AnimatePresence>
+                )}
+              </>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </div>
   )
 }

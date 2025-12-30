@@ -45,7 +45,7 @@ export function DropdownBlock(props: DropdownBlockProps) {
         </BaseSelect.Trigger>
         <BaseSelect.Portal>
           <BaseSelect.Positioner className="z-50 outline-none" sideOffset={8} alignItemWithTrigger={false}>
-            <BaseSelect.Popup className="max-h-(--available-height) min-w-(--anchor-width) origin-(--transform-origin) overflow-y-auto rounded-(--radius) bg-background p-1 shadow-md ring-2 ring-border transition-[transform,scale,opacity]">
+            <BaseSelect.Popup className="max-h-(--available-height) min-w-(--anchor-width) origin-(--transform-origin) overflow-y-auto rounded-(--radius) bg-background p-1 shadow-md ring-2 ring-border transition-[transform,scale,opacity] slide-in-from-top-2 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0">
               <BaseSelect.List>
                 {options.map((option) => (
                   <BaseSelect.Item

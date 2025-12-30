@@ -5,7 +5,7 @@ export function NextButton({ className, children, ...props }: React.ComponentPro
   return (
     <button
       className={cn(
-        'mx-auto block h-12 w-full max-w-sm rounded-(--radius) text-base font-semibold transition-all outline-none',
+        'block h-12 w-full rounded-(--radius) text-base font-semibold transition-all outline-none',
         'bg-primary text-primary-foreground hover:bg-primary/90',
         'focus-visible:ring-3 focus-visible:ring-ring/50',
         className,
