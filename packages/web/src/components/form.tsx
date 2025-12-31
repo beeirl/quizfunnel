@@ -6,11 +6,12 @@ import type {
   Condition,
   Info as FormType,
   Rule,
+  Theme as ThemeType,
   Variables,
 } from '@shopfunnel/core/form/types'
 import { useDebouncedCallback } from '@tanstack/react-pacer'
 import { AnimatePresence, motion } from 'motion/react'
-import * as React from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 type Values = Record<string, unknown>
 
@@ -221,6 +222,20 @@ export function shouldAutoAdvance(blocks: BlockType[]): boolean {
   return blocks.some(advancesAutomatically)
 }
 
+export function getThemeCssVars(theme: ThemeType) {
+  return {
+    '--radius': theme.radius.value,
+    '--primary': theme.colors.primary,
+    '--primary-foreground': theme.colors.primaryForeground,
+    '--muted': '#F5F5F5',
+    '--muted-foreground': '#737373',
+    '--background': '#FFFFFF',
+    '--foreground': '#0A0A0A',
+    '--border': '#E5E5E5',
+    '--ring': '#A1A1A1',
+  } as React.CSSProperties
+}
+
 export interface FormProps {
   form: FormType
   mode?: 'preview' | 'live'
@@ -231,24 +246,24 @@ export interface FormProps {
 export function Form({ form, mode = 'live', onComplete, onNext }: FormProps) {
   const STORAGE_KEY = `form-${form.id}-values`
 
-  const [currentPageIndex, setCurrentPageIndex] = React.useState(0)
+  const [currentPageIndex, setCurrentPageIndex] = useState(0)
 
-  const [values, setValues] = React.useState<Record<string, unknown>>({})
-  const [loadingValues, setLoadingValues] = React.useState<Record<string, boolean>>({})
+  const [values, setValues] = useState<Record<string, unknown>>({})
+  const [loadingValues, setLoadingValues] = useState<Record<string, boolean>>({})
 
-  const [variables, setVariables] = React.useState<Variables>(form.variables ?? {})
-  const [errors, setErrors] = React.useState<Record<string, string>>({})
-  const [hiddenBlockIds, setHiddenBlockIds] = React.useState<Set<string>>(new Set())
+  const [variables, setVariables] = useState<Variables>(form.variables ?? {})
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [hiddenBlockIds, setHiddenBlockIds] = useState<Set<string>>(new Set())
 
-  const [completed, setCompleted] = React.useState(false)
+  const [completed, setCompleted] = useState(false)
 
   const currentPage = form.pages[currentPageIndex]
 
-  const visibleBlocks = React.useMemo(
+  const visibleBlocks = useMemo(
     () => currentPage?.blocks.filter((block) => !hiddenBlockIds.has(block.id)) ?? [],
     [currentPage?.blocks, hiddenBlockIds],
   )
-  const resolvedBlocks = React.useMemo(
+  const resolvedBlocks = useMemo(
     () => resolveBlocks(visibleBlocks, values, variables),
     [visibleBlocks, values, variables],
   )
@@ -261,7 +276,7 @@ export function Form({ form, mode = 'live', onComplete, onNext }: FormProps) {
     { wait: 300 },
   )
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (mode === 'preview') return
 
     const storedValues = localStorage.getItem(STORAGE_KEY)
@@ -333,22 +348,7 @@ export function Form({ form, mode = 'live', onComplete, onNext }: FormProps) {
   if (!currentPage) return null
 
   return (
-    <div
-      className="relative flex min-h-dvh flex-col bg-background px-6"
-      style={
-        {
-          '--primary': form.theme.colors.primary,
-          '--primary-foreground': form.theme.colors.primaryForeground,
-          '--muted': '#F5F5F5',
-          '--muted-foreground': '#737373',
-          '--background': '#FFFFFF',
-          '--foreground': '#0A0A0A',
-          '--border': '#E5E5E5',
-          '--ring': '#A1A1A1',
-          '--radius': form.theme.radius.value,
-        } as React.CSSProperties
-      }
-    >
+    <div className="relative flex min-h-dvh flex-col bg-background px-6" style={getThemeCssVars(form.theme)}>
       <div className="mx-auto flex w-full max-w-sm flex-1 flex-col">
         {form.theme.logo && (
           <div className="flex h-auto w-full justify-center py-4">
