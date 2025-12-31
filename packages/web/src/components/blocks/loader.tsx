@@ -88,14 +88,14 @@ export function LoaderBlock(props: LoaderBlockProps) {
 
   return (
     <div className={cn('flex w-full flex-col items-center py-6', props.index > 0 && 'mt-6')}>
-      <div className="mb-6 text-5xl font-bold text-(--sf-color-foreground)">{progress}%</div>
+      <div className="mb-6 text-5xl font-bold text-foreground">{progress}%</div>
       <div className="h-2.5 w-full overflow-hidden rounded-[calc(var(--sf-radius)-5px)] bg-muted">
         <div
-          className="h-full rounded-[calc(var(--sf-radius)-5px)] bg-(--sf-color-primary) transition-[width] duration-75 ease-out"
+          className="h-full rounded-[calc(var(--sf-radius)-5px)] bg-primary transition-[width] duration-75 ease-out"
           style={{ width: `${progress}%` }}
         />
       </div>
-      {description && <p className="mt-4 text-center text-sm text-(--sf-color-foreground)/60">{description}</p>}
+      {description && <p className="mt-4 text-center text-sm text-muted-foreground">{description}</p>}
     </div>
   )
 }

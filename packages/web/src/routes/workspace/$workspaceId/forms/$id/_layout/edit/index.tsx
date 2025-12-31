@@ -1,48 +1,21 @@
-import { Button } from '@/components/ui/button'
 import { Resizable } from '@/components/ui/resizable'
 import { withActor } from '@/context/auth.withActor'
-import { Preview } from '@/routes/workspace/$workspaceId/forms/$id/edit/-components/preview'
 import { Form } from '@shopfunnel/core/form/index'
 import type { Block, Info, Page, Theme } from '@shopfunnel/core/form/types'
 import { Identifier } from '@shopfunnel/core/identifier'
-import {
-  IconExternalLink as ExternalLinkIcon,
-  IconEye as EyeIcon,
-  IconPalette as PaletteIcon,
-} from '@tabler/icons-react'
 import { useDebouncer } from '@tanstack/react-pacer'
-import { mutationOptions, queryOptions, useMutation, useSuspenseQuery } from '@tanstack/react-query'
-import { createFileRoute, Link, notFound } from '@tanstack/react-router'
+import { mutationOptions, useMutation, useSuspenseQuery } from '@tanstack/react-query'
+import { createFileRoute } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import * as React from 'react'
 import { z } from 'zod'
+import { getFormQueryOptions } from '../../-common'
 import { BlockPane } from './-components/block-pane'
 import { BlocksPane } from './-components/blocks-pane'
 import { PagePane } from './-components/page-pane'
 import { PagesPane } from './-components/pages-pane'
 import { Panel } from './-components/panel'
-import { ThemePopover } from './-components/theme-popover'
-
-const getForm = createServerFn()
-  .inputValidator(
-    z.object({
-      workspaceId: Identifier.schema('workspace'),
-      formId: Identifier.schema('form'),
-    }),
-  )
-  .handler(({ data }) => {
-    return withActor(async () => {
-      const form = await Form.getCurrentVersion(data.formId)
-      if (!form) throw notFound()
-      return form
-    }, data.workspaceId)
-  })
-
-const getFormQueryOptions = (workspaceId: string, formId: string) =>
-  queryOptions({
-    queryKey: ['form', workspaceId, formId],
-    queryFn: () => getForm({ data: { workspaceId, formId } }),
-  })
+import { Preview } from './-components/preview'
 
 const updateForm = createServerFn({ method: 'POST' })
   .inputValidator(
@@ -68,22 +41,6 @@ const updateForm = createServerFn({ method: 'POST' })
 const updateFormMutationOptions = (workspaceId: string, formId: string) =>
   mutationOptions({
     mutationFn: (data: { pages?: Page[]; theme?: Theme }) => updateForm({ data: { workspaceId, formId, ...data } }),
-  })
-
-const publishForm = createServerFn({ method: 'POST' })
-  .inputValidator(
-    z.object({
-      workspaceId: Identifier.schema('workspace'),
-      formId: Identifier.schema('form'),
-    }),
-  )
-  .handler(({ data }) => {
-    return withActor(() => Form.publish(data.formId), data.workspaceId)
-  })
-
-const publishFormMutationOptions = (workspaceId: string, formId: string) =>
-  mutationOptions({
-    mutationFn: () => publishForm({ data: { workspaceId, formId } }),
   })
 
 const uploadFormFile = createServerFn({ method: 'POST' })
@@ -117,12 +74,9 @@ const uploadFormFile = createServerFn({ method: 'POST' })
     }, data.workspaceId)
   })
 
-export const Route = createFileRoute('/workspace/$workspaceId/forms/$id/edit/')({
+export const Route = createFileRoute('/workspace/$workspaceId/forms/$id/_layout/edit/')({
   component: RouteComponent,
   ssr: false,
-  loader: async ({ context, params }) => {
-    await context.queryClient.ensureQueryData(getFormQueryOptions(params.workspaceId, params.id))
-  },
 })
 
 function RouteComponent() {
@@ -130,7 +84,6 @@ function RouteComponent() {
 
   const formQuery = useSuspenseQuery(getFormQueryOptions(params.workspaceId, params.id))
   const updateFormMutation = useMutation(updateFormMutationOptions(params.workspaceId, params.id))
-  const publishFormMutation = useMutation(publishFormMutationOptions(params.workspaceId, params.id))
 
   const saveDebouncer = useDebouncer(
     (data: { pages: Page[]; theme?: Theme }) => {
@@ -140,6 +93,11 @@ function RouteComponent() {
   )
 
   const [form, setForm] = React.useState<Info>(formQuery.data)
+
+  // Sync local state when query data changes (e.g., after publish)
+  React.useEffect(() => {
+    setForm(formQuery.data)
+  }, [formQuery.data])
 
   const [selectedPageId, setSelectedPageId] = React.useState<string | null>(form.pages[0]?.id ?? null)
   const selectedPages = form.pages.find((page) => page.id === selectedPageId) ?? null
@@ -264,113 +222,61 @@ function RouteComponent() {
   }
 
   return (
-    <div className="flex h-screen w-screen flex-col">
-      <div className="flex h-12 w-full shrink-0 items-center border-b px-4">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span className="truncate text-sm font-medium">{form.title}</span>
-          </div>
-        </div>
-        <div className="ml-auto flex items-center justify-end gap-1">
-          <ThemePopover.Root>
-            <ThemePopover.Trigger render={<Button variant="ghost" size="icon" aria-label="Design" />}>
-              <PaletteIcon />
-            </ThemePopover.Trigger>
-            <ThemePopover.Content
-              align="end"
-              theme={form.theme}
-              onThemeUpdate={handleThemeUpdate}
-              onImageUpload={handleImageUpload}
+    <div className="flex flex-1 overflow-hidden">
+      <Panel className="w-[250px]">
+        <Resizable.PanelGroup direction="vertical">
+          <Resizable.Panel defaultSize={selectedPageId ? 40 : 100} minSize={20}>
+            <PagesPane
+              pages={form.pages}
+              selectedPageId={selectedPageId}
+              onPageSelect={handlePageSelect}
+              onPagesReorder={handlePagesReorder}
+              onPageAdd={handlePageAdd}
+              onPageDelete={handlePageDelete}
             />
-          </ThemePopover.Root>
-          <div className="mx-1 h-4 w-px bg-border" />
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Preview"
-            render={<Link to="/workspace/$workspaceId/forms/$id/preview" params={params} target="_blank" />}
-          >
-            <EyeIcon />
-          </Button>
-          <div className="mx-1 h-4 w-px bg-border" />
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Open form"
-            render={<a href={`/f/${form.shortId}`} target="_blank" rel="noopener noreferrer" />}
-          >
-            <ExternalLinkIcon />
-          </Button>
-          <div className="mx-1 h-4 w-px bg-border" />
-          <Button
-            disabled={form.published || publishFormMutation.isPending}
-            variant={form.published ? 'ghost' : 'default'}
-            onClick={() => {
-              publishFormMutation.mutate(undefined, {
-                onSuccess: () => {
-                  setForm((prev) => ({ ...prev, published: true, publishedAt: new Date() }))
-                },
-              })
-            }}
-          >
-            Publish
-          </Button>
-        </div>
-      </div>
-      <div className="flex flex-1 overflow-hidden">
-        <Panel className="w-[250px]">
-          <Resizable.PanelGroup direction="vertical">
-            <Resizable.Panel defaultSize={selectedPageId ? 40 : 100} minSize={20}>
-              <PagesPane
-                pages={form.pages}
-                selectedPageId={selectedPageId}
-                onPageSelect={handlePageSelect}
-                onPagesReorder={handlePagesReorder}
-                onPageAdd={handlePageAdd}
-                onPageDelete={handlePageDelete}
-              />
-            </Resizable.Panel>
-            {selectedPageId && (
-              <React.Fragment>
-                <Resizable.Handle />
-                <Resizable.Panel defaultSize={60} minSize={20}>
-                  <BlocksPane
-                    blocks={selectedPages?.blocks ?? []}
-                    selectedBlockId={selectedBlockId}
-                    onBlockSelect={handleBlockSelect}
-                    onBlocksReorder={handleBlocksReorder}
-                    onBlockAdd={handleBlockAdd}
-                    onBlockDelete={handleBlockDelete}
-                  />
-                </Resizable.Panel>
-              </React.Fragment>
-            )}
-          </Resizable.PanelGroup>
+          </Resizable.Panel>
+          {selectedPageId && (
+            <React.Fragment>
+              <Resizable.Handle />
+              <Resizable.Panel defaultSize={60} minSize={20}>
+                <BlocksPane
+                  blocks={selectedPages?.blocks ?? []}
+                  selectedBlockId={selectedBlockId}
+                  onBlockSelect={handleBlockSelect}
+                  onBlocksReorder={handleBlocksReorder}
+                  onBlockAdd={handleBlockAdd}
+                  onBlockDelete={handleBlockDelete}
+                />
+              </Resizable.Panel>
+            </React.Fragment>
+          )}
+        </Resizable.PanelGroup>
+      </Panel>
+      <Preview
+        page={selectedPages}
+        theme={form.theme}
+        selectedBlockId={selectedBlockId}
+        onBlockSelect={handleBlockSelect}
+        onThemeUpdate={handleThemeUpdate}
+        onImageUpload={handleImageUpload}
+      />
+      {selectedBlocks ? (
+        <Panel className="w-[350px]">
+          <BlockPane
+            data={selectedBlocks}
+            onDataUpdate={(data) => handleBlockUpdate(selectedBlocks.id, data)}
+            onImageUpload={handleImageUpload}
+          />
         </Panel>
-        <Preview
-          page={selectedPages}
-          theme={form.theme}
-          selectedBlockId={selectedBlockId}
-          onBlockSelect={handleBlockSelect}
-        />
-        {selectedBlocks ? (
-          <Panel className="w-[350px]">
-            <BlockPane
-              data={selectedBlocks}
-              onDataUpdate={(data) => handleBlockUpdate(selectedBlocks.id, data)}
-              onImageUpload={handleImageUpload}
-            />
-          </Panel>
-        ) : selectedPages ? (
-          <Panel className="w-[350px]">
-            <PagePane
-              page={selectedPages}
-              index={form.pages.findIndex((p) => p.id === selectedPageId)}
-              onPageUpdate={(page) => handlePageUpdate(selectedPages.id, page)}
-            />
-          </Panel>
-        ) : null}
-      </div>
+      ) : selectedPages ? (
+        <Panel className="w-[350px]">
+          <PagePane
+            page={selectedPages}
+            index={form.pages.findIndex((p) => p.id === selectedPageId)}
+            onPageUpdate={(page) => handlePageUpdate(selectedPages.id, page)}
+          />
+        </Panel>
+      ) : null}
     </div>
   )
 }
