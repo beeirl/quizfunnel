@@ -4,13 +4,14 @@ import { z } from 'zod'
 export namespace Identifier {
   const prefixes = {
     account: 'acc',
+    answer: 'asw',
     auth: 'aut',
     billing: 'bil',
-    field: 'fld',
     file: 'fil',
+    question: 'qst',
     quiz: 'qiz',
+    submission: 'sbm',
     theme: 'thm',
-    submission: 'sub',
     usage: 'usg',
     user: 'usr',
     workspace: 'wrk',

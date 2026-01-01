@@ -286,6 +286,7 @@ export interface Theme {
 
 export interface Info {
   id: string
+  workspaceId: string
   shortId: string
   title: string
   steps: Step[]

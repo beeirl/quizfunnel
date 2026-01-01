@@ -1,7 +1,9 @@
 import { sql } from 'drizzle-orm'
-import { primaryKey, timestamp, varchar } from 'drizzle-orm/mysql-core'
+import { char, primaryKey, timestamp, varchar } from 'drizzle-orm/mysql-core'
 
-export const id = (name: string) => varchar(name, { length: 30 })
+export const id = (name: string) => char(name, { length: 30 })
+
+export const ulid = (name: string) => varchar(name, { length: 26 })
 
 export const workspaceColumns = {
   get id() {

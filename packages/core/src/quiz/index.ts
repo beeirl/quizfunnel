@@ -5,6 +5,7 @@ import { Actor } from '../actor'
 import { Database } from '../database'
 import { File } from '../file'
 import { Identifier } from '../identifier'
+import { Question } from '../question'
 import { fn } from '../utils/fn'
 import { QuizFileTable, QuizTable, QuizVersionTable } from './index.sql'
 import { Info, RADII, Rule, Step, Variables, type Theme } from './types'
@@ -87,7 +88,7 @@ export namespace Quiz {
         workspaceId: Actor.workspace(),
         quizId: id,
         version: currentVersion,
-        pages: [],
+        steps: [],
         rules: [],
         variables: {},
         theme: DEFAULT_THEME,
@@ -168,7 +169,7 @@ export namespace Quiz {
             workspaceId: Actor.workspace(),
             quizId: input.id,
             version: newVersion,
-            pages: input.steps ?? currentVersion.pages,
+            steps: input.steps ?? currentVersion.steps,
             rules: input.rules ?? currentVersion.rules,
             variables: input.variables ?? currentVersion.variables,
             theme: input.theme ?? currentVersion.theme,
@@ -185,7 +186,7 @@ export namespace Quiz {
           await tx
             .update(QuizVersionTable)
             .set({
-              pages: input.steps,
+              steps: input.steps,
               rules: input.rules,
               variables: input.variables,
               theme: input.theme,
@@ -227,6 +228,8 @@ export namespace Quiz {
         })
         .where(and(eq(QuizTable.workspaceId, Actor.workspace()), eq(QuizTable.id, id)))
     })
+
+    await Question.sync({ quizId: id })
   })
 
   function serialize(rows: typeof QuizTable.$inferSelect) {
@@ -253,9 +256,10 @@ export namespace Quiz {
       map(
         (group): Info => ({
           id: group[0].quiz.id,
+          workspaceId: group[0].quiz.workspaceId,
           shortId: group[0].quiz.shortId,
           title: group[0].quiz.title,
-          steps: group[0].quiz_version.pages,
+          steps: group[0].quiz_version.steps,
           rules: group[0].quiz_version.rules,
           variables: group[0].quiz_version.variables,
           theme: group[0].quiz_version.theme,

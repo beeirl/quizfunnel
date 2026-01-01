@@ -23,7 +23,7 @@ export const QuizVersionTable = mysqlTable(
     workspaceId: id('workspace_id').notNull(),
     quizId: id('quiz_id').notNull(),
     version: int('version').notNull(),
-    pages: json('pages').$type<Step[]>().notNull(),
+    steps: json('steps').$type<Step[]>().notNull(),
     rules: json('rules').$type<Rule[]>().notNull(),
     variables: json('variables').$type<Variables>().notNull(),
     theme: json('theme').$type<Theme>().notNull(),

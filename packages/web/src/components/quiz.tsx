@@ -13,7 +13,7 @@ import { useDebouncedCallback } from '@tanstack/react-pacer'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
 
-type Values = Record<string, unknown>
+export type Values = Record<string, unknown>
 
 function evaluateCondition(condition: Condition, values: Values, variables: Variables) {
   function compare(op: string, left: unknown, right: unknown) {
@@ -332,6 +332,18 @@ export function Quiz({ quiz, mode = 'live', onComplete, onNext }: QuizProps) {
       }
     }
 
+    const currentValues = (() => {
+      const currentBlockIds = currentStep.blocks.map((b) => b.id)
+      return currentBlockIds.reduce<Values>((currentValues, blockId) => {
+        if (values[blockId] !== undefined) {
+          currentValues[blockId] = values[blockId]
+        }
+        return currentValues
+      }, {})
+    })()
+
+    onNext?.(currentValues)
+
     if (nextStepIndex >= quiz.steps.length) {
       setCompleted(true)
       onComplete?.(values)
@@ -341,8 +353,6 @@ export function Quiz({ quiz, mode = 'live', onComplete, onNext }: QuizProps) {
     setCurrentStepIndex(nextStepIndex)
     setHiddenBlockIds(nextHiddenBlockIds)
     setVariables(nextVariables)
-
-    onNext?.(values)
   }
 
   if (!currentStep) return null
