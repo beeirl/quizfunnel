@@ -19,6 +19,7 @@ export namespace Analytics {
   export const QuizEvent = z.discriminatedUnion('type', [
     BaseEvent.extend({ type: z.literal('quiz_view') }),
     BaseEvent.extend({ type: z.literal('quiz_start') }),
+    BaseEvent.extend({ type: z.literal('quiz_complete') }),
     StepEvent.extend({ type: z.literal('step_view') }),
     StepEvent.extend({ type: z.literal('step_complete'), duration: z.number() }),
     StepEvent.extend({

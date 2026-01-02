@@ -34,7 +34,7 @@
   },
   "scripts": {
     "dev": "sst dev",
-    "sso": "aws sso login --sso-session=5head"
+    "tb:beeirl": "cd tinybird && tb --branch beeirl deploy --wait"
   },
   "devDependencies": {
     "@tsconfig/bun": "1.0.10",

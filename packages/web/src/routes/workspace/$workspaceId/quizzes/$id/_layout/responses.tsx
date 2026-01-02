@@ -30,6 +30,10 @@ const listSubmissionsQueryOptions = (workspaceId: string, quizId: string) =>
 
 export const Route = createFileRoute('/workspace/$workspaceId/quizzes/$id/_layout/responses')({
   component: RouteComponent,
+  ssr: false,
+  loader: async ({ context, params }) => {
+    await context.queryClient.ensureQueryData(listSubmissionsQueryOptions(params.workspaceId, params.id))
+  },
 })
 
 type RowData = {

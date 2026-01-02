@@ -37,8 +37,8 @@ const getInsights = createServerFn()
       }),
     ])
 
-    const funnelJson = await funnelRes.json()
-    const metricsJson = await metricsRes.json()
+    const funnelJson = (await funnelRes.json()) as any
+    const metricsJson = (await metricsRes.json()) as any
 
     const funnel: FunnelData[] = funnelJson.data ?? []
     const metrics: MetricsData = metricsJson.data?.[0] ?? {
@@ -58,6 +58,7 @@ const getInsightsQueryOptions = (quizId: string) =>
 
 export const Route = createFileRoute('/workspace/$workspaceId/quizzes/$id/_layout/insights')({
   component: RouteComponent,
+  ssr: false,
   loader: async ({ context, params }) => {
     await context.queryClient.ensureQueryData(getInsightsQueryOptions(params.id))
   },

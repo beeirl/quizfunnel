@@ -213,7 +213,21 @@ function RouteComponent() {
   }
 
   const handleComplete = async () => {
-    if (sessionId) {
+    if (sessionId && visitorId) {
+      await trackEvents({
+        data: [
+          {
+            type: 'quiz_complete',
+            quiz_id: quiz.id,
+            quiz_version: quiz.version,
+            workspace_id: quiz.workspaceId,
+            session_id: sessionId,
+            visitor_id: visitorId,
+            timestamp: new Date().toISOString(),
+          },
+        ],
+      })
+
       await completeSubmission({
         data: { sessionId },
       })

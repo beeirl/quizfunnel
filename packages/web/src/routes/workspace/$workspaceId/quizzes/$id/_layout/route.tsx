@@ -26,6 +26,7 @@ const publishQuizMutationOptions = (workspaceId: string, quizId: string) =>
 
 export const Route = createFileRoute('/workspace/$workspaceId/quizzes/$id/_layout')({
   component: RouteComponent,
+  ssr: false,
   loader: async ({ context, params }) => {
     await context.queryClient.ensureQueryData(getQuizQueryOptions(params.workspaceId, params.id))
   },

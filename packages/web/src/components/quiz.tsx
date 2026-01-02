@@ -9,7 +9,6 @@ import type {
   Theme as ThemeType,
   Variables,
 } from '@shopfunnel/core/quiz/types'
-import { useDebouncedCallback } from '@tanstack/react-pacer'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -256,8 +255,6 @@ export function Quiz({ quiz, mode = 'live', onComplete, onStepChange, onStepComp
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [hiddenBlockIds, setHiddenBlockIds] = useState<Set<string>>(new Set())
 
-  const [completed, setCompleted] = useState(false)
-
   const currentStep = quiz.steps[currentStepIndex]
 
   const visibleBlocks = useMemo(
@@ -267,15 +264,6 @@ export function Quiz({ quiz, mode = 'live', onComplete, onStepChange, onStepComp
   const resolvedBlocks = useMemo(
     () => resolveBlocks(visibleBlocks, values, variables),
     [visibleBlocks, values, variables],
-  )
-
-  const persistValues = useDebouncedCallback(
-    (values: Values) => {
-      if (mode === 'preview') return
-      if (completed) return
-      localStorage.setItem(VALUES_STORAGE_KEY, JSON.stringify(values))
-    },
-    { wait: 300 },
   )
 
   useEffect(() => {
@@ -301,7 +289,7 @@ export function Quiz({ quiz, mode = 'live', onComplete, onStepChange, onStepComp
   const handleBlockValueChange = (blockId: string, value: unknown) => {
     const newValues = { ...values, [blockId]: value }
     setValues(newValues)
-    persistValues(newValues)
+    localStorage.setItem(VALUES_STORAGE_KEY, JSON.stringify(values))
     if (shouldAutoAdvance(visibleBlocks)) {
       next(newValues)
     }
@@ -340,6 +328,10 @@ export function Quiz({ quiz, mode = 'live', onComplete, onStepChange, onStepComp
       }
     }
 
+    setCurrentStepIndex(nextStepIndex)
+    setHiddenBlockIds(nextHiddenBlockIds)
+    setVariables(nextVariables)
+
     const currentStepValues = (() => {
       const currentBlockIds = currentStep.blocks.map((b) => b.id)
       return currentBlockIds.reduce<Values>((currentStepValues, blockId) => {
@@ -358,47 +350,39 @@ export function Quiz({ quiz, mode = 'live', onComplete, onStepChange, onStepComp
     })
 
     if (nextStepIndex >= quiz.steps.length) {
-      setValues({})
-      setLoadingValues({})
       localStorage.removeItem(VALUES_STORAGE_KEY)
-      setCompleted(true)
       onComplete?.(values)
-      return
     }
-
-    setCurrentStepIndex(nextStepIndex)
-    setHiddenBlockIds(nextHiddenBlockIds)
-    setVariables(nextVariables)
   }
-
-  if (!currentStep) return null
 
   return (
     <div className="relative flex min-h-dvh flex-col bg-background px-6" style={getThemeCssVars(quiz.theme)}>
       <div className="mx-auto flex w-full max-w-sm flex-1 flex-col">
-        {quiz.theme.logo && (
-          <div className="flex h-auto w-full justify-center py-4">
+        <div className="flex h-16 w-full items-center justify-center">
+          {quiz.theme.logo ? (
             <img src={quiz.theme.logo} alt="Logo" className="h-9 w-auto object-contain" />
-          </div>
-        )}
+          ) : (
+            <span className="text-xl font-bold text-foreground">{quiz.title}</span>
+          )}
+        </div>
         <div className="h-1.5 w-full rounded-(--radius) bg-muted">
           <motion.div
             className="h-full rounded-(--radius) bg-primary"
             initial={{ width: 0 }}
-            animate={{ width: `${((currentStepIndex + 1) / quiz.steps.length) * 100}%` }}
+            animate={{ width: `${(currentStepIndex / quiz.steps.length) * 100}%` }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
           />
         </div>
         <AnimatePresence mode="wait">
           <motion.div
-            key={completed ? 'completed' : currentStep.id}
+            key={`quiz-step-${currentStepIndex}`}
             className="flex flex-1 flex-col"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
           >
-            {!completed && (
+            {currentStep && (
               <>
                 <div className="pt-8">
                   {resolvedBlocks.map((block, index) => (
