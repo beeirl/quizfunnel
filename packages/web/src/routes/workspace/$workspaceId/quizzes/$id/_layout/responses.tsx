@@ -1,38 +1,49 @@
+import { Button } from '@/components/ui/button'
 import { withActor } from '@/context/auth.withActor'
+import { cn } from '@/lib/utils'
 import { Identifier } from '@shopfunnel/core/identifier'
 import { Submission } from '@shopfunnel/core/submission/index'
-import { queryOptions, useSuspenseQuery } from '@tanstack/react-query'
+import { IconArrowLeft as ArrowLeftIcon, IconArrowRight as ArrowRightIcon } from '@tabler/icons-react'
+import { keepPreviousData, queryOptions, useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
+import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table'
 import * as React from 'react'
-import { Column, useTable } from 'react-table'
 import { z } from 'zod'
-
-import { Table } from '@/components/ui/table'
-import { cn } from '@/lib/utils'
 
 const listSubmissions = createServerFn()
   .inputValidator(
     z.object({
       workspaceId: Identifier.schema('workspace'),
       quizId: Identifier.schema('quiz'),
+      page: z.number().int().positive().default(1),
     }),
   )
   .handler(({ data }) => {
-    return withActor(() => Submission.list(data.quizId), data.workspaceId)
+    return withActor(() => Submission.list({ quizId: data.quizId, page: data.page, limit: 50 }), data.workspaceId)
   })
 
-const listSubmissionsQueryOptions = (workspaceId: string, quizId: string) =>
+const listSubmissionsQueryOptions = (workspaceId: string, quizId: string, page: number = 1) =>
   queryOptions({
-    queryKey: ['submissions', workspaceId, quizId],
-    queryFn: () => listSubmissions({ data: { workspaceId, quizId } }),
+    queryKey: ['submissions', workspaceId, quizId, page],
+    queryFn: () => listSubmissions({ data: { workspaceId, quizId, page } }),
+    placeholderData: keepPreviousData,
   })
 
 export const Route = createFileRoute('/workspace/$workspaceId/quizzes/$id/_layout/responses')({
+  validateSearch: (search) =>
+    z
+      .object({
+        page: z.coerce.number().int().positive().optional(),
+      })
+      .parse(search),
+  loaderDeps: ({ search }) => ({ page: search.page }),
   component: RouteComponent,
   ssr: false,
-  loader: async ({ context, params }) => {
-    await context.queryClient.ensureQueryData(listSubmissionsQueryOptions(params.workspaceId, params.id))
+  loader: async ({ context, params, deps }) => {
+    await context.queryClient.ensureQueryData(
+      listSubmissionsQueryOptions(params.workspaceId, params.id, deps.page ?? 1),
+    )
   },
 })
 
@@ -51,19 +62,36 @@ function formatDate(date: Date): string {
   }).format(date)
 }
 
+const columnHelper = createColumnHelper<RowData>()
+
 function RouteComponent() {
   const params = Route.useParams()
-  const { data } = useSuspenseQuery(listSubmissionsQueryOptions(params.workspaceId, params.id))
+  const search = Route.useSearch()
+  const navigate = Route.useNavigate()
 
-  const columns: Column<RowData>[] = React.useMemo(() => {
-    const questionColumns: Column<RowData>[] = data.questions
+  const currentPage = search.page ?? 1
+
+  const { data, isFetching } = useSuspenseQuery(listSubmissionsQueryOptions(params.workspaceId, params.id, currentPage))
+
+  const goToPage = (newPage: number) => {
+    navigate({ search: { page: newPage } })
+  }
+
+  const columns = React.useMemo(() => {
+    const questionColumns = data.questions
       .sort((a, b) => a.index - b.index)
-      .map((q) => ({
-        Header: q.title,
-        accessor: q.id,
-      }))
+      .map((q) =>
+        columnHelper.accessor(q.id, {
+          header: q.title,
+        }),
+      )
 
-    return [{ Header: 'Submitted At', accessor: 'submittedAt' }, ...questionColumns]
+    return [
+      columnHelper.accessor('submittedAt', {
+        header: 'Submitted At',
+      }),
+      ...questionColumns,
+    ]
   }, [data.questions])
 
   const tableData: RowData[] = React.useMemo(() => {
@@ -79,80 +107,114 @@ function RouteComponent() {
     })
   }, [data.submissions, data.questions])
 
-  const { getTableProps, getTableBodyProps, headerGroups, rows, prepareRow } = useTable({
-    columns,
+  const table = useReactTable({
     data: tableData,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
   })
 
+  const pages = () => {
+    const { totalPages } = data
+    const start = Math.max(1, currentPage - 5)
+    const end = Math.min(totalPages, currentPage + 5)
+    const pages: number[] = []
+    for (let i = start; i <= end; i++) {
+      pages.push(i)
+    }
+    return pages
+  }
+
   return (
-    <div className="flex flex-1 overflow-auto p-6">
-      <div className="w-full space-y-6">
-        <div className="text-2xl font-bold">Responses</div>
-        <div className="overflow-x-auto rounded-lg border">
-          <Table.Root {...getTableProps()} className="min-w-max">
-            <Table.Header>
-              {headerGroups.map((headerGroup) => {
-                const { key: headerGroupKey, ...headerGroupProps } = headerGroup.getHeaderGroupProps()
-                return (
-                  <Table.Row key={headerGroupKey} className="bg-muted" {...headerGroupProps}>
-                    {headerGroup.headers.map((column, index) => {
-                      const { key: columnKey, ...columnProps } = column.getHeaderProps()
-                      const isFirstColumn = index === 0
-                      const isLastColumn = index === headerGroup.headers.length - 1
-                      return (
-                        <Table.Head
-                          key={columnKey}
-                          className={cn('min-w-56 p-0', isFirstColumn && 'sticky left-0 bg-muted')}
-                          {...columnProps}
-                        >
-                          <div
-                            className={cn(
-                              'flex h-full items-center px-2 py-2',
-                              !isLastColumn && 'border-r border-border',
-                            )}
-                            style={isFirstColumn ? { boxShadow: 'rgba(89, 86, 93, 0.04) 2px 0px 0px' } : undefined}
-                          >
-                            {column.render('Header')}
-                          </div>
-                        </Table.Head>
-                      )
-                    })}
-                  </Table.Row>
-                )
-              })}
-            </Table.Header>
-            <Table.Body {...getTableBodyProps()}>
-              {rows.map((row) => {
-                prepareRow(row)
-                const { key: rowKey, ...rowProps } = row.getRowProps()
-                return (
-                  <Table.Row key={rowKey} {...rowProps}>
-                    {row.cells.map((cell, index) => {
-                      const { key: cellKey, ...cellProps } = cell.getCellProps()
-                      const isFirstColumn = index === 0
-                      const isLastColumn = index === row.cells.length - 1
-                      return (
-                        <Table.Cell
-                          key={cellKey}
-                          className={cn('min-w-56 p-0', isFirstColumn && 'sticky left-0 bg-background')}
-                          {...cellProps}
-                        >
-                          <div
-                            className={cn('flex items-center p-2', !isLastColumn && 'border-r border-border')}
-                            style={isFirstColumn ? { boxShadow: 'rgba(89, 86, 93, 0.04) 2px 0px 0px' } : undefined}
-                          >
-                            {cell.render('Cell')}
-                          </div>
-                        </Table.Cell>
-                      )
-                    })}
-                  </Table.Row>
-                )
-              })}
-            </Table.Body>
-          </Table.Root>
-        </div>
+    <div className="flex flex-1 flex-col overflow-hidden px-6 pt-6 pb-1.5">
+      <div className="mb-6 text-2xl font-bold">Responses</div>
+      <div className="max-h-full overflow-auto rounded-lg border">
+        <table className="w-full min-w-max caption-bottom text-sm">
+          <thead className="sticky top-0 z-10 [&_tr]:border-b">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id} className="bg-muted transition-colors">
+                {headerGroup.headers.map((header, index) => {
+                  const isFirstColumn = index === 0
+                  const isLastColumn = index === headerGroup.headers.length - 1
+                  return (
+                    <th
+                      key={header.id}
+                      className={cn(
+                        'h-10 min-w-56 p-0 text-left align-middle font-medium whitespace-nowrap text-foreground',
+                        isFirstColumn && 'sticky left-0 z-20 bg-muted',
+                      )}
+                    >
+                      <div
+                        className={cn('flex h-full items-center px-2 py-2', !isLastColumn && 'border-r border-border')}
+                        style={isFirstColumn ? { boxShadow: 'rgba(89, 86, 93, 0.04) 2px 0px 0px' } : undefined}
+                      >
+                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                      </div>
+                    </th>
+                  )
+                })}
+              </tr>
+            ))}
+          </thead>
+          <tbody className="[&_tr:last-child]:border-0">
+            {table.getRowModel().rows.map((row) => (
+              <tr key={row.id} className="border-b transition-colors hover:bg-muted/50">
+                {row.getVisibleCells().map((cell, index) => {
+                  const isFirstColumn = index === 0
+                  const isLastColumn = index === row.getVisibleCells().length - 1
+                  return (
+                    <td
+                      key={cell.id}
+                      className={cn(
+                        'min-w-56 p-0 align-middle whitespace-nowrap',
+                        isFirstColumn && 'sticky left-0 bg-background',
+                      )}
+                    >
+                      <div
+                        className={cn('flex items-center p-2', !isLastColumn && 'border-r border-border')}
+                        style={isFirstColumn ? { boxShadow: 'rgba(89, 86, 93, 0.04) 2px 0px 0px' } : undefined}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </div>
+                    </td>
+                  )
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
+      {data.totalPages > 1 && (
+        <div className="sticky bottom-0 flex gap-2 pt-1.5">
+          <Button
+            disabled={currentPage === 1 || isFetching}
+            size="icon-sm"
+            variant="ghost"
+            onClick={() => goToPage(currentPage - 1)}
+          >
+            <ArrowLeftIcon />
+          </Button>
+          {pages().map((page) => (
+            <Button
+              key={page}
+              className="tabular-nums"
+              disabled={isFetching}
+              size="sm"
+              variant={currentPage === page ? 'secondary' : 'ghost'}
+              onClick={() => goToPage(page)}
+            >
+              {page}
+            </Button>
+          ))}
+          <Button
+            disabled={currentPage >= data.totalPages || isFetching}
+            size="icon-sm"
+            variant="ghost"
+            onClick={() => goToPage(currentPage + 1)}
+          >
+            <ArrowRightIcon />
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

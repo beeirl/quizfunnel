@@ -48,19 +48,104 @@ export namespace Submission {
     )
   })
 
-  export const list = fn(Identifier.schema('quiz'), async (quizId) => {
-    const questions = await Question.list(quizId)
+  export const list = fn(
+    z.object({
+      quizId: Identifier.schema('quiz'),
+      page: z.number().int().positive().default(1),
+      limit: z.number().int().min(1).max(100).default(50),
+    }),
+    async (input) => {
+      const { quizId, page, limit } = input
+      const offset = (page - 1) * limit
 
-    // Fetch all submissions for this quiz
-    const submissions = await Database.use((tx) =>
-      tx
-        .select()
-        .from(SubmissionTable)
-        .where(and(eq(SubmissionTable.workspaceId, Actor.workspaceId()), eq(SubmissionTable.quizId, quizId)))
-        .orderBy(desc(SubmissionTable.createdAt)),
-    )
+      const questions = await Question.list(quizId)
 
-    if (submissions.length === 0) {
+      // Get total count
+      const countResult = await Database.use((tx) =>
+        tx
+          .select({ count: sql<number>`COUNT(*)` })
+          .from(SubmissionTable)
+          .where(and(eq(SubmissionTable.workspaceId, Actor.workspaceId()), eq(SubmissionTable.quizId, quizId))),
+      )
+      const total = countResult[0]?.count ?? 0
+
+      const totalPages = Math.ceil(total / limit)
+
+      // Fetch paginated submissions for this quiz
+      const submissions = await Database.use((tx) =>
+        tx
+          .select()
+          .from(SubmissionTable)
+          .where(and(eq(SubmissionTable.workspaceId, Actor.workspaceId()), eq(SubmissionTable.quizId, quizId)))
+          .orderBy(desc(SubmissionTable.createdAt))
+          .limit(limit)
+          .offset(offset),
+      )
+
+      if (submissions.length === 0) {
+        return {
+          questions: questions.map((q) => ({
+            id: q.id,
+            title: q.title,
+            index: q.index,
+            options: q.options,
+          })),
+          submissions: [],
+          total,
+          page,
+          limit,
+          totalPages,
+        }
+      }
+
+      // Fetch all answers for these submissions
+      const submissionIds = submissions.map((s) => s.id)
+      const answers = await Database.use((tx) =>
+        tx
+          .select({
+            submissionId: AnswerTable.submissionId,
+            questionId: AnswerTable.questionId,
+            text: AnswerValueTable.text,
+            number: AnswerValueTable.number,
+            optionId: AnswerValueTable.optionId,
+          })
+          .from(AnswerTable)
+          .innerJoin(AnswerValueTable, eq(AnswerValueTable.answerId, AnswerTable.id))
+          .where(
+            and(eq(AnswerTable.workspaceId, Actor.workspaceId()), inArray(AnswerTable.submissionId, submissionIds)),
+          ),
+      )
+
+      // Build a map of questionId -> options for label resolution
+      const questionOptionByQuestionId = new Map(questions.map((q) => [q.id, q.options]))
+
+      // Group answers by submission
+      const answersBySubmission = new Map<string, Map<string, string[]>>()
+      for (const answer of answers) {
+        let submissionAnswers = answersBySubmission.get(answer.submissionId)
+        if (!submissionAnswers) {
+          submissionAnswers = new Map()
+          answersBySubmission.set(answer.submissionId, submissionAnswers)
+        }
+
+        let questionAnswers = submissionAnswers.get(answer.questionId)
+        if (!questionAnswers) {
+          questionAnswers = []
+          submissionAnswers.set(answer.questionId, questionAnswers)
+        }
+
+        // Resolve the answer value
+        if (answer.text !== null) {
+          questionAnswers.push(answer.text)
+        } else if (answer.optionId !== null) {
+          const options = questionOptionByQuestionId.get(answer.questionId)
+          const label = options?.find((o) => o.id === answer.optionId)?.label ?? answer.optionId
+          questionAnswers.push(label)
+        } else if (answer.number !== null) {
+          questionAnswers.push(String(answer.number))
+        }
+      }
+
       return {
         questions: questions.map((q) => ({
           id: q.id,
@@ -68,78 +153,26 @@ export namespace Submission {
           index: q.index,
           options: q.options,
         })),
-        submissions: [],
-      }
-    }
-
-    // Fetch all answers for these submissions
-    const submissionIds = submissions.map((s) => s.id)
-    const answers = await Database.use((tx) =>
-      tx
-        .select({
-          submissionId: AnswerTable.submissionId,
-          questionId: AnswerTable.questionId,
-          text: AnswerValueTable.text,
-          number: AnswerValueTable.number,
-          optionId: AnswerValueTable.optionId,
-        })
-        .from(AnswerTable)
-        .innerJoin(AnswerValueTable, eq(AnswerValueTable.answerId, AnswerTable.id))
-        .where(and(eq(AnswerTable.workspaceId, Actor.workspaceId()), inArray(AnswerTable.submissionId, submissionIds))),
-    )
-
-    // Build a map of questionId -> options for label resolution
-    const questionOptionByQuestionId = new Map(questions.map((q) => [q.id, q.options]))
-
-    // Group answers by submission
-    const answersBySubmission = new Map<string, Map<string, string[]>>()
-    for (const answer of answers) {
-      let submissionAnswers = answersBySubmission.get(answer.submissionId)
-      if (!submissionAnswers) {
-        submissionAnswers = new Map()
-        answersBySubmission.set(answer.submissionId, submissionAnswers)
-      }
-
-      let questionAnswers = submissionAnswers.get(answer.questionId)
-      if (!questionAnswers) {
-        questionAnswers = []
-        submissionAnswers.set(answer.questionId, questionAnswers)
-      }
-
-      // Resolve the answer value
-      if (answer.text !== null) {
-        questionAnswers.push(answer.text)
-      } else if (answer.optionId !== null) {
-        const options = questionOptionByQuestionId.get(answer.questionId)
-        const label = options?.find((o) => o.id === answer.optionId)?.label ?? answer.optionId
-        questionAnswers.push(label)
-      } else if (answer.number !== null) {
-        questionAnswers.push(String(answer.number))
-      }
-    }
-
-    return {
-      questions: questions.map((q) => ({
-        id: q.id,
-        title: q.title,
-        index: q.index,
-        options: q.options,
-      })),
-      submissions: submissions.map((s) => {
-        const submissionAnswers = answersBySubmission.get(s.id)
-        const answers: Record<string, string[]> = {}
-        if (submissionAnswers) {
-          for (const [questionId, values] of submissionAnswers) {
-            answers[questionId] = values
+        submissions: submissions.map((s) => {
+          const submissionAnswers = answersBySubmission.get(s.id)
+          const answers: Record<string, string[]> = {}
+          if (submissionAnswers) {
+            for (const [questionId, values] of submissionAnswers) {
+              answers[questionId] = values
+            }
           }
-        }
-        return {
-          id: s.id,
-          createdAt: s.createdAt,
-          completedAt: s.completedAt,
-          answers,
-        }
-      }),
-    }
-  })
+          return {
+            id: s.id,
+            createdAt: s.createdAt,
+            completedAt: s.completedAt,
+            answers,
+          }
+        }),
+        total,
+        page,
+        limit,
+        totalPages,
+      }
+    },
+  )
 }
