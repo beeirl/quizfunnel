@@ -88,7 +88,7 @@ function RouteComponent() {
 
     return [
       columnHelper.accessor('submittedAt', {
-        header: 'Submitted At',
+        header: 'Submitted at',
       }),
       ...questionColumns,
     ]
@@ -124,8 +124,10 @@ function RouteComponent() {
     return pages
   }
 
+  const hasMore = data.totalPages > 1
+
   return (
-    <div className="flex flex-1 flex-col overflow-hidden px-6 pt-6 pb-1.5">
+    <div className={cn('flex flex-1 flex-col overflow-hidden px-6 pt-6', hasMore ? 'pb-1.5' : 'pb-6')}>
       <div className="mb-6 text-2xl font-bold">Responses</div>
       <div className="max-h-full overflow-auto rounded-lg border">
         <table className="w-full min-w-max caption-bottom text-sm">
@@ -139,8 +141,8 @@ function RouteComponent() {
                     <th
                       key={header.id}
                       className={cn(
-                        'h-10 min-w-56 p-0 text-left align-middle font-medium whitespace-nowrap text-foreground',
-                        isFirstColumn && 'sticky left-0 z-20 bg-muted',
+                        'h-10 p-0 text-left align-middle font-medium whitespace-nowrap text-foreground',
+                        isFirstColumn ? 'sticky left-0 z-20 w-56 bg-muted' : 'min-w-56',
                       )}
                     >
                       <div
@@ -157,7 +159,7 @@ function RouteComponent() {
           </thead>
           <tbody className="[&_tr:last-child]:border-0">
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="border-b transition-colors hover:bg-muted/50">
+              <tr key={row.id} className="border-b">
                 {row.getVisibleCells().map((cell, index) => {
                   const isFirstColumn = index === 0
                   const isLastColumn = index === row.getVisibleCells().length - 1
@@ -165,8 +167,8 @@ function RouteComponent() {
                     <td
                       key={cell.id}
                       className={cn(
-                        'min-w-56 p-0 align-middle whitespace-nowrap',
-                        isFirstColumn && 'sticky left-0 bg-background',
+                        'p-0 align-middle whitespace-nowrap',
+                        isFirstColumn ? 'sticky left-0 w-56 bg-background' : 'min-w-56',
                       )}
                     >
                       <div
@@ -183,7 +185,7 @@ function RouteComponent() {
           </tbody>
         </table>
       </div>
-      {data.totalPages > 1 && (
+      {hasMore && (
         <div className="sticky bottom-0 flex gap-2 pt-1.5">
           <Button
             disabled={currentPage === 1 || isFetching}
