@@ -127,28 +127,24 @@ function RouteComponent() {
   const hasMore = data.totalPages > 1
 
   return (
-    <div className={cn('flex flex-1 flex-col overflow-hidden px-6 pt-6', hasMore ? 'pb-1.5' : 'pb-6')}>
-      <div className="mb-6 text-2xl font-bold">Responses</div>
-      <div className="max-h-full overflow-auto rounded-lg border">
+    <div className={cn('flex flex-1 flex-col overflow-hidden pt-6', hasMore ? 'pb-1.5' : 'pb-6')}>
+      <div className="mb-4 px-6 text-2xl font-bold">Responses</div>
+      <div className="max-h-full overflow-auto px-4">
         <table className="w-full min-w-max caption-bottom text-sm">
           <thead className="sticky top-0 z-10 [&_tr]:border-b">
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className="bg-muted transition-colors">
+              <tr key={headerGroup.id} className="transition-colors">
                 {headerGroup.headers.map((header, index) => {
                   const isFirstColumn = index === 0
-                  const isLastColumn = index === headerGroup.headers.length - 1
                   return (
                     <th
                       key={header.id}
                       className={cn(
-                        'h-10 p-0 text-left align-middle font-medium whitespace-nowrap text-foreground',
-                        isFirstColumn ? 'sticky left-0 z-20 w-56 bg-muted' : 'min-w-56',
+                        'h-10 p-0 text-left align-middle font-medium whitespace-nowrap text-muted-foreground',
+                        isFirstColumn ? 'w-56' : 'min-w-56',
                       )}
                     >
-                      <div
-                        className={cn('flex h-full items-center px-2 py-2', !isLastColumn && 'border-r border-border')}
-                        style={isFirstColumn ? { boxShadow: 'rgba(89, 86, 93, 0.04) 2px 0px 0px' } : undefined}
-                      >
+                      <div className="flex h-full items-center px-2 py-2">
                         {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                       </div>
                     </th>
@@ -166,15 +162,9 @@ function RouteComponent() {
                   return (
                     <td
                       key={cell.id}
-                      className={cn(
-                        'p-0 align-middle whitespace-nowrap',
-                        isFirstColumn ? 'sticky left-0 w-56 bg-background' : 'min-w-56',
-                      )}
+                      className={cn('p-0 align-middle whitespace-nowrap', isFirstColumn ? 'w-56' : 'min-w-56')}
                     >
-                      <div
-                        className={cn('flex items-center p-2', !isLastColumn && 'border-r border-border')}
-                        style={isFirstColumn ? { boxShadow: 'rgba(89, 86, 93, 0.04) 2px 0px 0px' } : undefined}
-                      >
+                      <div className="flex items-center p-2">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </div>
                     </td>
