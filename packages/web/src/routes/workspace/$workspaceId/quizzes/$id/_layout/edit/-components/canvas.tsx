@@ -3,6 +3,7 @@ import { NextButton } from '@/components/next-button'
 import { getThemeCssVars, shouldAutoAdvance } from '@/components/quiz'
 import { Button } from '@/components/ui/button'
 import { ButtonGroup } from '@/components/ui/button-group'
+import { Empty } from '@/components/ui/empty'
 import { cn } from '@/lib/utils'
 import {
   defaultDropAnimationSideEffects,
@@ -70,6 +71,8 @@ interface CanvasContextValue {
   onDragEnd: (event: DragEndEvent) => void
   onPageAdd: (page: PageType, index: number) => void
   onBlockAdd: (block: BlockType, pageId?: string, index?: number) => void
+  onPaneClick: () => void
+  onThemeButtonClick: () => void
 }
 
 const CanvasContext = React.createContext<CanvasContextValue | null>(null)
@@ -97,27 +100,22 @@ function BlockContent({
   index,
   dragging,
   selected,
+  addMenuOpen,
 }: {
   block: BlockType
   index: number
   dragging?: boolean
   selected?: boolean
+  addMenuOpen?: boolean
 }) {
   const blockInfo = getBlockInfo(block.type)
 
   return (
-    <div
-      className={cn(
-        'relative w-full select-none',
-        dragging && 'shadow-lg ring-2 ring-primary',
-        selected && 'ring-2 ring-primary',
-        !selected && !dragging && 'group-hover/block:ring-2 group-hover/block:ring-primary',
-      )}
-    >
+    <div className={cn('relative w-full select-none', dragging && 'shadow-lg ring-2 ring-primary')}>
       <div
         className={cn(
           'absolute bottom-full left-0 z-10 mb-1 text-xs font-medium text-primary',
-          selected ? 'block' : 'hidden group-hover/block:block',
+          selected || addMenuOpen ? 'block' : 'hidden group-hover/canvas-block:block',
         )}
       >
         {blockInfo.name}
@@ -140,6 +138,17 @@ function SortableBlock({
 }) {
   const { dropping, selectedBlockId, onSelectBlock, onBlockAdd } = useCanvas()
   const { zoom } = useViewport()
+  const [addMenuOpen, setAddMenuOpen] = React.useState(false)
+
+  const handleAddMenuOpenChange = React.useCallback(
+    (open: boolean) => {
+      setAddMenuOpen(open)
+      if (open) {
+        onSelectBlock(null)
+      }
+    },
+    [onSelectBlock],
+  )
 
   const selected = selectedBlockId === block.id
 
@@ -200,18 +209,31 @@ function SortableBlock({
     <div
       ref={setNodeRef}
       style={style}
-      className="group/block nopan nodrag relative"
+      className="group/canvas-block nopan nodrag relative"
       data-slot="canvas-block"
       {...attributes}
       {...listeners}
       onClick={handleClick}
     >
-      <div className="relative">
-        <BlockContent block={block} index={index} selected={selected} />
+      <div
+        className={cn(
+          'relative ring-primary',
+          (selected || addMenuOpen) && 'ring-2',
+          !selected && !addMenuOpen && 'group-hover/canvas-block:ring-2',
+        )}
+      >
+        <BlockContent block={block} index={index} selected={selected} addMenuOpen={addMenuOpen} />
 
         {/* Top add-block button - centered on top border of BlockContent */}
-        <div className="pointer-events-none absolute top-0 left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 scale-0 opacity-0 transition-[opacity,transform] group-hover/block:pointer-events-auto group-hover/block:scale-100 group-hover/block:opacity-100 has-data-popup-open:pointer-events-auto has-data-popup-open:scale-100 has-data-popup-open:opacity-100">
-          <AddBlockMenu.Root onBlockAdd={handleAddBlockAbove} existingBlocks={pageBlocks}>
+        <div
+          className="pointer-events-none absolute top-0 left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 scale-0 opacity-0 transition-[opacity,transform] group-hover/canvas-block:pointer-events-auto group-hover/canvas-block:scale-100 group-hover/canvas-block:opacity-100 has-data-popup-open:pointer-events-auto has-data-popup-open:scale-100 has-data-popup-open:opacity-100"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <AddBlockMenu.Root
+            onBlockAdd={handleAddBlockAbove}
+            existingBlocks={pageBlocks}
+            onOpenChange={handleAddMenuOpenChange}
+          >
             <AddBlockMenu.Trigger
               render={
                 <Button className="cursor-crosshair" size="icon-sm">
@@ -224,8 +246,15 @@ function SortableBlock({
         </div>
 
         {/* Bottom add-block button - centered on bottom border of BlockContent */}
-        <div className="pointer-events-none absolute bottom-0 left-1/2 z-10 -translate-x-1/2 translate-y-1/2 scale-0 opacity-0 transition-[opacity,transform] group-hover/block:pointer-events-auto group-hover/block:scale-100 group-hover/block:opacity-100 has-data-popup-open:pointer-events-auto has-data-popup-open:scale-100 has-data-popup-open:opacity-100">
-          <AddBlockMenu.Root onBlockAdd={handleAddBlockBelow} existingBlocks={pageBlocks}>
+        <div
+          className="pointer-events-none absolute bottom-0 left-1/2 z-10 -translate-x-1/2 translate-y-1/2 scale-0 opacity-0 transition-[opacity,transform] group-hover/canvas-block:pointer-events-auto group-hover/canvas-block:scale-100 group-hover/canvas-block:opacity-100 has-data-popup-open:pointer-events-auto has-data-popup-open:scale-100 has-data-popup-open:opacity-100"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <AddBlockMenu.Root
+            onBlockAdd={handleAddBlockBelow}
+            existingBlocks={pageBlocks}
+            onOpenChange={handleAddMenuOpenChange}
+          >
             <AddBlockMenu.Trigger
               render={
                 <Button className="cursor-crosshair" size="icon-sm">
@@ -245,32 +274,33 @@ function Page({
   page,
   pageIndex,
   overlay,
-  draggingPage,
-  selected,
+  addMenuOpen,
 }: {
   page: PageType
   pageIndex: number
   overlay?: boolean
-  draggingPage?: boolean
-  selected?: boolean
+  addMenuOpen?: boolean
 }) {
+  const { draggingPage, selectedPageId, onBlockAdd } = useCanvas()
+  const selected = selectedPageId === page.id
+
   return (
     <div className="flex flex-col gap-2">
       <div
         className={cn(
           'text-sm font-medium',
-          selected
+          selected || addMenuOpen
             ? 'text-primary'
-            : 'text-muted-foreground group-[:hover:not(:has([data-slot=canvas-block]:hover))]/page:text-primary',
+            : 'text-muted-foreground group-[:hover:not(:has([data-slot=canvas-block]:hover))]/canvas-page:text-primary',
         )}
       >
         {page.name || `Page ${pageIndex + 1}`}
       </div>
       <div
         className={cn(
-          'relative border border-border',
-          'group-hover/page:[&:not(:has([data-slot=canvas-block]:hover))]:border-primary group-hover/page:[&:not(:has([data-slot=canvas-block]:hover))]:ring group-hover/page:[&:not(:has([data-slot=canvas-block]:hover))]:ring-primary',
-          selected && 'border-primary ring ring-primary',
+          'relative border border-border ring-primary',
+          'group-[:hover:not(:has([data-slot=canvas-block]:hover))]/canvas-page:border-primary group-[:hover:not(:has([data-slot=canvas-block]:hover))]/canvas-page:ring',
+          (selected || addMenuOpen) && 'border-primary ring',
         )}
       >
         <div
@@ -278,31 +308,55 @@ function Page({
           style={{ width: PAGE_WIDTH, height: PAGE_HEIGHT }}
         >
           <div className="mx-auto flex w-full max-w-sm flex-1 flex-col px-6 pt-8">
-            {overlay || draggingPage ? (
-              <div className="flex flex-col">
-                {page.blocks.map((block, index) => (
-                  <BlockContent key={block.id} block={block} index={index} />
-                ))}
-              </div>
-            ) : (
-              <SortableContext items={page.blocks} strategy={verticalListSortingStrategy}>
-                <div className="flex flex-col">
-                  {page.blocks.map((block, index) => (
-                    <SortableBlock
-                      key={block.id}
-                      block={block}
-                      index={index}
-                      pageId={page.id}
-                      pageBlocks={page.blocks}
+            {page.blocks.length === 0 ? (
+              <Empty.Root>
+                <Empty.Header>
+                  <Empty.Title>No blocks yet</Empty.Title>
+                  <Empty.Description>Add a block to get started</Empty.Description>
+                </Empty.Header>
+                <Empty.Content>
+                  <AddBlockMenu.Root onBlockAdd={(block) => onBlockAdd(block, page.id)} existingBlocks={[]}>
+                    <AddBlockMenu.Trigger
+                      render={
+                        <Button>
+                          <PlusIcon />
+                          Add Block
+                        </Button>
+                      }
                     />
-                  ))}
-                </div>
-              </SortableContext>
-            )}
-            {!shouldAutoAdvance(page.blocks) && (
-              <div className="mt-auto w-full pt-4 pb-5">
-                <NextButton static>{page.properties?.buttonText || 'Next'}</NextButton>
-              </div>
+                    <AddBlockMenu.Content />
+                  </AddBlockMenu.Root>
+                </Empty.Content>
+              </Empty.Root>
+            ) : (
+              <>
+                {overlay || draggingPage !== null ? (
+                  <div className="flex flex-col">
+                    {page.blocks.map((block, index) => (
+                      <BlockContent key={block.id} block={block} index={index} />
+                    ))}
+                  </div>
+                ) : (
+                  <SortableContext items={page.blocks} strategy={verticalListSortingStrategy}>
+                    <div className="flex flex-col">
+                      {page.blocks.map((block, index) => (
+                        <SortableBlock
+                          key={block.id}
+                          block={block}
+                          index={index}
+                          pageId={page.id}
+                          pageBlocks={page.blocks}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                )}
+                {!shouldAutoAdvance(page.blocks) && (
+                  <div className="mt-auto w-full pt-4 pb-5">
+                    <NextButton static>{page.properties?.buttonText || 'Next'}</NextButton>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -312,8 +366,20 @@ function Page({
 }
 
 function SortablePage({ page, pageIndex, pageCount }: { page: PageType; pageIndex: number; pageCount: number }) {
-  const { dropping, selectedPageId, draggingPage, onSelectPage, onPageAdd } = useCanvas()
+  const { dropping, onSelectPage, onSelectBlock, onPageAdd } = useCanvas()
   const { zoom } = useViewport()
+  const [addMenuOpen, setAddMenuOpen] = React.useState(false)
+
+  const handleAddMenuOpenChange = React.useCallback(
+    (open: boolean) => {
+      setAddMenuOpen(open)
+      if (open) {
+        onSelectPage(null)
+        onSelectBlock(null)
+      }
+    },
+    [onSelectPage, onSelectBlock],
+  )
 
   const {
     attributes,
@@ -326,8 +392,6 @@ function SortablePage({ page, pageIndex, pageCount }: { page: PageType; pageInde
     id: page.id,
     data: { type: 'page' },
   })
-
-  const selected = selectedPageId === page.id
 
   const style: React.CSSProperties = dragging
     ? { opacity: 0, pointerEvents: 'none' }
@@ -374,17 +438,25 @@ function SortablePage({ page, pageIndex, pageCount }: { page: PageType; pageInde
     <div
       ref={setNodeRef}
       style={style}
-      className="nopan nodrag group/page relative"
+      className="group/canvas-page nopan nodrag relative"
       data-slot="canvas-page"
       {...attributes}
       {...listeners}
       onClick={handleClick}
     >
-      <Page page={page} pageIndex={pageIndex} draggingPage={draggingPage !== null} selected={selected} />
+      <Page page={page} pageIndex={pageIndex} addMenuOpen={addMenuOpen} />
 
       {/* Left add-page button - centered on left border */}
-      <div className="pointer-events-none absolute top-1/2 left-0 z-10 -translate-x-1/2 -translate-y-1/2 scale-0 opacity-0 transition-[opacity,transform] group-[:hover:not(:has([data-slot=canvas-block]:hover))]/page:pointer-events-auto group-[:hover:not(:has([data-slot=canvas-block]:hover))]/page:scale-100 group-[:hover:not(:has([data-slot=canvas-block]:hover))]/page:opacity-100 has-data-popup-open:pointer-events-auto has-data-popup-open:scale-100 has-data-popup-open:opacity-100">
-        <AddPageMenu.Root onPageAdd={handleAddPageLeft} pageCount={pageCount} side="left">
+      <div
+        className="pointer-events-none absolute top-1/2 left-0 z-10 -translate-x-1/2 -translate-y-1/2 scale-0 opacity-0 transition-[opacity,transform] group-[:hover:not(:has([data-slot=canvas-block]:hover))]/canvas-page:pointer-events-auto group-[:hover:not(:has([data-slot=canvas-block]:hover))]/canvas-page:scale-100 group-[:hover:not(:has([data-slot=canvas-block]:hover))]/canvas-page:opacity-100 has-data-popup-open:pointer-events-auto has-data-popup-open:scale-100 has-data-popup-open:opacity-100"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <AddPageMenu.Root
+          onPageAdd={handleAddPageLeft}
+          pageCount={pageCount}
+          side="left"
+          onOpenChange={handleAddMenuOpenChange}
+        >
           <AddPageMenu.Trigger
             render={
               <Button className="cursor-crosshair" size="icon">
@@ -397,8 +469,16 @@ function SortablePage({ page, pageIndex, pageCount }: { page: PageType; pageInde
       </div>
 
       {/* Right add-page button - centered on right border */}
-      <div className="pointer-events-none absolute top-1/2 right-0 z-10 translate-x-1/2 -translate-y-1/2 scale-0 opacity-0 transition-[opacity,transform] group-[:hover:not(:has([data-slot=canvas-block]:hover))]/page:pointer-events-auto group-[:hover:not(:has([data-slot=canvas-block]:hover))]/page:scale-100 group-[:hover:not(:has([data-slot=canvas-block]:hover))]/page:opacity-100 has-data-popup-open:pointer-events-auto has-data-popup-open:scale-100 has-data-popup-open:opacity-100">
-        <AddPageMenu.Root onPageAdd={handleAddPageRight} pageCount={pageCount} side="right">
+      <div
+        className="pointer-events-none absolute top-1/2 right-0 z-10 translate-x-1/2 -translate-y-1/2 scale-0 opacity-0 transition-[opacity,transform] group-[:hover:not(:has([data-slot=canvas-block]:hover))]/canvas-page:pointer-events-auto group-[:hover:not(:has([data-slot=canvas-block]:hover))]/canvas-page:scale-100 group-[:hover:not(:has([data-slot=canvas-block]:hover))]/canvas-page:opacity-100 has-data-popup-open:pointer-events-auto has-data-popup-open:scale-100 has-data-popup-open:opacity-100"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <AddPageMenu.Root
+          onPageAdd={handleAddPageRight}
+          pageCount={pageCount}
+          side="right"
+          onOpenChange={handleAddMenuOpenChange}
+        >
           <AddPageMenu.Trigger
             render={
               <Button className="cursor-crosshair" size="icon">
@@ -420,20 +500,7 @@ type NodeData = {
 type NodeType = Node<NodeData, 'node'>
 
 function Node({ data: { pages } }: NodeProps<NodeType>) {
-  const {
-    theme,
-    draggingPage,
-    draggingBlock,
-    dropping,
-    selectedPageId,
-    selectedBlockId,
-    onSelectPage,
-    onSelectBlock,
-    onDragStart,
-    onDragEnd,
-    onPageAdd,
-    onBlockAdd,
-  } = useCanvas()
+  const { theme, draggingPage, draggingBlock, onDragStart, onDragEnd } = useCanvas()
   const { zoom } = useViewport()
 
   const sensors = useSensors(
@@ -479,15 +546,8 @@ const nodeTypes = {
   node: Node,
 }
 
-function CanvasContent({
-  nodes,
-  onPaneClick,
-  onThemeButtonClick,
-}: {
-  nodes: NodeType[]
-  onPaneClick: () => void
-  onThemeButtonClick: () => void
-}) {
+function CanvasContent({ nodes }: { nodes: NodeType[] }) {
+  const { onPaneClick, onThemeButtonClick } = useCanvas()
   const { zoomIn, zoomOut, fitView } = useReactFlow()
 
   return (
@@ -686,6 +746,8 @@ export function Canvas({
       onDragEnd: handleDragEnd,
       onPageAdd,
       onBlockAdd,
+      onPaneClick: handlePaneClick,
+      onThemeButtonClick,
     }),
     [
       theme,
@@ -700,6 +762,8 @@ export function Canvas({
       handleDragEnd,
       onPageAdd,
       onBlockAdd,
+      handlePaneClick,
+      onThemeButtonClick,
     ],
   )
 
@@ -707,7 +771,7 @@ export function Canvas({
     <div className="size-full overscroll-x-none bg-background" data-slot="canvas">
       <CanvasContext.Provider value={contextValue}>
         <ReactFlowProvider>
-          <CanvasContent nodes={nodes} onPaneClick={handlePaneClick} onThemeButtonClick={onThemeButtonClick} />
+          <CanvasContent nodes={nodes} />
         </ReactFlowProvider>
       </CanvasContext.Provider>
     </div>

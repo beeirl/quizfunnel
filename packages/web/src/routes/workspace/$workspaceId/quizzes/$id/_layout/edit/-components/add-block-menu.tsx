@@ -118,14 +118,16 @@ function AddBlockMenuRoot({
   children,
   onBlockAdd,
   existingBlocks,
+  onOpenChange,
 }: {
   children: React.ReactNode
   onBlockAdd: (block: Block) => void
   existingBlocks: Block[]
+  onOpenChange?: (open: boolean) => void
 }) {
   return (
     <AddBlockMenuContext value={{ onBlockAdd, existingBlocks }}>
-      <Menu.Root>{children}</Menu.Root>
+      <Menu.Root onOpenChange={onOpenChange}>{children}</Menu.Root>
     </AddBlockMenuContext>
   )
 }

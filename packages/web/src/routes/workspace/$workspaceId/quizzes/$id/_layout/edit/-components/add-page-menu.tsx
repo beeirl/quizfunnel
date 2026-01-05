@@ -104,15 +104,17 @@ function AddPageMenuRoot({
   onPageAdd,
   pageCount,
   side,
+  onOpenChange,
 }: {
   children: React.ReactNode
   onPageAdd: (page: Page) => void
   pageCount: number
   side: 'left' | 'right'
+  onOpenChange?: (open: boolean) => void
 }) {
   return (
     <AddPageMenuContext value={{ onPageAdd, pageCount, side }}>
-      <Menu.Root>{children}</Menu.Root>
+      <Menu.Root onOpenChange={onOpenChange}>{children}</Menu.Root>
     </AddPageMenuContext>
   )
 }
