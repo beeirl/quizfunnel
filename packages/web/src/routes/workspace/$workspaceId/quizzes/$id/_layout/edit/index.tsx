@@ -240,6 +240,16 @@ function RouteComponent() {
     return uploadQuizFile({ data: formData })
   }
 
+  const handleThemeButtonClick = () => {
+    if (showThemePanel) {
+      setShowThemePanel(false)
+    } else {
+      setSelectedPageId(null)
+      setSelectedBlockId(null)
+      setShowThemePanel(true)
+    }
+  }
+
   return (
     <div className="flex flex-1 overflow-hidden">
       <Canvas
@@ -247,10 +257,9 @@ function RouteComponent() {
         theme={quiz.theme}
         selectedPageId={selectedPageId}
         selectedBlockId={selectedBlockId}
-        showDesignPanel={showThemePanel}
+        onThemeButtonClick={handleThemeButtonClick}
         onPageSelect={handlePageSelect}
         onBlockSelect={handleBlockSelect}
-        onDesignSelect={handleDesignSelect}
         onPagesReorder={handlePagesReorder}
         onPageAdd={handlePageAdd}
         onPageDelete={handlePageDelete}

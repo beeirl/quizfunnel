@@ -538,11 +538,11 @@ const nodeTypes = {
 function CanvasContent({
   nodes,
   onPaneClick,
-  onDesignSelect,
+  onThemeButtonClick,
 }: {
   nodes: NodeType[]
   onPaneClick: () => void
-  onDesignSelect: () => void
+  onThemeButtonClick: () => void
 }) {
   const { zoomIn, zoomOut, fitView } = useReactFlow()
 
@@ -583,7 +583,7 @@ function CanvasContent({
         </ButtonGroup.Root>
       </ReactFlowPanel>
       <ReactFlowPanel position="top-right">
-        <Button variant="outline" onClick={onDesignSelect}>
+        <Button variant="outline" onClick={onThemeButtonClick}>
           <PaletteIcon />
           Design
         </Button>
@@ -597,10 +597,9 @@ export interface CanvasProps {
   theme: Theme
   selectedPageId: string | null
   selectedBlockId: string | null
-  showDesignPanel: boolean
   onPageSelect: (pageId: string | null) => void
   onBlockSelect: (blockId: string | null) => void
-  onDesignSelect: () => void
+  onThemeButtonClick: () => void
   onPagesReorder: (pages: PageType[]) => void
   onPageAdd: (page: PageType, index: number) => void
   onPageDelete: (pageId: string) => void
@@ -614,10 +613,9 @@ export function Canvas({
   theme,
   selectedPageId,
   selectedBlockId,
-  showDesignPanel,
   onPageSelect,
   onBlockSelect,
-  onDesignSelect,
+  onThemeButtonClick,
   onPagesReorder,
   onPageAdd,
   onPageDelete,
@@ -761,7 +759,7 @@ export function Canvas({
   return (
     <div className="size-full overscroll-x-none bg-background" data-slot="canvas">
       <ReactFlowProvider>
-        <CanvasContent nodes={nodes} onPaneClick={handlePaneClick} onDesignSelect={onDesignSelect} />
+        <CanvasContent nodes={nodes} onPaneClick={handlePaneClick} onThemeButtonClick={onThemeButtonClick} />
       </ReactFlowProvider>
     </div>
   )
