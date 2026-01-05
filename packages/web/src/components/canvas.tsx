@@ -1,1019 +1,654 @@
-import { cn } from '@/lib/utils'
-import { IconPlus as PlusIcon, IconTrash as TrashIcon } from '@tabler/icons-react'
+import * as React from 'react'
+import { createPortal } from 'react-dom'
+
+import {
+  defaultDropAnimationSideEffects,
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  pointerWithin,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+  type DropAnimation,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  horizontalListSortingStrategy,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { IconPlus as PlusIcon } from '@tabler/icons-react'
 import {
   Background,
   Controls,
   PanOnScrollMode,
   ReactFlow,
   ReactFlowProvider,
-  useNodesInitialized,
-  useNodesState,
-  useReactFlow,
-  type CoordinateExtent,
+  useViewport,
   type Node,
   type NodeProps,
-  type OnNodeDrag,
-  type OnNodesChange,
-  type XYPosition,
 } from '@xyflow/react'
-import { timer } from 'd3-timer'
-import * as React from 'react'
-import { ulid } from 'ulid'
+
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 import '@xyflow/react/dist/style.css'
 
-// ============================================================================
-// Types
-// ============================================================================
+// iPhone 16 logical dimensions
+const PAGE_WIDTH = 393
+const PAGE_HEIGHT = 852
 
-type ParentCardData = {
+interface BlockData {
   id: string
   label: string
+  height: number
 }
 
-type InnerCardData = {
+interface PageData {
   id: string
-  parentId: string
-  content: string
+  title: string
+  blocks: BlockData[]
 }
 
-// Node data now only stores IDs - components look up actual data from context
-type ParentCardNodeData = {
-  cardId: string
+type PagesContainerNodeData = {
+  pages: PageData[]
+  activePage: PageData | null
+  activeBlock: BlockData | null
+  zoom: number
+  isDropping: boolean
+  isDraggingPage: boolean
+  isDraggingBlock: boolean
+  sensors: ReturnType<typeof useSensors>
+  selectedPageId: string | null
+  selectedBlockId: string | null
+  onSelectPage: (pageId: string | null) => void
+  onSelectBlock: (blockId: string | null) => void
+  onDragStart: (event: DragStartEvent) => void
+  onDragEnd: (event: DragEndEvent) => void
+  onAddPage: (index: number) => void
 }
 
-type InnerCardNodeData = {
-  cardId: string
-  parentId: string
-}
+type PagesContainerNodeType = Node<PagesContainerNodeData, 'pagesContainer'>
 
-type ParentCardNodeType = Node<ParentCardNodeData, 'parentCard'>
-type InnerCardNodeType = Node<InnerCardNodeData, 'innerCard'>
-type CanvasNode = ParentCardNodeType | InnerCardNodeType
-
-type DragState = {
-  draggingId: string | null
-  draggingType: 'parent' | 'inner' | null
-  draggingParentId: string | null
-  childrenOfDraggingParent: string[]
-}
-
-// Slot boundary for drag detection - calculated once at drag start
-type SlotBoundary = {
-  id: string
-  top: number
-  bottom: number
-  center: number
-}
-
-// ============================================================================
-// Constants
-// ============================================================================
-
-const PARENT_CARD_WIDTH = 280
-const PARENT_CARD_MIN_HEIGHT = 120
-const PARENT_CARD_HEADER_HEIGHT = 48
-const PARENT_CARD_PADDING = 12
-const PARENT_GAP = 32
-
-const INNER_CARD_WIDTH = PARENT_CARD_WIDTH - PARENT_CARD_PADDING * 2
-const INNER_CARD_GAP = 8
-const INNER_CARD_FALLBACK_HEIGHT = 80 // Fallback for drag operations if measurement is missing
-
-const DEFAULT_CARDS_PER_ROW = 3
-const ANIMATION_DURATION = 200
-
-// ============================================================================
-// Context for data lookup and callbacks
-// ============================================================================
-
-type CanvasContextValue = {
-  // Data lookups - stable references
-  getParentCard: (id: string) => ParentCardData | undefined
-  getInnerCard: (id: string) => InnerCardData | undefined
-  // Callbacks
-  onAddInnerCard: (parentId: string) => void
-  onDeleteInnerCard: (id: string) => void
-  isParentDragging: (innerCardId: string) => boolean
-}
-
-const CanvasContext = React.createContext<CanvasContextValue | null>(null)
-
-function useCanvasContext() {
-  const context = React.use(CanvasContext)
-  if (!context) {
-    throw new Error('useCanvasContext must be used within CanvasProvider')
-  }
-  return context
-}
-
-// ============================================================================
-// Initial Data
-// ============================================================================
-
-const initialParentCards: ParentCardData[] = [
-  { id: 'parent-1', label: 'To Do' },
-  { id: 'parent-2', label: 'In Progress' },
-  { id: 'parent-3', label: 'Done' },
-]
-
-const initialInnerCards: InnerCardData[] = [
-  { id: 'inner-1', parentId: 'parent-1', content: 'Research React Flow sub-flows' },
-  { id: 'inner-2', parentId: 'parent-1', content: 'Design the data model for nested cards with dynamic heights' },
-  { id: 'inner-3', parentId: 'parent-1', content: 'Write tests' },
+const INITIAL_PAGES: PageData[] = [
   {
-    id: 'inner-4',
-    parentId: 'parent-2',
-    content: 'Implement vertical sorting within parent cards using React Flow drag events',
+    id: 'page-1',
+    title: 'Page 1',
+    blocks: [
+      { id: 'p1-b1', label: 'Block 1', height: 80 },
+      { id: 'p1-b2', label: 'Block 2', height: 120 },
+      { id: 'p1-b3', label: 'Block 3', height: 60 },
+      { id: 'p1-b4', label: 'Block 4', height: 140 },
+      { id: 'p1-b5', label: 'Block 5', height: 100 },
+      { id: 'p1-b6', label: 'Block 6', height: 90 },
+      { id: 'p1-b7', label: 'Block 7', height: 110 },
+      { id: 'p1-b8', label: 'Block 8', height: 75 },
+    ],
   },
-  { id: 'inner-5', parentId: 'parent-2', content: 'Add delete functionality' },
-  { id: 'inner-6', parentId: 'parent-3', content: 'Initial setup complete!' },
+  {
+    id: 'page-2',
+    title: 'Page 2',
+    blocks: [
+      { id: 'p2-b1', label: 'Block 1', height: 95 },
+      { id: 'p2-b2', label: 'Block 2', height: 130 },
+      { id: 'p2-b3', label: 'Block 3', height: 70 },
+      { id: 'p2-b4', label: 'Block 4', height: 85 },
+      { id: 'p2-b5', label: 'Block 5', height: 145 },
+      { id: 'p2-b6', label: 'Block 6', height: 65 },
+      { id: 'p2-b7', label: 'Block 7', height: 105 },
+    ],
+  },
+  {
+    id: 'page-3',
+    title: 'Page 3',
+    blocks: [
+      { id: 'p3-b1', label: 'Block 1', height: 110 },
+      { id: 'p3-b2', label: 'Block 2', height: 60 },
+      { id: 'p3-b3', label: 'Block 3', height: 135 },
+      { id: 'p3-b4', label: 'Block 4', height: 80 },
+      { id: 'p3-b5', label: 'Block 5', height: 125 },
+      { id: 'p3-b6', label: 'Block 6', height: 70 },
+      { id: 'p3-b7', label: 'Block 7', height: 150 },
+      { id: 'p3-b8', label: 'Block 8', height: 90 },
+    ],
+  },
 ]
 
-// Build initial Maps from arrays
-function buildParentCardsMap(cards: ParentCardData[]): Map<string, ParentCardData> {
-  return new Map(cards.map((c) => [c.id, c]))
+const ZOOM_MIN = 0.25
+const ZOOM_MAX = 2
+
+const DROP_ANIMATION: DropAnimation = {
+  duration: 200,
+  easing: 'ease',
+  sideEffects: defaultDropAnimationSideEffects({
+    styles: {
+      active: { opacity: '0' },
+    },
+  }),
 }
 
-function buildInnerCardsMap(cards: InnerCardData[]): Map<string, InnerCardData> {
-  return new Map(cards.map((c) => [c.id, c]))
+// Helper to check if an ID is a block ID
+function isBlockId(id: string): boolean {
+  return id.includes('-b')
 }
 
-function buildInnerCardOrderMap(cards: InnerCardData[]): Map<string, string[]> {
-  const orderMap = new Map<string, string[]>()
-  for (const card of cards) {
-    const existing = orderMap.get(card.parentId) ?? []
-    existing.push(card.id)
-    orderMap.set(card.parentId, existing)
-  }
-  return orderMap
+function BlockContent({
+  block,
+  isDragging,
+  isSelected,
+}: {
+  block: BlockData
+  isDragging?: boolean
+  isSelected?: boolean
+}) {
+  return (
+    <div
+      className={cn(
+        'flex w-full items-center justify-center rounded-lg bg-muted text-sm font-medium text-muted-foreground select-none',
+        isDragging && 'shadow-lg ring-1 ring-primary',
+        isSelected && 'ring-1 ring-blue-500',
+      )}
+      style={{ height: block.height }}
+    >
+      {block.label}
+    </div>
+  )
 }
 
-// ============================================================================
-// Helper Functions
-// ============================================================================
+function SortableBlock({
+  block,
+  zoom,
+  isDropping,
+  isSelected,
+  onSelect,
+}: {
+  block: BlockData
+  zoom: number
+  isDropping: boolean
+  isSelected: boolean
+  onSelect: (blockId: string) => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: block.id,
+  })
 
-function getParentPositionFromIndex(index: number, cardsPerRow: number): XYPosition {
-  const row = Math.floor(index / cardsPerRow)
-  const col = index % cardsPerRow
-  return {
-    x: col * (PARENT_CARD_WIDTH + PARENT_GAP),
-    y: row * (PARENT_CARD_MIN_HEIGHT + PARENT_GAP),
-  }
+  const style: React.CSSProperties = isDragging
+    ? { opacity: 0, pointerEvents: 'none' }
+    : {
+        transform: isDropping
+          ? undefined
+          : CSS.Transform.toString(
+              transform
+                ? {
+                    ...transform,
+                    x: transform.x / zoom,
+                    y: transform.y / zoom,
+                  }
+                : null,
+            ),
+        transition: isDropping ? 'none' : transition,
+        pointerEvents: 'all',
+        touchAction: 'none',
+      }
+
+  const handleClick = React.useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation()
+      onSelect(block.id)
+    },
+    [onSelect, block.id],
+  )
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="nopan nodrag relative"
+      {...attributes}
+      {...listeners}
+      onClick={handleClick}
+    >
+      {isSelected && (
+        <div className="absolute bottom-full left-0 z-10 mb-1 text-xs font-medium text-blue-500">{block.label}</div>
+      )}
+      <BlockContent block={block} isSelected={isSelected} />
+    </div>
+  )
 }
 
-function getParentIndexFromPosition(x: number, y: number, cardsPerRow: number, totalCards: number): number {
-  const col = Math.round(x / (PARENT_CARD_WIDTH + PARENT_GAP))
-  const row = Math.round(y / (PARENT_CARD_MIN_HEIGHT + PARENT_GAP))
-  const clampedCol = Math.max(0, Math.min(col, cardsPerRow - 1))
-  const clampedRow = Math.max(0, row)
-  const index = clampedRow * cardsPerRow + clampedCol
-  return Math.max(0, Math.min(index, totalCards - 1))
+function Page({
+  page,
+  zoom,
+  isDropping,
+  isOverlay,
+  isDraggingPage,
+  isSelected,
+  selectedBlockId,
+  onSelectBlock,
+}: {
+  page: PageData
+  zoom: number
+  isDropping: boolean
+  isOverlay?: boolean
+  isDraggingPage?: boolean
+  isSelected?: boolean
+  selectedBlockId?: string | null
+  onSelectBlock?: (blockId: string) => void
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className={cn('text-sm font-medium', isSelected ? 'text-blue-500' : 'text-muted-foreground')}>
+        {page.title}
+      </div>
+      <div className={cn('relative', isSelected && 'ring-1 ring-blue-500')}>
+        <div
+          className="nowheel no-scrollbar flex flex-col overflow-y-scroll bg-card p-3"
+          style={{ width: PAGE_WIDTH, height: PAGE_HEIGHT }}
+        >
+          {isOverlay || isDraggingPage ? (
+            <div className="flex flex-col gap-2">
+              {page.blocks.map((block) => (
+                <BlockContent key={block.id} block={block} />
+              ))}
+            </div>
+          ) : (
+            <SortableContext items={page.blocks} strategy={verticalListSortingStrategy}>
+              <div className="flex flex-col gap-2">
+                {page.blocks.map((block) => (
+                  <SortableBlock
+                    key={block.id}
+                    block={block}
+                    zoom={zoom}
+                    isDropping={isDropping}
+                    isSelected={selectedBlockId === block.id}
+                    onSelect={onSelectBlock!}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          )}
+        </div>
+      </div>
+    </div>
+  )
 }
 
-function getInnerCardYPosition(index: number, siblingHeights: (number | undefined)[]): number {
-  let y = PARENT_CARD_HEADER_HEIGHT
-  for (let i = 0; i < index; i++) {
-    const height = siblingHeights[i]
-    if (height === undefined) continue
-    y += height + INNER_CARD_GAP
-  }
-  return y
+function AddPageZone({ index, onAddPage }: { index: number; onAddPage: (index: number) => void }) {
+  const [isHovered, setIsHovered] = React.useState(false)
+
+  const handleClick = React.useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation()
+      onAddPage(index)
+    },
+    [index, onAddPage],
+  )
+
+  return (
+    <div
+      className="nopan nodrag pointer-events-auto flex w-12 shrink-0 items-center justify-center"
+      style={{ height: PAGE_HEIGHT + 28 }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <Button
+        size="icon"
+        className={cn('transition-opacity', isHovered ? 'opacity-100' : 'opacity-0')}
+        onClick={handleClick}
+      >
+        <PlusIcon />
+      </Button>
+    </div>
+  )
 }
 
-function arrayMove<T>(arr: T[], from: number, to: number): T[] {
-  const newArr = [...arr]
-  const [item] = newArr.splice(from, 1)
-  if (item !== undefined) {
-    newArr.splice(to, 0, item)
-  }
-  return newArr
+function SortablePage({
+  page,
+  zoom,
+  isDropping,
+  isSelected,
+  onSelect,
+  isDraggingPage,
+  selectedBlockId,
+  onSelectBlock,
+}: {
+  page: PageData
+  zoom: number
+  isDropping: boolean
+  isSelected: boolean
+  onSelect: (pageId: string) => void
+  isDraggingPage: boolean
+  selectedBlockId: string | null
+  onSelectBlock: (blockId: string) => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: page.id,
+  })
+
+  const style: React.CSSProperties = isDragging
+    ? { opacity: 0, pointerEvents: 'none' }
+    : {
+        transform: isDropping
+          ? undefined
+          : CSS.Transform.toString(
+              transform
+                ? {
+                    ...transform,
+                    x: transform.x / zoom,
+                    y: transform.y / zoom,
+                  }
+                : null,
+            ),
+        transition: isDropping ? 'none' : transition,
+        pointerEvents: 'all',
+        touchAction: 'none',
+      }
+
+  const handleClick = React.useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation()
+      onSelect(page.id)
+    },
+    [onSelect, page.id],
+  )
+
+  return (
+    <div ref={setNodeRef} style={style} className="nopan nodrag" {...attributes} {...listeners} onClick={handleClick}>
+      <Page
+        page={page}
+        zoom={zoom}
+        isDropping={isDropping}
+        isDraggingPage={isDraggingPage}
+        isSelected={isSelected}
+        selectedBlockId={selectedBlockId}
+        onSelectBlock={onSelectBlock}
+      />
+    </div>
+  )
 }
 
-function calculateParentHeight(measuredHeights: Map<string, number>, innerCardIds: string[]): number {
-  if (innerCardIds.length === 0) {
-    return PARENT_CARD_MIN_HEIGHT
-  }
+function PagesContainerNode({ data }: NodeProps<PagesContainerNodeType>) {
+  const {
+    pages,
+    activePage,
+    activeBlock,
+    zoom,
+    isDropping,
+    isDraggingPage,
+    sensors,
+    selectedPageId,
+    selectedBlockId,
+    onSelectPage,
+    onSelectBlock,
+    onDragStart,
+    onDragEnd,
+    onAddPage,
+  } = data
 
-  // Check if all cards are measured
-  const allMeasured = innerCardIds.every((id) => measuredHeights.has(id))
-  if (!allMeasured) {
-    // Return a reasonable default until all cards are measured
-    return PARENT_CARD_MIN_HEIGHT + innerCardIds.length * 80
-  }
+  return (
+    <div className="nopan nodrag">
+      <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragStart={onDragStart} onDragEnd={onDragEnd}>
+        <SortableContext items={pages} strategy={horizontalListSortingStrategy}>
+          <div className="flex items-start">
+            <AddPageZone index={0} onAddPage={onAddPage} />
+            {pages.map((page, i) => (
+              <React.Fragment key={page.id}>
+                <SortablePage
+                  page={page}
+                  zoom={zoom}
+                  isDropping={isDropping}
+                  isSelected={selectedPageId === page.id}
+                  onSelect={onSelectPage}
+                  isDraggingPage={isDraggingPage}
+                  selectedBlockId={selectedBlockId}
+                  onSelectBlock={onSelectBlock}
+                />
+                <AddPageZone index={i + 1} onAddPage={onAddPage} />
+              </React.Fragment>
+            ))}
+          </div>
+        </SortableContext>
 
-  let totalHeight = PARENT_CARD_HEADER_HEIGHT
-  for (let i = 0; i < innerCardIds.length; i++) {
-    const cardId = innerCardIds[i]
-    if (cardId) {
-      const height = measuredHeights.get(cardId)
-      if (height !== undefined) {
-        totalHeight += height
-        if (i < innerCardIds.length - 1) {
-          totalHeight += INNER_CARD_GAP
+        {createPortal(
+          <DragOverlay dropAnimation={DROP_ANIMATION}>
+            {activePage ? (
+              <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top left', width: 'fit-content' }}>
+                <Page page={activePage} zoom={zoom} isDropping={false} isOverlay />
+              </div>
+            ) : activeBlock ? (
+              <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top left', width: PAGE_WIDTH - 24 }}>
+                <BlockContent block={activeBlock} isDragging />
+              </div>
+            ) : null}
+          </DragOverlay>,
+          document.body,
+        )}
+      </DndContext>
+    </div>
+  )
+}
+
+const nodeTypes = {
+  pagesContainer: PagesContainerNode,
+}
+
+function CanvasInner() {
+  const [pages, setPages] = React.useState(INITIAL_PAGES)
+  const [activePageId, setActivePageId] = React.useState<string | null>(null)
+  const [activeBlockId, setActiveBlockId] = React.useState<string | null>(null)
+  const [isDropping, setIsDropping] = React.useState(false)
+  const [selectedPageId, setSelectedPageId] = React.useState<string | null>(null)
+  const [selectedBlockId, setSelectedBlockId] = React.useState<string | null>(null)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+  )
+
+  const handleDragStart = React.useCallback((event: DragStartEvent) => {
+    const id = String(event.active.id)
+    setIsDropping(false)
+
+    if (isBlockId(id)) {
+      setActiveBlockId(id)
+      setActivePageId(null)
+    } else {
+      setActivePageId(id)
+      setActiveBlockId(null)
+    }
+  }, [])
+
+  const handleDragEnd = React.useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event
+
+      setIsDropping(true)
+
+      if (over && active.id !== over.id) {
+        const activeId = String(active.id)
+        const overId = String(over.id)
+
+        if (isBlockId(activeId)) {
+          // Block reordering within the same page
+          const pageIndex = pages.findIndex((p) => p.blocks.some((b) => b.id === activeId))
+          if (pageIndex !== -1) {
+            setPages((prev) => {
+              const newPages = [...prev]
+              const page = newPages[pageIndex]
+              if (!page) return prev
+
+              const blocks = page.blocks
+              const oldIndex = blocks.findIndex((b) => b.id === activeId)
+              const newIndex = blocks.findIndex((b) => b.id === overId)
+
+              if (oldIndex !== -1 && newIndex !== -1) {
+                newPages[pageIndex] = {
+                  id: page.id,
+                  title: page.title,
+                  blocks: arrayMove(blocks, oldIndex, newIndex),
+                }
+              }
+              return newPages
+            })
+          }
+        } else {
+          // Page reordering
+          setPages((prev) => {
+            const oldIndex = prev.findIndex((p) => p.id === activeId)
+            const newIndex = prev.findIndex((p) => p.id === overId)
+            if (oldIndex !== -1 && newIndex !== -1) {
+              return arrayMove(prev, oldIndex, newIndex)
+            }
+            return prev
+          })
         }
       }
+
+      setActivePageId(null)
+      setActiveBlockId(null)
+      requestAnimationFrame(() => setIsDropping(false))
+    },
+    [pages],
+  )
+
+  const activePage = pages.find((page) => page.id === activePageId) ?? null
+  const activeBlock = pages.flatMap((page) => page.blocks).find((block) => block.id === activeBlockId) ?? null
+  const { zoom } = useViewport()
+
+  const handleSelectPage = React.useCallback((pageId: string | null) => {
+    setSelectedPageId(pageId)
+    setSelectedBlockId(null) // Deselect block when selecting page
+  }, [])
+
+  const handleSelectBlock = React.useCallback((blockId: string | null) => {
+    setSelectedBlockId(blockId)
+    setSelectedPageId(null) // Deselect page when selecting block
+  }, [])
+
+  const handlePaneClick = React.useCallback(() => {
+    setSelectedPageId(null)
+    setSelectedBlockId(null)
+  }, [])
+
+  const handleAddPage = React.useCallback(
+    (index: number) => {
+      const newPage: PageData = {
+        id: `page-${Date.now()}`,
+        title: `Page ${pages.length + 1}`,
+        blocks: [],
+      }
+      setPages((prev) => {
+        const newPages = [...prev]
+        newPages.splice(index, 0, newPage)
+        return newPages
+      })
+    },
+    [pages.length],
+  )
+
+  const handleDeleteSelectedPage = React.useCallback(() => {
+    if (selectedPageId) {
+      setPages((prev) => prev.filter((page) => page.id !== selectedPageId))
+      setSelectedPageId(null)
     }
-  }
-  totalHeight += PARENT_CARD_PADDING
-  return Math.max(PARENT_CARD_MIN_HEIGHT, totalHeight)
-}
+  }, [selectedPageId])
 
-function generateId(): string {
-  return ulid()
-}
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Backspace' && selectedPageId) {
+        event.preventDefault()
+        handleDeleteSelectedPage()
+      }
+    }
 
-// Easing function for smooth animations
-function easeOutQuad(t: number): number {
-  return t * (2 - t)
-}
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectedPageId, handleDeleteSelectedPage])
 
-// ============================================================================
-// Node Components (memoized for performance)
-// Components look up data from context using stable IDs
-// ============================================================================
-
-const ParentCardNode = React.memo(function ParentCardNode({ data, dragging }: NodeProps<ParentCardNodeType>) {
-  const { cardId } = data
-  const { getParentCard, onAddInnerCard } = useCanvasContext()
-
-  const card = getParentCard(cardId)
-  if (!card) return null
+  const nodes = React.useMemo<PagesContainerNodeType[]>(
+    () => [
+      {
+        id: 'pages-container',
+        type: 'pagesContainer',
+        position: { x: 0, y: 0 },
+        data: {
+          pages,
+          activePage,
+          activeBlock,
+          zoom,
+          isDropping,
+          isDraggingPage: activePageId !== null,
+          isDraggingBlock: activeBlockId !== null,
+          sensors,
+          selectedPageId,
+          selectedBlockId,
+          onSelectPage: handleSelectPage,
+          onSelectBlock: handleSelectBlock,
+          onDragStart: handleDragStart,
+          onDragEnd: handleDragEnd,
+          onAddPage: handleAddPage,
+        },
+      },
+    ],
+    [
+      pages,
+      activePage,
+      activeBlock,
+      zoom,
+      isDropping,
+      activePageId,
+      activeBlockId,
+      sensors,
+      selectedPageId,
+      selectedBlockId,
+      handleSelectPage,
+      handleSelectBlock,
+      handleDragStart,
+      handleDragEnd,
+      handleAddPage,
+    ],
+  )
 
   return (
-    <div
-      style={{ touchAction: 'none' }}
-      className={cn(
-        'flex h-full w-full flex-col rounded-xl border border-border bg-card shadow-sm',
-        'transition-shadow duration-200',
-        dragging && 'shadow-lg ring-2 ring-primary/20',
-      )}
-    >
-      <div className="flex items-center justify-between border-b border-border px-3 py-2">
-        <span className="text-sm font-semibold text-foreground">{card.label}</span>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation()
-            onAddInnerCard(card.id)
-          }}
-          onMouseDown={(e) => e.stopPropagation()}
-          className={cn(
-            'flex h-6 w-6 items-center justify-center rounded-md',
-            'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-            'transition-colors',
-          )}
-        >
-          <PlusIcon className="h-4 w-4" />
-        </button>
-      </div>
-      <div className="relative flex-1" />
+    <div className="h-screen w-screen overscroll-x-none bg-muted">
+      <ReactFlow
+        nodes={nodes}
+        nodeTypes={nodeTypes}
+        minZoom={ZOOM_MIN}
+        maxZoom={ZOOM_MAX}
+        fitView
+        nodesDraggable={false}
+        nodesConnectable={false}
+        elementsSelectable={false}
+        panOnScroll
+        panOnScrollSpeed={1}
+        panOnScrollMode={PanOnScrollMode.Free}
+        zoomOnScroll={false}
+        zoomOnPinch
+        zoomActivationKeyCode="Meta"
+        panOnDrag={[0, 1, 2]}
+        noWheelClassName="nowheel"
+        onPaneClick={handlePaneClick}
+        proOptions={{
+          hideAttribution: true,
+        }}
+      >
+        <Background />
+        <Controls showInteractive={false} />
+      </ReactFlow>
     </div>
   )
-})
-
-const InnerCardNode = React.memo(function InnerCardNode({ data, dragging }: NodeProps<InnerCardNodeType>) {
-  const { cardId } = data
-  const { getInnerCard, onDeleteInnerCard, isParentDragging } = useCanvasContext()
-
-  const innerCard = getInnerCard(cardId)
-  if (!innerCard) return null
-
-  // Check if this card's parent is being dragged
-  const parentBeingDragged = isParentDragging(cardId)
-
-  return (
-    <div
-      style={{ touchAction: 'none' }}
-      className={cn(
-        'group flex w-full cursor-grab flex-col gap-2 rounded-lg border border-border bg-background p-3 shadow-sm',
-        'hover:shadow-md active:cursor-grabbing',
-        // Only apply transition when not dragging (for smooth reordering animation)
-        !dragging && !parentBeingDragged && 'transition-shadow duration-200',
-        dragging && 'shadow-lg ring-2 ring-primary/20',
-      )}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <p className="flex-1 text-sm text-foreground">{innerCard.content}</p>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation()
-            onDeleteInnerCard(innerCard.id)
-          }}
-          onMouseDown={(e) => e.stopPropagation()}
-          onPointerDown={(e) => e.stopPropagation()}
-          className={cn(
-            'flex h-5 w-5 shrink-0 items-center justify-center rounded',
-            // Always visible on touch devices, hover-reveal on desktop
-            'opacity-100 sm:opacity-0 sm:group-hover:opacity-100',
-            'text-muted-foreground hover:bg-destructive/10 hover:text-destructive',
-            'transition-all',
-          )}
-        >
-          <TrashIcon className="h-3.5 w-3.5" />
-        </button>
-      </div>
-    </div>
-  )
-})
-
-// ============================================================================
-// Main Components
-// ============================================================================
+}
 
 export function Canvas() {
   return (
-    <div className="h-screen w-screen overflow-hidden bg-background">
-      <ReactFlowProvider>
-        <Flow />
-      </ReactFlowProvider>
-    </div>
-  )
-}
-
-function Flow() {
-  const { updateNode, fitView } = useReactFlow<CanvasNode>()
-
-  // Node types - memoized per React Flow best practices
-  const nodeTypes = React.useMemo(
-    () => ({
-      parentCard: ParentCardNode,
-      innerCard: InnerCardNode,
-    }),
-    [],
-  )
-
-  const [cardsPerRow] = React.useState(DEFAULT_CARDS_PER_ROW)
-  const [ready, setReady] = React.useState(false)
-
-  // ============================================================================
-  // Stable Data Stores (refs) - card data that rarely changes
-  // ============================================================================
-  const parentCardsMapRef = React.useRef<Map<string, ParentCardData>>(buildParentCardsMap(initialParentCards))
-  const innerCardsMapRef = React.useRef<Map<string, InnerCardData>>(buildInnerCardsMap(initialInnerCards))
-
-  // ============================================================================
-  // Order State - tracks which cards exist and their order (changes on reorder/add/delete)
-  // ============================================================================
-  const [parentCardOrder, setParentCardOrder] = React.useState<string[]>(() => initialParentCards.map((c) => c.id))
-  const [innerCardOrderMap, setInnerCardOrderMap] = React.useState<Map<string, string[]>>(() =>
-    buildInnerCardOrderMap(initialInnerCards),
-  )
-
-  // ============================================================================
-  // Drag State
-  // ============================================================================
-  const [dragState, setDragState] = React.useState<DragState>({
-    draggingId: null,
-    draggingType: null,
-    draggingParentId: null,
-    childrenOfDraggingParent: [],
-  })
-
-  // Synchronous ref to track dragging state immediately (before async state update)
-  const isDraggingRef = React.useRef(false)
-
-  const measuredHeightsRef = React.useRef<Map<string, number>>(new Map())
-  const previewOrderRef = React.useRef<string[]>([])
-  const animationTimersRef = React.useRef<Map<string, ReturnType<typeof timer>>>(new Map())
-  const dropTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  // Slot boundaries calculated at drag start - remains stable during drag
-  const slotBoundariesRef = React.useRef<SlotBoundary[]>([])
-  const draggedCardHeightRef = React.useRef<number>(0)
-
-  // Ref to store children of dragging parent (for stable isParentDragging function)
-  const childrenOfDraggingParentRef = React.useRef<string[]>([])
-
-  // ============================================================================
-  // Stable Data Lookup Functions (for context)
-  // ============================================================================
-  const getParentCard = React.useCallback((id: string) => {
-    return parentCardsMapRef.current.get(id)
-  }, [])
-
-  const getInnerCard = React.useCallback((id: string) => {
-    return innerCardsMapRef.current.get(id)
-  }, [])
-
-  // ============================================================================
-  // Animation Helpers
-  // ============================================================================
-  const cancelAnimations = React.useCallback(() => {
-    animationTimersRef.current.forEach((t) => t.stop())
-    animationTimersRef.current.clear()
-  }, [])
-
-  const animateNodePosition = React.useCallback(
-    (nodeId: string, from: XYPosition, to: XYPosition) => {
-      // Cancel any existing animation for this node
-      const existingTimer = animationTimersRef.current.get(nodeId)
-      if (existingTimer) {
-        existingTimer.stop()
-      }
-
-      const startTime = Date.now()
-      const t = timer(() => {
-        const elapsed = Date.now() - startTime
-        const progress = Math.min(elapsed / ANIMATION_DURATION, 1)
-        const eased = easeOutQuad(progress)
-
-        const currentPosition = {
-          x: from.x + (to.x - from.x) * eased,
-          y: from.y + (to.y - from.y) * eased,
-        }
-
-        updateNode(nodeId, { position: currentPosition })
-
-        if (progress >= 1) {
-          t.stop()
-          animationTimersRef.current.delete(nodeId)
-        }
-      })
-
-      animationTimersRef.current.set(nodeId, t)
-    },
-    [updateNode],
-  )
-
-  // ============================================================================
-  // Callbacks for context
-  // ============================================================================
-  const handleAddInnerCard = React.useCallback((parentId: string) => {
-    const newId = `inner-${generateId()}`
-    const newInnerCard: InnerCardData = {
-      id: newId,
-      parentId,
-      content: 'New card',
-    }
-
-    // Update stable data store
-    innerCardsMapRef.current.set(newId, newInnerCard)
-
-    // Update order state (triggers node creation)
-    setInnerCardOrderMap((prev) => {
-      const newMap = new Map(prev)
-      const existing = newMap.get(parentId) ?? []
-      newMap.set(parentId, [...existing, newId])
-      return newMap
-    })
-  }, [])
-
-  const handleDeleteInnerCard = React.useCallback((id: string) => {
-    const card = innerCardsMapRef.current.get(id)
-    if (!card) return
-
-    // Update order state first (triggers node removal)
-    setInnerCardOrderMap((prev) => {
-      const newMap = new Map(prev)
-      const existing = newMap.get(card.parentId) ?? []
-      newMap.set(
-        card.parentId,
-        existing.filter((cardId) => cardId !== id),
-      )
-      return newMap
-    })
-
-    // Clean up data store and measurements
-    innerCardsMapRef.current.delete(id)
-    measuredHeightsRef.current.delete(id)
-  }, [])
-
-  const isParentDragging = React.useCallback((innerCardId: string) => {
-    return childrenOfDraggingParentRef.current.includes(innerCardId)
-  }, [])
-
-  // ============================================================================
-  // Context Value (stable - functions use refs internally)
-  // ============================================================================
-  const contextValue = React.useMemo<CanvasContextValue>(
-    () => ({
-      getParentCard,
-      getInnerCard,
-      onAddInnerCard: handleAddInnerCard,
-      onDeleteInnerCard: handleDeleteInnerCard,
-      isParentDragging,
-    }),
-    [getParentCard, getInnerCard, handleAddInnerCard, handleDeleteInnerCard, isParentDragging],
-  )
-
-  // ============================================================================
-  // Build Initial Nodes (only called once or on structural changes)
-  // ============================================================================
-  const buildInitialNodes = React.useCallback((): CanvasNode[] => {
-    const nodes: CanvasNode[] = []
-
-    for (let i = 0; i < parentCardOrder.length; i++) {
-      const cardId = parentCardOrder[i]
-      if (!cardId) continue
-
-      const childIds = innerCardOrderMap.get(cardId) ?? []
-      const height = calculateParentHeight(measuredHeightsRef.current, childIds)
-      const position = getParentPositionFromIndex(i, cardsPerRow)
-
-      nodes.push({
-        id: cardId,
-        type: 'parentCard',
-        position,
-        data: { cardId },
-        draggable: true,
-        selectable: false,
-        width: PARENT_CARD_WIDTH,
-        height,
-      } satisfies ParentCardNodeType)
-    }
-
-    for (const parentId of parentCardOrder) {
-      const childIds = innerCardOrderMap.get(parentId) ?? []
-      const siblingHeights = childIds.map((id) => measuredHeightsRef.current.get(id))
-
-      for (let i = 0; i < childIds.length; i++) {
-        const cardId = childIds[i]
-        if (!cardId) continue
-
-        const y = getInnerCardYPosition(i, siblingHeights)
-
-        nodes.push({
-          id: cardId,
-          type: 'innerCard',
-          position: { x: PARENT_CARD_PADDING, y },
-          parentId: parentId,
-          extent: 'parent',
-          data: { cardId, parentId },
-          draggable: true,
-          selectable: false,
-          width: INNER_CARD_WIDTH,
-        } satisfies InnerCardNodeType)
-      }
-    }
-
-    return nodes
-  }, [parentCardOrder, innerCardOrderMap, cardsPerRow])
-
-  const [nodes, setNodes, onNodesChange] = useNodesState<CanvasNode>(buildInitialNodes())
-
-  // ============================================================================
-  // Sync nodes when structure changes (add/delete) - but NOT on reorder
-  // ============================================================================
-  const prevParentOrderLengthRef = React.useRef(parentCardOrder.length)
-  const prevInnerOrderMapSizeRef = React.useRef(
-    Array.from(innerCardOrderMap.values()).reduce((sum, arr) => sum + arr.length, 0),
-  )
-
-  React.useEffect(() => {
-    // Skip during drag
-    if (isDraggingRef.current || dragState.draggingId) return
-
-    const currentParentLength = parentCardOrder.length
-    const currentInnerCount = Array.from(innerCardOrderMap.values()).reduce((sum, arr) => sum + arr.length, 0)
-
-    // Only rebuild if structure changed (add/delete), not just reorder
-    const structureChanged =
-      currentParentLength !== prevParentOrderLengthRef.current || currentInnerCount !== prevInnerOrderMapSizeRef.current
-
-    if (structureChanged) {
-      prevParentOrderLengthRef.current = currentParentLength
-      prevInnerOrderMapSizeRef.current = currentInnerCount
-      setNodes(buildInitialNodes())
-    }
-  }, [parentCardOrder, innerCardOrderMap, buildInitialNodes, setNodes, dragState.draggingId])
-
-  // ============================================================================
-  // Detect when all nodes have been measured
-  // ============================================================================
-  const nodesInitialized = useNodesInitialized()
-  const hasRepositionedRef = React.useRef(false)
-
-  React.useEffect(() => {
-    if (nodesInitialized && !hasRepositionedRef.current && !dragState.draggingId) {
-      hasRepositionedRef.current = true
-
-      // Extract measured heights from current nodes
-      for (const node of nodes) {
-        if (node.type === 'innerCard' && node.measured?.height) {
-          measuredHeightsRef.current.set(node.id, node.measured.height)
-        }
-      }
-
-      // Update positions using functional setNodes (preserves object identity where possible)
-      setNodes((currentNodes) => {
-        return currentNodes.map((node) => {
-          if (node.type === 'innerCard') {
-            const { parentId } = node.data as InnerCardNodeData
-            const siblingIds = innerCardOrderMap.get(parentId) ?? []
-            const siblingIndex = siblingIds.indexOf(node.id)
-            const siblingHeights = siblingIds.map((id) => measuredHeightsRef.current.get(id))
-            const y = getInnerCardYPosition(siblingIndex, siblingHeights)
-
-            if (node.position.y === y) return node // No change, preserve identity
-            return { ...node, position: { ...node.position, y } }
-          }
-
-          if (node.type === 'parentCard') {
-            const childIds = innerCardOrderMap.get(node.id) ?? []
-            const height = calculateParentHeight(measuredHeightsRef.current, childIds)
-
-            if (node.height === height) return node // No change, preserve identity
-            return { ...node, height }
-          }
-
-          return node
-        })
-      })
-
-      // Fit view after nodes are repositioned with correct measurements
-      requestAnimationFrame(() => {
-        fitView({ padding: 0.3 })
-        setReady(true)
-      })
-    }
-  }, [nodesInitialized, dragState.draggingId, innerCardOrderMap, nodes, setNodes, fitView])
-
-  // ============================================================================
-  // Calculate dynamic pan boundaries
-  // ============================================================================
-  const translateExtent = React.useMemo((): CoordinateExtent => {
-    const PADDING = 500
-
-    if (parentCardOrder.length === 0) {
-      return [
-        [-1000, -1000],
-        [1000, 1000],
-      ]
-    }
-
-    const lastIndex = parentCardOrder.length - 1
-    const lastCol = lastIndex % cardsPerRow
-    const lastRow = Math.floor(lastIndex / cardsPerRow)
-
-    const maxX = (lastCol + 1) * (PARENT_CARD_WIDTH + PARENT_GAP)
-    const maxY = (lastRow + 1) * (PARENT_CARD_MIN_HEIGHT + PARENT_GAP) + 200
-
-    return [
-      [-PADDING, -PADDING],
-      [maxX + PADDING, maxY + PADDING],
-    ]
-  }, [parentCardOrder.length, cardsPerRow])
-
-  // ============================================================================
-  // Cleanup
-  // ============================================================================
-  React.useEffect(() => {
-    return () => {
-      cancelAnimations()
-      if (dropTimeoutRef.current) {
-        clearTimeout(dropTimeoutRef.current)
-      }
-    }
-  }, [cancelAnimations])
-
-  // ============================================================================
-  // Handle dimension changes
-  // ============================================================================
-  const dimensionsChangedDuringDragRef = React.useRef(false)
-
-  const handleNodesChange: OnNodesChange<CanvasNode> = React.useCallback(
-    (changes) => {
-      onNodesChange(changes)
-
-      let dimensionsChanged = false
-      for (const change of changes) {
-        if (change.type === 'dimensions' && change.dimensions) {
-          const node = nodes.find((n) => n.id === change.id)
-          if (node?.type === 'innerCard') {
-            const prevHeight = measuredHeightsRef.current.get(change.id)
-            if (prevHeight !== change.dimensions.height) {
-              measuredHeightsRef.current.set(change.id, change.dimensions.height)
-              dimensionsChanged = true
-            }
-          }
-        }
-      }
-
-      if (dimensionsChanged) {
-        if (isDraggingRef.current) {
-          dimensionsChangedDuringDragRef.current = true
-        } else {
-          // Update positions and heights using functional update (preserves identity)
-          setNodes((currentNodes) => {
-            return currentNodes.map((node) => {
-              if (node.type === 'innerCard') {
-                const { parentId } = node.data as InnerCardNodeData
-                const siblingIds = innerCardOrderMap.get(parentId) ?? []
-                const siblingIndex = siblingIds.indexOf(node.id)
-                const siblingHeights = siblingIds.map((id) => measuredHeightsRef.current.get(id))
-                const y = getInnerCardYPosition(siblingIndex, siblingHeights)
-
-                if (node.position.y === y) return node
-                return { ...node, position: { ...node.position, y } }
-              }
-
-              if (node.type === 'parentCard') {
-                const childIds = innerCardOrderMap.get(node.id) ?? []
-                const height = calculateParentHeight(measuredHeightsRef.current, childIds)
-
-                if (node.height === height) return node
-                return { ...node, height }
-              }
-
-              return node
-            })
-          })
-        }
-      }
-    },
-    [onNodesChange, nodes, innerCardOrderMap, setNodes],
-  )
-
-  // Handle deferred dimension updates after drag ends
-  React.useEffect(() => {
-    if (!dragState.draggingId && dimensionsChangedDuringDragRef.current) {
-      dimensionsChangedDuringDragRef.current = false
-      setNodes((currentNodes) => {
-        return currentNodes.map((node) => {
-          if (node.type === 'innerCard') {
-            const { parentId } = node.data as InnerCardNodeData
-            const siblingIds = innerCardOrderMap.get(parentId) ?? []
-            const siblingIndex = siblingIds.indexOf(node.id)
-            const siblingHeights = siblingIds.map((id) => measuredHeightsRef.current.get(id))
-            const y = getInnerCardYPosition(siblingIndex, siblingHeights)
-
-            if (node.position.y === y) return node
-            return { ...node, position: { ...node.position, y } }
-          }
-
-          if (node.type === 'parentCard') {
-            const childIds = innerCardOrderMap.get(node.id) ?? []
-            const height = calculateParentHeight(measuredHeightsRef.current, childIds)
-
-            if (node.height === height) return node
-            return { ...node, height }
-          }
-
-          return node
-        })
-      })
-    }
-  }, [dragState.draggingId, innerCardOrderMap, setNodes])
-
-  // ============================================================================
-  // Drag Handlers
-  // ============================================================================
-  const handleNodeDragStart: OnNodeDrag<CanvasNode> = React.useCallback(
-    (_, node) => {
-      isDraggingRef.current = true
-      cancelAnimations()
-
-      if (node.type === 'parentCard') {
-        const childIds = innerCardOrderMap.get(node.id) ?? []
-
-        setNodes((nds) =>
-          nds.map((n) => {
-            if (n.id === node.id) return { ...n, zIndex: 1000 }
-            if (childIds.includes(n.id)) return { ...n, zIndex: 1001 }
-            return n
-          }),
-        )
-
-        childrenOfDraggingParentRef.current = childIds
-        setDragState({
-          draggingId: node.id,
-          draggingType: 'parent',
-          draggingParentId: node.id,
-          childrenOfDraggingParent: childIds,
-        })
-        previewOrderRef.current = [...parentCardOrder]
-        slotBoundariesRef.current = []
-      } else if (node.type === 'innerCard') {
-        const { parentId } = node.data as InnerCardNodeData
-        const siblingIds = innerCardOrderMap.get(parentId) ?? []
-
-        setNodes((nds) => nds.map((n) => (n.id === node.id ? { ...n, zIndex: 1000 } : n)))
-
-        // Calculate stable slot boundaries at drag start
-        const boundaries: SlotBoundary[] = []
-        let y = PARENT_CARD_HEADER_HEIGHT
-        for (const siblingId of siblingIds) {
-          const height = measuredHeightsRef.current.get(siblingId) ?? INNER_CARD_FALLBACK_HEIGHT
-          boundaries.push({
-            id: siblingId,
-            top: y,
-            bottom: y + height,
-            center: y + height / 2,
-          })
-          y += height + INNER_CARD_GAP
-        }
-        slotBoundariesRef.current = boundaries
-        draggedCardHeightRef.current = measuredHeightsRef.current.get(node.id) ?? INNER_CARD_FALLBACK_HEIGHT
-
-        setDragState({
-          draggingId: node.id,
-          draggingType: 'inner',
-          draggingParentId: parentId,
-          childrenOfDraggingParent: [],
-        })
-        previewOrderRef.current = [...siblingIds]
-      }
-    },
-    [parentCardOrder, innerCardOrderMap, cancelAnimations, setNodes],
-  )
-
-  const handleNodeDrag: OnNodeDrag<CanvasNode> = React.useCallback(
-    (_, node) => {
-      if (!dragState.draggingId) return
-
-      if (dragState.draggingType === 'parent') {
-        const fromIndex = previewOrderRef.current.indexOf(dragState.draggingId)
-        const toIndex = getParentIndexFromPosition(
-          node.position.x,
-          node.position.y,
-          cardsPerRow,
-          parentCardOrder.length,
-        )
-
-        if (fromIndex === toIndex) return
-
-        const newPreviewOrder = arrayMove(previewOrderRef.current, fromIndex, toIndex)
-        previewOrderRef.current = newPreviewOrder
-
-        for (const parentId of newPreviewOrder) {
-          if (parentId === dragState.draggingId) continue
-
-          const previewIndex = newPreviewOrder.indexOf(parentId)
-          const targetPosition = getParentPositionFromIndex(previewIndex, cardsPerRow)
-
-          const currentNode = nodes.find((n) => n.id === parentId)
-          if (currentNode) {
-            animateNodePosition(parentId, currentNode.position, targetPosition)
-          }
-        }
-      } else if (dragState.draggingType === 'inner') {
-        const boundaries = slotBoundariesRef.current
-        if (boundaries.length === 0) return
-
-        const draggedCardCenter = node.position.y + draggedCardHeightRef.current / 2
-
-        let targetSlotIndex = 0
-        let minDistance = Infinity
-
-        for (let i = 0; i < boundaries.length; i++) {
-          const slot = boundaries[i]
-          if (!slot) continue
-
-          const distance = Math.abs(draggedCardCenter - slot.center)
-          if (distance < minDistance) {
-            minDistance = distance
-            targetSlotIndex = i
-          }
-        }
-
-        targetSlotIndex = Math.min(Math.max(0, targetSlotIndex), previewOrderRef.current.length - 1)
-
-        const fromIndex = previewOrderRef.current.indexOf(dragState.draggingId)
-        if (fromIndex === targetSlotIndex) return
-
-        const newPreviewOrder = arrayMove(previewOrderRef.current, fromIndex, targetSlotIndex)
-        previewOrderRef.current = newPreviewOrder
-
-        const newSiblingHeights = newPreviewOrder.map(
-          (id) => measuredHeightsRef.current.get(id) ?? INNER_CARD_FALLBACK_HEIGHT,
-        )
-
-        for (const siblingId of newPreviewOrder) {
-          if (siblingId === dragState.draggingId) continue
-
-          const previewIndex = newPreviewOrder.indexOf(siblingId)
-          const targetPosition = { x: PARENT_CARD_PADDING, y: getInnerCardYPosition(previewIndex, newSiblingHeights) }
-
-          const currentNode = nodes.find((n) => n.id === siblingId)
-          if (currentNode) {
-            animateNodePosition(siblingId, currentNode.position, targetPosition)
-          }
-        }
-      }
-    },
-    [dragState, parentCardOrder.length, cardsPerRow, nodes, animateNodePosition],
-  )
-
-  const handleNodeDragStop: OnNodeDrag<CanvasNode> = React.useCallback(
-    (_, node) => {
-      if (!dragState.draggingId) return
-
-      const previewOrder = previewOrderRef.current
-
-      if (dragState.draggingType === 'parent') {
-        for (const parentId of previewOrder) {
-          const targetIndex = previewOrder.indexOf(parentId)
-          const targetPosition = getParentPositionFromIndex(targetIndex, cardsPerRow)
-
-          const currentNode = nodes.find((n) => n.id === parentId)
-          if (currentNode) {
-            animateNodePosition(parentId, currentNode.position, targetPosition)
-          }
-        }
-      } else if (dragState.draggingType === 'inner') {
-        const newSiblingHeights = previewOrder.map(
-          (id) => measuredHeightsRef.current.get(id) ?? INNER_CARD_FALLBACK_HEIGHT,
-        )
-
-        for (const siblingId of previewOrder) {
-          const targetIndex = previewOrder.indexOf(siblingId)
-          const targetPosition = {
-            x: PARENT_CARD_PADDING,
-            y: getInnerCardYPosition(targetIndex, newSiblingHeights),
-          }
-
-          const currentNode = nodes.find((n) => n.id === siblingId)
-          if (currentNode) {
-            animateNodePosition(siblingId, currentNode.position, targetPosition)
-          }
-        }
-      }
-
-      const draggingType = dragState.draggingType
-      const draggedNodeId = dragState.draggingId
-      const draggedChildIds = dragState.childrenOfDraggingParent
-      const finalOrder = [...previewOrder]
-      const innerCardParentId = draggingType === 'inner' ? (node.data as InnerCardNodeData).parentId : null
-
-      dropTimeoutRef.current = setTimeout(() => {
-        // Reset z-index using functional update (preserves identity)
-        setNodes((nds) =>
-          nds.map((n) => {
-            if (n.id === draggedNodeId && n.zIndex !== undefined) return { ...n, zIndex: undefined }
-            if (draggedChildIds.includes(n.id) && n.zIndex !== undefined) return { ...n, zIndex: undefined }
-            return n
-          }),
-        )
-
-        // Update order state - this does NOT trigger a full rebuild anymore
-        // because we check for structural changes (add/delete), not just reorder
-        if (draggingType === 'parent') {
-          setParentCardOrder(finalOrder)
-        } else if (draggingType === 'inner' && innerCardParentId) {
-          setInnerCardOrderMap((prev) => {
-            const newMap = new Map(prev)
-            newMap.set(innerCardParentId, finalOrder)
-            return newMap
-          })
-        }
-
-        setDragState({
-          draggingId: null,
-          draggingType: null,
-          draggingParentId: null,
-          childrenOfDraggingParent: [],
-        })
-
-        isDraggingRef.current = false
-        childrenOfDraggingParentRef.current = []
-        previewOrderRef.current = []
-        slotBoundariesRef.current = []
-      }, ANIMATION_DURATION)
-    },
-    [dragState, cardsPerRow, nodes, animateNodePosition, setNodes],
-  )
-
-  return (
-    <CanvasContext value={contextValue}>
-      <ReactFlow<CanvasNode>
-        className={cn('transition-opacity duration-200', !ready && 'opacity-0')}
-        nodes={nodes}
-        edges={[]}
-        nodeTypes={nodeTypes}
-        onNodesChange={handleNodesChange}
-        onNodeDragStart={handleNodeDragStart}
-        onNodeDrag={handleNodeDrag}
-        onNodeDragStop={handleNodeDragStop}
-        fitView={false}
-        // Panning
-        panOnDrag
-        panOnScroll
-        panOnScrollMode={PanOnScrollMode.Free}
-        // Zooming
-        zoomOnScroll={false}
-        zoomOnPinch
-        zoomOnDoubleClick
-        minZoom={0.1}
-        maxZoom={3}
-        // Boundaries
-        translateExtent={translateExtent}
-        proOptions={{ hideAttribution: true }}
-        nodesConnectable={false}
-        elementsSelectable={false}
-      >
-        <Background gap={20} size={1} />
-        <Controls
-          showInteractive={false}
-          fitViewOptions={{ padding: 0.3 }}
-          className={cn(
-            '[&>button]:border-border [&>button]:bg-card [&>button]:text-muted-foreground',
-            '[&>button:hover]:bg-accent [&>button:hover]:text-accent-foreground',
-            '[&>button]:fill-current',
-          )}
-        />
-      </ReactFlow>
-    </CanvasContext>
+    <ReactFlowProvider>
+      <CanvasInner />
+    </ReactFlowProvider>
   )
 }

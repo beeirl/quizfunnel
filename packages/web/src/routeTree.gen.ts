@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as CanvasRouteImport } from './routes/canvas'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
@@ -19,10 +20,16 @@ import { Route as WorkspaceWorkspaceIdDashboardRouteRouteImport } from './routes
 import { Route as WorkspaceWorkspaceIdDashboardIndexRouteImport } from './routes/workspace/$workspaceId/_dashboard/index'
 import { Route as WorkspaceWorkspaceIdQuizzesIdLayoutRouteRouteImport } from './routes/workspace/$workspaceId/quizzes/$id/_layout/route'
 import { Route as WorkspaceWorkspaceIdQuizzesIdPreviewIndexRouteImport } from './routes/workspace/$workspaceId/quizzes/$id/preview/index'
+import { Route as WorkspaceWorkspaceIdQuizzesIdLayoutSettingsRouteImport } from './routes/workspace/$workspaceId/quizzes/$id/_layout/settings'
 import { Route as WorkspaceWorkspaceIdQuizzesIdLayoutResponsesRouteImport } from './routes/workspace/$workspaceId/quizzes/$id/_layout/responses'
 import { Route as WorkspaceWorkspaceIdQuizzesIdLayoutInsightsRouteImport } from './routes/workspace/$workspaceId/quizzes/$id/_layout/insights'
 import { Route as WorkspaceWorkspaceIdQuizzesIdLayoutEditIndexRouteImport } from './routes/workspace/$workspaceId/quizzes/$id/_layout/edit/index'
 
+const CanvasRoute = CanvasRouteImport.update({
+  id: '/canvas',
+  path: '/canvas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -77,6 +84,12 @@ const WorkspaceWorkspaceIdQuizzesIdPreviewIndexRoute =
     path: '/quizzes/$id/preview/',
     getParentRoute: () => WorkspaceWorkspaceIdRouteRoute,
   } as any)
+const WorkspaceWorkspaceIdQuizzesIdLayoutSettingsRoute =
+  WorkspaceWorkspaceIdQuizzesIdLayoutSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => WorkspaceWorkspaceIdQuizzesIdLayoutRouteRoute,
+  } as any)
 const WorkspaceWorkspaceIdQuizzesIdLayoutResponsesRoute =
   WorkspaceWorkspaceIdQuizzesIdLayoutResponsesRouteImport.update({
     id: '/responses',
@@ -98,6 +111,7 @@ const WorkspaceWorkspaceIdQuizzesIdLayoutEditIndexRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/canvas': typeof CanvasRoute
   '/workspace/$workspaceId': typeof WorkspaceWorkspaceIdDashboardRouteRouteWithChildren
   '/auth/authorize': typeof AuthAuthorizeRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -107,11 +121,13 @@ export interface FileRoutesByFullPath {
   '/workspace/$workspaceId/quizzes/$id': typeof WorkspaceWorkspaceIdQuizzesIdLayoutRouteRouteWithChildren
   '/workspace/$workspaceId/quizzes/$id/insights': typeof WorkspaceWorkspaceIdQuizzesIdLayoutInsightsRoute
   '/workspace/$workspaceId/quizzes/$id/responses': typeof WorkspaceWorkspaceIdQuizzesIdLayoutResponsesRoute
+  '/workspace/$workspaceId/quizzes/$id/settings': typeof WorkspaceWorkspaceIdQuizzesIdLayoutSettingsRoute
   '/workspace/$workspaceId/quizzes/$id/preview': typeof WorkspaceWorkspaceIdQuizzesIdPreviewIndexRoute
   '/workspace/$workspaceId/quizzes/$id/edit': typeof WorkspaceWorkspaceIdQuizzesIdLayoutEditIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/canvas': typeof CanvasRoute
   '/workspace/$workspaceId': typeof WorkspaceWorkspaceIdDashboardIndexRoute
   '/auth/authorize': typeof AuthAuthorizeRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -120,12 +136,14 @@ export interface FileRoutesByTo {
   '/workspace/$workspaceId/quizzes/$id': typeof WorkspaceWorkspaceIdQuizzesIdLayoutRouteRouteWithChildren
   '/workspace/$workspaceId/quizzes/$id/insights': typeof WorkspaceWorkspaceIdQuizzesIdLayoutInsightsRoute
   '/workspace/$workspaceId/quizzes/$id/responses': typeof WorkspaceWorkspaceIdQuizzesIdLayoutResponsesRoute
+  '/workspace/$workspaceId/quizzes/$id/settings': typeof WorkspaceWorkspaceIdQuizzesIdLayoutSettingsRoute
   '/workspace/$workspaceId/quizzes/$id/preview': typeof WorkspaceWorkspaceIdQuizzesIdPreviewIndexRoute
   '/workspace/$workspaceId/quizzes/$id/edit': typeof WorkspaceWorkspaceIdQuizzesIdLayoutEditIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/canvas': typeof CanvasRoute
   '/workspace/$workspaceId': typeof WorkspaceWorkspaceIdRouteRouteWithChildren
   '/auth/authorize': typeof AuthAuthorizeRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -136,6 +154,7 @@ export interface FileRoutesById {
   '/workspace/$workspaceId/quizzes/$id/_layout': typeof WorkspaceWorkspaceIdQuizzesIdLayoutRouteRouteWithChildren
   '/workspace/$workspaceId/quizzes/$id/_layout/insights': typeof WorkspaceWorkspaceIdQuizzesIdLayoutInsightsRoute
   '/workspace/$workspaceId/quizzes/$id/_layout/responses': typeof WorkspaceWorkspaceIdQuizzesIdLayoutResponsesRoute
+  '/workspace/$workspaceId/quizzes/$id/_layout/settings': typeof WorkspaceWorkspaceIdQuizzesIdLayoutSettingsRoute
   '/workspace/$workspaceId/quizzes/$id/preview/': typeof WorkspaceWorkspaceIdQuizzesIdPreviewIndexRoute
   '/workspace/$workspaceId/quizzes/$id/_layout/edit/': typeof WorkspaceWorkspaceIdQuizzesIdLayoutEditIndexRoute
 }
@@ -143,6 +162,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/canvas'
     | '/workspace/$workspaceId'
     | '/auth/authorize'
     | '/auth/callback'
@@ -152,11 +172,13 @@ export interface FileRouteTypes {
     | '/workspace/$workspaceId/quizzes/$id'
     | '/workspace/$workspaceId/quizzes/$id/insights'
     | '/workspace/$workspaceId/quizzes/$id/responses'
+    | '/workspace/$workspaceId/quizzes/$id/settings'
     | '/workspace/$workspaceId/quizzes/$id/preview'
     | '/workspace/$workspaceId/quizzes/$id/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/canvas'
     | '/workspace/$workspaceId'
     | '/auth/authorize'
     | '/auth/callback'
@@ -165,11 +187,13 @@ export interface FileRouteTypes {
     | '/workspace/$workspaceId/quizzes/$id'
     | '/workspace/$workspaceId/quizzes/$id/insights'
     | '/workspace/$workspaceId/quizzes/$id/responses'
+    | '/workspace/$workspaceId/quizzes/$id/settings'
     | '/workspace/$workspaceId/quizzes/$id/preview'
     | '/workspace/$workspaceId/quizzes/$id/edit'
   id:
     | '__root__'
     | '/'
+    | '/canvas'
     | '/workspace/$workspaceId'
     | '/auth/authorize'
     | '/auth/callback'
@@ -180,12 +204,14 @@ export interface FileRouteTypes {
     | '/workspace/$workspaceId/quizzes/$id/_layout'
     | '/workspace/$workspaceId/quizzes/$id/_layout/insights'
     | '/workspace/$workspaceId/quizzes/$id/_layout/responses'
+    | '/workspace/$workspaceId/quizzes/$id/_layout/settings'
     | '/workspace/$workspaceId/quizzes/$id/preview/'
     | '/workspace/$workspaceId/quizzes/$id/_layout/edit/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CanvasRoute: typeof CanvasRoute
   WorkspaceWorkspaceIdRouteRoute: typeof WorkspaceWorkspaceIdRouteRouteWithChildren
   AuthAuthorizeRoute: typeof AuthAuthorizeRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
@@ -195,6 +221,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/canvas': {
+      id: '/canvas'
+      path: '/canvas'
+      fullPath: '/canvas'
+      preLoaderRoute: typeof CanvasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -265,6 +298,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceWorkspaceIdQuizzesIdPreviewIndexRouteImport
       parentRoute: typeof WorkspaceWorkspaceIdRouteRoute
     }
+    '/workspace/$workspaceId/quizzes/$id/_layout/settings': {
+      id: '/workspace/$workspaceId/quizzes/$id/_layout/settings'
+      path: '/settings'
+      fullPath: '/workspace/$workspaceId/quizzes/$id/settings'
+      preLoaderRoute: typeof WorkspaceWorkspaceIdQuizzesIdLayoutSettingsRouteImport
+      parentRoute: typeof WorkspaceWorkspaceIdQuizzesIdLayoutRouteRoute
+    }
     '/workspace/$workspaceId/quizzes/$id/_layout/responses': {
       id: '/workspace/$workspaceId/quizzes/$id/_layout/responses'
       path: '/responses'
@@ -307,6 +347,7 @@ const WorkspaceWorkspaceIdDashboardRouteRouteWithChildren =
 interface WorkspaceWorkspaceIdQuizzesIdLayoutRouteRouteChildren {
   WorkspaceWorkspaceIdQuizzesIdLayoutInsightsRoute: typeof WorkspaceWorkspaceIdQuizzesIdLayoutInsightsRoute
   WorkspaceWorkspaceIdQuizzesIdLayoutResponsesRoute: typeof WorkspaceWorkspaceIdQuizzesIdLayoutResponsesRoute
+  WorkspaceWorkspaceIdQuizzesIdLayoutSettingsRoute: typeof WorkspaceWorkspaceIdQuizzesIdLayoutSettingsRoute
   WorkspaceWorkspaceIdQuizzesIdLayoutEditIndexRoute: typeof WorkspaceWorkspaceIdQuizzesIdLayoutEditIndexRoute
 }
 
@@ -316,6 +357,8 @@ const WorkspaceWorkspaceIdQuizzesIdLayoutRouteRouteChildren: WorkspaceWorkspaceI
       WorkspaceWorkspaceIdQuizzesIdLayoutInsightsRoute,
     WorkspaceWorkspaceIdQuizzesIdLayoutResponsesRoute:
       WorkspaceWorkspaceIdQuizzesIdLayoutResponsesRoute,
+    WorkspaceWorkspaceIdQuizzesIdLayoutSettingsRoute:
+      WorkspaceWorkspaceIdQuizzesIdLayoutSettingsRoute,
     WorkspaceWorkspaceIdQuizzesIdLayoutEditIndexRoute:
       WorkspaceWorkspaceIdQuizzesIdLayoutEditIndexRoute,
   }
@@ -348,6 +391,7 @@ const WorkspaceWorkspaceIdRouteRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CanvasRoute: CanvasRoute,
   WorkspaceWorkspaceIdRouteRoute: WorkspaceWorkspaceIdRouteRouteWithChildren,
   AuthAuthorizeRoute: AuthAuthorizeRoute,
   AuthCallbackRoute: AuthCallbackRoute,
