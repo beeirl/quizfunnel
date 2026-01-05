@@ -10,6 +10,7 @@ import {
 } from '@tabler/icons-react'
 import * as React from 'react'
 import { ulid } from 'ulid'
+import { useCanvasPage } from './canvas-page-context'
 
 const ADD_BLOCK_DATA = {
   heading: (): Block => ({
@@ -87,7 +88,6 @@ const PAGE_TEMPLATES = [
 
 const AddPageMenuContext = React.createContext<{
   onPageAdd: (page: Page) => void
-  pageCount: number
   side: 'left' | 'right'
 } | null>(null)
 
@@ -102,32 +102,30 @@ function useAddPageMenuContext() {
 function AddPageMenuRoot({
   children,
   onPageAdd,
-  pageCount,
   side,
   onOpenChange,
 }: {
   children: React.ReactNode
   onPageAdd: (page: Page) => void
-  pageCount: number
   side: 'left' | 'right'
   onOpenChange?: (open: boolean) => void
 }) {
   return (
-    <AddPageMenuContext value={{ onPageAdd, pageCount, side }}>
+    <AddPageMenuContext value={{ onPageAdd, side }}>
       <Menu.Root onOpenChange={onOpenChange}>{children}</Menu.Root>
     </AddPageMenuContext>
   )
 }
 
 function AddPageMenuContent() {
-  const { onPageAdd, pageCount, side } = useAddPageMenuContext()
+  const { onPageAdd, side } = useAddPageMenuContext()
+  const { pageCount } = useCanvasPage()
 
   const handlePageAdd = (templateId: string) => {
     const template = PAGE_TEMPLATES.find((t) => t.id === templateId)!
 
     const blocks: Block[] = []
     template.blocks.forEach((type) => {
-      // For input blocks, prepend a heading block
       if (['text_input', 'multiple_choice', 'picture_choice', 'dropdown'].includes(type)) {
         blocks.push(ADD_BLOCK_DATA.heading())
       }

@@ -3,6 +3,7 @@ import { Menu } from '@/components/ui/menu'
 import type { Block } from '@shopfunnel/core/quiz/types'
 import * as React from 'react'
 import { ulid } from 'ulid'
+import { useCanvasPage } from './canvas-page-context'
 
 const ADD_BLOCK_DATA: Record<Block['type'], () => Block> = {
   text_input: () => ({
@@ -103,7 +104,6 @@ const ADD_BLOCK_DATA: Record<Block['type'], () => Block> = {
 
 const AddBlockMenuContext = React.createContext<{
   onBlockAdd: (block: Block) => void
-  existingBlocks: Block[]
 } | null>(null)
 
 function useAddBlockMenuContext() {
@@ -117,23 +117,23 @@ function useAddBlockMenuContext() {
 function AddBlockMenuRoot({
   children,
   onBlockAdd,
-  existingBlocks,
   onOpenChange,
 }: {
   children: React.ReactNode
   onBlockAdd: (block: Block) => void
-  existingBlocks: Block[]
   onOpenChange?: (open: boolean) => void
 }) {
   return (
-    <AddBlockMenuContext value={{ onBlockAdd, existingBlocks }}>
+    <AddBlockMenuContext value={{ onBlockAdd }}>
       <Menu.Root onOpenChange={onOpenChange}>{children}</Menu.Root>
     </AddBlockMenuContext>
   )
 }
 
 function AddBlockMenuContent() {
-  const { onBlockAdd, existingBlocks } = useAddBlockMenuContext()
+  const { onBlockAdd } = useAddBlockMenuContext()
+  const { page } = useCanvasPage()
+  const existingBlocks = page.blocks ?? []
 
   const hasInputOrLoader = existingBlocks.some((block) =>
     ['text_input', 'multiple_choice', 'picture_choice', 'dropdown', 'loader'].includes(block.type),
