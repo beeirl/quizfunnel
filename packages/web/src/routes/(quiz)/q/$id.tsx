@@ -81,7 +81,7 @@ function RouteComponent() {
 
   const quizViewedRef = useRef(false)
   const quizStartedRef = useRef(false)
-  const stepViewedAtRef = useRef<number>(Date.now())
+  const pageViewedAtRef = useRef<number>(Date.now())
 
   useEffect(() => {
     const storedSessionId = localStorage.getItem(SESSION_STORAGE_KEY)
@@ -119,9 +119,9 @@ function RouteComponent() {
     })
   }, [sessionId, visitorId, quiz.id, quiz.version, quiz.workspaceId])
 
-  const handleStepChange = useCallback(
-    (step: { id: string; index: number; name: string }) => {
-      stepViewedAtRef.current = Date.now()
+  const handlePageChange = useCallback(
+    (page: { id: string; index: number; name: string }) => {
+      pageViewedAtRef.current = Date.now()
 
       if (!sessionId || !visitorId) return
 
@@ -134,9 +134,9 @@ function RouteComponent() {
             workspace_id: quiz.workspaceId,
             session_id: sessionId,
             visitor_id: visitorId,
-            step_id: step.id,
-            step_index: step.index,
-            step_name: step.name,
+            step_id: page.id,
+            step_index: page.index,
+            step_name: page.name,
             timestamp: new Date().toISOString(),
           },
         ],
@@ -145,7 +145,7 @@ function RouteComponent() {
     [sessionId, visitorId, quiz.id, quiz.version, quiz.workspaceId],
   )
 
-  const handleStepComplete = async (step: { id: string; index: number; name: string; values: Values }) => {
+  const handlePageComplete = async (page: { id: string; index: number; name: string; values: Values }) => {
     if (!sessionId || !visitorId) return
 
     const baseEvent = {
@@ -164,19 +164,19 @@ function RouteComponent() {
       events.push({ ...baseEvent, type: 'quiz_start' })
     }
 
-    const duration = Date.now() - stepViewedAtRef.current
+    const duration = Date.now() - pageViewedAtRef.current
 
-    const quizStep = quiz.steps[step.index]
-    const blocksById = new Map(quizStep?.blocks.map((b) => [b.id, b]) ?? [])
-    for (const [blockId] of Object.entries(step.values)) {
+    const quizPage = quiz.pages[page.index]
+    const blocksById = new Map(quizPage?.blocks.map((b) => [b.id, b]) ?? [])
+    for (const [blockId] of Object.entries(page.values)) {
       const block = blocksById.get(blockId)
       if (block && INPUT_BLOCKS.includes(block.type as (typeof INPUT_BLOCKS)[number])) {
         events.push({
           ...baseEvent,
           type: 'question_answer',
-          step_id: step.id,
-          step_index: step.index,
-          step_name: step.name,
+          step_id: page.id,
+          step_index: page.index,
+          step_name: page.name,
           block_id: blockId,
           block_type: block.type,
           duration,
@@ -187,18 +187,18 @@ function RouteComponent() {
     events.push({
       ...baseEvent,
       type: 'step_complete',
-      step_id: step.id,
-      step_index: step.index,
-      step_name: step.name,
+      step_id: page.id,
+      step_index: page.index,
+      step_name: page.name,
       duration,
     })
 
-    if (Object.entries(step.values).length) {
+    if (Object.entries(page.values).length) {
       await submitAnswers({
         data: {
           quizId: quiz.id,
           sessionId,
-          answers: Object.entries(step.values).map(([blockId, value]) => ({
+          answers: Object.entries(page.values).map(([blockId, value]) => ({
             blockId,
             value,
             duration,
@@ -241,8 +241,8 @@ function RouteComponent() {
       <Quiz
         quiz={quiz}
         mode="live"
-        onStepChange={handleStepChange}
-        onStepComplete={handleStepComplete}
+        onPageChange={handlePageChange}
+        onPageComplete={handlePageComplete}
         onComplete={handleComplete}
       />
     </div>

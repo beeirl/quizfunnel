@@ -1,6 +1,6 @@
 import { int, json, mysqlTable, primaryKey, uniqueIndex, varchar } from 'drizzle-orm/mysql-core'
 import { id, timestamp, timestampColumns, workspaceColumns, workspaceIndexes } from '../database/types'
-import type { Rule, Step, Theme, Variables } from './types'
+import type { Page, Rule, Theme, Variables } from './types'
 
 export const QuizTable = mysqlTable(
   'quiz',
@@ -23,7 +23,7 @@ export const QuizVersionTable = mysqlTable(
     workspaceId: id('workspace_id').notNull(),
     quizId: id('quiz_id').notNull(),
     version: int('version').notNull(),
-    steps: json('steps').$type<Step[]>().notNull(),
+    pages: json('pages').$type<Page[]>().notNull(),
     rules: json('rules').$type<Rule[]>().notNull(),
     variables: json('variables').$type<Variables>().notNull(),
     theme: json('theme').$type<Theme>().notNull(),

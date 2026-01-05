@@ -5,7 +5,7 @@ import { Dialog } from '@/components/ui/dialog'
 import { Empty } from '@/components/ui/empty'
 import { cn } from '@/lib/utils'
 import { Combobox } from '@base-ui/react/combobox'
-import type { Block, Step } from '@shopfunnel/core/quiz/types'
+import type { Block, Page } from '@shopfunnel/core/quiz/types'
 import {
   IconChevronDown as ChevronDownIcon,
   IconFile as FileIcon,
@@ -145,23 +145,23 @@ const PREVIEW_BLOCK_DATA: Record<string, Block> = {
   },
 }
 
-interface StepTemplate {
+interface PageTemplate {
   id: string
   icon: React.ComponentType<{ className?: string }>
   blocks: Block['type'][]
   name: string
   description: string
-  defaultStepProperties: Step['properties']
+  defaultPageProperties: Page['properties']
 }
 
-const STEP_TEMPLATES: StepTemplate[] = [
+const PAGE_TEMPLATES: PageTemplate[] = [
   {
     id: 'blank',
     icon: FileIcon,
     blocks: [],
     name: 'Blank',
-    description: 'Start with an empty step and add blocks as needed.',
-    defaultStepProperties: {
+    description: 'Start with an empty page and add blocks as needed.',
+    defaultPageProperties: {
       buttonAction: 'next',
       buttonText: 'Continue',
       showButton: true,
@@ -173,7 +173,7 @@ const STEP_TEMPLATES: StepTemplate[] = [
     blocks: ['text_input'],
     name: 'Text Input',
     description: 'Collect brief text responses like names or short answers.',
-    defaultStepProperties: {
+    defaultPageProperties: {
       buttonAction: 'next',
       buttonText: 'Continue',
       showButton: true,
@@ -185,7 +185,7 @@ const STEP_TEMPLATES: StepTemplate[] = [
     blocks: ['multiple_choice'],
     name: 'Multiple Choice',
     description: 'Let users select from a list of predefined options. Auto-advances on selection.',
-    defaultStepProperties: {
+    defaultPageProperties: {
       buttonAction: 'next',
       buttonText: 'Continue',
       showButton: false,
@@ -197,7 +197,7 @@ const STEP_TEMPLATES: StepTemplate[] = [
     blocks: ['picture_choice'],
     name: 'Picture Choice',
     description: 'Display image-based choices in a grid. Users select one option from visually rich cards.',
-    defaultStepProperties: {
+    defaultPageProperties: {
       buttonAction: 'next',
       buttonText: 'Continue',
       showButton: false,
@@ -209,7 +209,7 @@ const STEP_TEMPLATES: StepTemplate[] = [
     blocks: ['dropdown'],
     name: 'Dropdown',
     description: 'Present many options in a compact dropdown menu. Ideal for long lists.',
-    defaultStepProperties: {
+    defaultPageProperties: {
       buttonAction: 'next',
       buttonText: 'Continue',
       showButton: true,
@@ -222,7 +222,7 @@ const STEP_TEMPLATES: StepTemplate[] = [
     name: 'Loader',
     description:
       'Display a progress indicator that fills up over time. The Continue button is disabled until loading completes.',
-    defaultStepProperties: {
+    defaultPageProperties: {
       buttonAction: 'next',
       buttonText: 'Continue',
       showButton: true,
@@ -230,54 +230,54 @@ const STEP_TEMPLATES: StepTemplate[] = [
   },
 ]
 
-function getStepTemplate(id: string) {
-  return STEP_TEMPLATES.find((template) => template.id === id)!
+function getPageTemplate(id: string) {
+  return PAGE_TEMPLATES.find((template) => template.id === id)!
 }
 
-const AddStepDialogContext = React.createContext<{
-  onStepAdd: (step: Step) => void
+const AddPageDialogContext = React.createContext<{
+  onPageAdd: (page: Page) => void
   setOpen: React.Dispatch<React.SetStateAction<boolean>>
-  stepCount: number
+  pageCount: number
 } | null>(null)
 
-function useAddStepDialogContext() {
-  const context = React.use(AddStepDialogContext)
+function useAddPageDialogContext() {
+  const context = React.use(AddPageDialogContext)
   if (!context) {
-    throw new Error('AddStepDialog components must be used within AddStepDialog.Root')
+    throw new Error('AddPageDialog components must be used within AddPageDialog.Root')
   }
   return context
 }
 
-function AddStepDialogRoot({
+function AddPageDialogRoot({
   children,
-  onStepAdd,
-  stepCount,
+  onPageAdd,
+  pageCount,
 }: {
   children: React.ReactNode
-  onStepAdd: (step: Step) => void
-  stepCount: number
+  onPageAdd: (page: Page) => void
+  pageCount: number
 }) {
   const [open, setOpen] = React.useState(false)
 
   return (
-    <AddStepDialogContext value={{ onStepAdd, setOpen, stepCount }}>
+    <AddPageDialogContext value={{ onPageAdd, setOpen, pageCount }}>
       <Dialog.Root open={open} onOpenChange={setOpen}>
         {children}
       </Dialog.Root>
-    </AddStepDialogContext>
+    </AddPageDialogContext>
   )
 }
 
-function AddStepDialogPopup() {
-  const { onStepAdd, setOpen, stepCount } = useAddStepDialogContext()
+function AddPageDialogPopup() {
+  const { onPageAdd, setOpen, pageCount } = useAddPageDialogContext()
 
-  const templateIds = STEP_TEMPLATES.map((t) => t.id)
+  const templateIds = PAGE_TEMPLATES.map((t) => t.id)
 
   const [highlightedTemplateId, setHighlightedTemplateId] = React.useState<string | undefined>(templateIds[0])
-  const highlightedTemplate = highlightedTemplateId ? getStepTemplate(highlightedTemplateId) : undefined
+  const highlightedTemplate = highlightedTemplateId ? getPageTemplate(highlightedTemplateId) : undefined
 
-  const handleStepAdd = (templateId: string) => {
-    const template = getStepTemplate(templateId)
+  const handlePageAdd = (templateId: string) => {
+    const template = getPageTemplate(templateId)
 
     const blocks: Block[] = []
     template.blocks.forEach((type) => {
@@ -288,13 +288,13 @@ function AddStepDialogPopup() {
       blocks.push(ADD_BLOCK_DATA[type]() as Block)
     })
 
-    const step: Step = {
+    const page: Page = {
       id: ulid(),
-      name: `Step ${stepCount + 1}`,
+      name: `Page ${pageCount + 1}`,
       blocks,
-      properties: template.defaultStepProperties,
+      properties: template.defaultPageProperties,
     }
-    onStepAdd(step)
+    onPageAdd(page)
     setOpen(false)
   }
 
@@ -313,10 +313,10 @@ function AddStepDialogPopup() {
             <SearchIcon className="pointer-events-none absolute left-4.5 size-4 text-muted-foreground" />
             <Combobox.Input
               className="h-full flex-1 bg-transparent pl-10.5 text-sm outline-none placeholder:text-muted-foreground"
-              placeholder="Find step templates..."
+              placeholder="Find page templates..."
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && highlightedTemplateId) {
-                  handleStepAdd(highlightedTemplateId)
+                  handlePageAdd(highlightedTemplateId)
                 }
               }}
             />
@@ -324,7 +324,7 @@ function AddStepDialogPopup() {
           <div className="flex h-[650px] max-h-[calc(90vh-48px)]">
             <Combobox.List className="flex w-full flex-col gap-0.5 overflow-y-auto p-2 data-empty:hidden md:max-w-[250px] md:border-r md:border-border">
               {(templateId: string) => {
-                const template = getStepTemplate(templateId)
+                const template = getPageTemplate(templateId)
                 return (
                   <Combobox.Item
                     key={templateId}
@@ -332,7 +332,7 @@ function AddStepDialogPopup() {
                     onClick={() => {
                       setHighlightedTemplateId(templateId)
                     }}
-                    onDoubleClick={() => handleStepAdd(templateId)}
+                    onDoubleClick={() => handlePageAdd(templateId)}
                     className={cn(
                       'flex h-8 shrink-0 cursor-pointer items-center gap-2.5 rounded-md px-2.5 transition-colors outline-none',
                       'hover:bg-secondary',
@@ -364,7 +364,7 @@ function AddStepDialogPopup() {
                 </div>
 
                 <div className="flex shrink-0 justify-end border-t border-border p-4">
-                  <Button onClick={() => handleStepAdd(highlightedTemplate.id)}>Add step</Button>
+                  <Button onClick={() => handlePageAdd(highlightedTemplate.id)}>Add page</Button>
                 </div>
               </div>
             )}
@@ -388,8 +388,8 @@ function AddStepDialogPopup() {
   )
 }
 
-export const AddStepDialog = {
-  Root: AddStepDialogRoot,
+export const AddPageDialog = {
+  Root: AddPageDialogRoot,
   Trigger: Dialog.Trigger,
-  Popup: AddStepDialogPopup,
+  Popup: AddPageDialogPopup,
 }

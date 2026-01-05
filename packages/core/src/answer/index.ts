@@ -49,7 +49,7 @@ export namespace Answer {
             ),
           )
 
-        const blocks = new Map(quiz.steps.flatMap((step) => step.blocks.map((block) => [block.id, block])))
+        const blocks = new Map(quiz.pages.flatMap((page) => page.blocks.map((block) => [block.id, block])))
         const questionIds = new Map(questions.map((q) => [q.blockId, q.id]))
 
         for (const answer of input.answers) {

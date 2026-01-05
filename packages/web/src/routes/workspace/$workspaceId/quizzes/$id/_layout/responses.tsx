@@ -1,9 +1,15 @@
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Empty } from '@/components/ui/empty'
 import { withActor } from '@/context/auth.withActor'
 import { cn } from '@/lib/utils'
 import { Identifier } from '@shopfunnel/core/identifier'
 import { Submission } from '@shopfunnel/core/submission/index'
-import { IconArrowLeft as ArrowLeftIcon, IconArrowRight as ArrowRightIcon } from '@tabler/icons-react'
+import {
+  IconArrowLeft as ArrowLeftIcon,
+  IconArrowRight as ArrowRightIcon,
+  IconInbox as InboxIcon,
+} from '@tabler/icons-react'
 import { keepPreviousData, queryOptions, useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
@@ -125,87 +131,111 @@ function RouteComponent() {
   }
 
   const hasMore = data.totalPages > 1
+  const hasResponses = data.submissions.length > 0
 
   return (
-    <div className={cn('flex flex-1 flex-col overflow-hidden pt-6', hasMore ? 'pb-1.5' : 'pb-6')}>
-      <div className="mb-4 px-6 text-2xl font-bold">Responses</div>
-      <div className="max-h-full overflow-auto px-4">
-        <table className="w-full min-w-max caption-bottom text-sm">
-          <thead className="sticky top-0 z-10 [&_tr]:border-b">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className="transition-colors">
-                {headerGroup.headers.map((header, index) => {
-                  const isFirstColumn = index === 0
-                  return (
-                    <th
-                      key={header.id}
-                      className={cn(
-                        'h-10 p-0 text-left align-middle font-medium whitespace-nowrap text-muted-foreground',
-                        isFirstColumn ? 'w-56' : 'min-w-56',
-                      )}
-                    >
-                      <div className="flex h-full items-center px-2 py-2">
-                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                      </div>
-                    </th>
-                  )
-                })}
-              </tr>
-            ))}
-          </thead>
-          <tbody className="[&_tr:last-child]:border-0">
-            {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="border-b">
-                {row.getVisibleCells().map((cell, index) => {
-                  const isFirstColumn = index === 0
-                  const isLastColumn = index === row.getVisibleCells().length - 1
-                  return (
-                    <td
-                      key={cell.id}
-                      className={cn('p-0 align-middle whitespace-nowrap', isFirstColumn ? 'w-56' : 'min-w-56')}
-                    >
-                      <div className="flex items-center p-2">
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </div>
-                    </td>
-                  )
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {hasMore && (
-        <div className="sticky bottom-0 flex gap-2 pt-1.5">
-          <Button
-            disabled={currentPage === 1 || isFetching}
-            size="icon-sm"
-            variant="ghost"
-            onClick={() => goToPage(currentPage - 1)}
-          >
-            <ArrowLeftIcon />
-          </Button>
-          {pages().map((page) => (
-            <Button
-              key={page}
-              className="tabular-nums"
-              disabled={isFetching}
-              size="sm"
-              variant={currentPage === page ? 'secondary' : 'ghost'}
-              onClick={() => goToPage(page)}
-            >
-              {page}
-            </Button>
-          ))}
-          <Button
-            disabled={currentPage >= data.totalPages || isFetching}
-            size="icon-sm"
-            variant="ghost"
-            onClick={() => goToPage(currentPage + 1)}
-          >
-            <ArrowRightIcon />
-          </Button>
+    <div className={cn('flex flex-1 flex-col gap-6 overflow-hidden pt-6 sm:pt-10', hasMore ? 'pb-1.5' : 'pb-6')}>
+      <div className="px-6 text-2xl font-bold sm:px-14">Responses</div>
+      {!hasResponses ? (
+        <div className="px-6 sm:px-14">
+          <Card.Root>
+            <Card.Content>
+              <Empty.Root>
+                <Empty.Header>
+                  <Empty.Media variant="icon">
+                    <InboxIcon />
+                  </Empty.Media>
+                  <Empty.Title>No responses yet</Empty.Title>
+                  <Empty.Description>
+                    Responses will appear here once users start completing your quiz.
+                  </Empty.Description>
+                </Empty.Header>
+              </Empty.Root>
+            </Card.Content>
+          </Card.Root>
         </div>
+      ) : (
+        <>
+          <div className="max-h-full overflow-auto px-6 sm:px-12">
+            <table className="w-full min-w-max caption-bottom text-sm">
+              <thead className="sticky top-0 z-10 [&_tr]:border-b">
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <tr key={headerGroup.id} className="transition-colors">
+                    {headerGroup.headers.map((header, index) => {
+                      const isFirstColumn = index === 0
+                      return (
+                        <th
+                          key={header.id}
+                          className={cn(
+                            'h-10 p-0 text-left align-middle font-medium whitespace-nowrap text-muted-foreground',
+                            isFirstColumn ? 'w-56' : 'min-w-56',
+                          )}
+                        >
+                          <div className="flex h-full items-center px-2 py-2">
+                            {header.isPlaceholder
+                              ? null
+                              : flexRender(header.column.columnDef.header, header.getContext())}
+                          </div>
+                        </th>
+                      )
+                    })}
+                  </tr>
+                ))}
+              </thead>
+              <tbody className="[&_tr:last-child]:border-0">
+                {table.getRowModel().rows.map((row) => (
+                  <tr key={row.id} className="border-b">
+                    {row.getVisibleCells().map((cell, index) => {
+                      const isFirstColumn = index === 0
+                      return (
+                        <td
+                          key={cell.id}
+                          className={cn('p-0 align-middle whitespace-nowrap', isFirstColumn ? 'w-56' : 'min-w-56')}
+                        >
+                          <div className="flex items-center p-2">
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </div>
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {hasMore && (
+            <div className="sticky bottom-0 flex gap-2 pt-1.5">
+              <Button
+                disabled={currentPage === 1 || isFetching}
+                size="icon-sm"
+                variant="ghost"
+                onClick={() => goToPage(currentPage - 1)}
+              >
+                <ArrowLeftIcon />
+              </Button>
+              {pages().map((page) => (
+                <Button
+                  key={page}
+                  className="tabular-nums"
+                  disabled={isFetching}
+                  size="sm"
+                  variant={currentPage === page ? 'secondary' : 'ghost'}
+                  onClick={() => goToPage(page)}
+                >
+                  {page}
+                </Button>
+              ))}
+              <Button
+                disabled={currentPage >= data.totalPages || isFetching}
+                size="icon-sm"
+                variant="ghost"
+                onClick={() => goToPage(currentPage + 1)}
+              >
+                <ArrowRightIcon />
+              </Button>
+            </div>
+          )}
+        </>
       )}
     </div>
   )

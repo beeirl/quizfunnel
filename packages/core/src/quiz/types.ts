@@ -158,18 +158,15 @@ export const INPUT_BLOCKS = ['text_input', 'multiple_choice', 'picture_choice', 
 export type InputBlock = (typeof INPUT_BLOCKS)[number]
 
 // ============================================
-// Step
+// Page
 // ============================================
 
-export interface Step {
+export interface Page {
   id: string
   name: string
   blocks: Block[]
-  properties: {
-    showButton: boolean
-    buttonText: string
-    buttonAction: 'next' | 'redirect'
-    redirectUrl?: string
+  properties?: {
+    buttonText?: string
   }
 }
 
@@ -184,20 +181,20 @@ export type Variables = Record<string, string | number>
 // ============================================
 //
 // Rules define conditional logic that is evaluated when the user navigates
-// away from a step (e.g., presses the "next" button). Each rule is associated
-// with a specific step via `stepId`.
+// away from a page (e.g., presses the "next" button). Each rule is associated
+// with a specific page via `pageId`.
 //
 // Evaluation Flow:
-// 1. User completes a step and triggers navigation
-// 2. The rule for the current step is found and evaluated
+// 1. User completes a page and triggers navigation
+// 2. The rule for the current page is found and evaluated
 // 3. Each action's condition is checked against current block values and variables
 // 4. Matching actions are executed in order:
-//    - `jump`: Determines which step to navigate to (overrides sequential navigation)
-//    - `hide`: Marks blocks to be hidden on the DESTINATION step (not the current step)
+//    - `jump`: Determines which page to navigate to (overrides sequential navigation)
+//    - `hide`: Marks blocks to be hidden on the DESTINATION page (not the current page)
 //    - Math ops (add, subtract, multiply, divide, set): Update variable values
-// 5. Navigation occurs to the determined step with updated state
+// 5. Navigation occurs to the determined page with updated state
 //
-// Important: Hide actions reference block IDs on the NEXT step, not the current step.
+// Important: Hide actions reference block IDs on the NEXT page, not the current page.
 // This allows conditional display of content based on previous answers.
 
 export interface LogicalCondition {
@@ -219,8 +216,8 @@ export type Condition = ComparisonCondition | LogicalCondition
  * An action to execute when its condition is met.
  *
  * Action types:
- * - `jump`: Navigate to a specific step (uses `details.to`)
- * - `hide`: Hide a block on the destination step (uses `details.target` with type 'block')
+ * - `jump`: Navigate to a specific page (uses `details.to`)
+ * - `hide`: Hide a block on the destination page (uses `details.target` with type 'block')
  * - `add`, `subtract`, `multiply`, `divide`, `set`: Perform math on a variable
  *   (uses `details.target` with type 'variable' and `details.value`)
  */
@@ -229,9 +226,9 @@ export interface RuleAction {
   /** The condition that must be true for this action to execute */
   condition: Condition
   details: {
-    /** Target step for 'jump' actions */
+    /** Target page for 'jump' actions */
     to?: {
-      type: 'step'
+      type: 'page'
       value: string
     }
     /** Target block (for 'hide') or variable (for math operations) */
@@ -248,12 +245,12 @@ export interface RuleAction {
 }
 
 /**
- * A rule associated with a specific step, evaluated when the user leaves that step.
+ * A rule associated with a specific page, evaluated when the user leaves that page.
  * Contains a list of actions that are executed if their conditions are met.
  */
 export interface Rule {
-  /** The step this rule belongs to (evaluated when leaving this step) */
-  stepId: string
+  /** The page this rule belongs to (evaluated when leaving this page) */
+  pageId: string
   /** Actions to evaluate and potentially execute */
   actions: RuleAction[]
 }
@@ -294,7 +291,7 @@ export interface Info {
   shortId: string
   title: string
   version: number
-  steps: Step[]
+  pages: Page[]
   rules: Rule[]
   variables: Variables
   theme: Theme

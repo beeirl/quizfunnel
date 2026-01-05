@@ -1,5 +1,6 @@
 import { and, eq, isNull, sql } from 'drizzle-orm'
 import { groupBy, map, pipe, values } from 'remeda'
+import { ulid } from 'ulid'
 import z from 'zod'
 import { Actor } from '../actor'
 import { Database } from '../database'
@@ -8,7 +9,7 @@ import { Identifier } from '../identifier'
 import { Question } from '../question'
 import { fn } from '../utils/fn'
 import { QuizFileTable, QuizTable, QuizVersionTable } from './index.sql'
-import { Info, RADII, Rule, Step, Variables, type Theme } from './types'
+import { Info, Page, RADII, Rule, Variables, type Theme } from './types'
 
 export namespace Quiz {
   const NEW_VERSION_THRESHOLD = 15 * 60 * 1000
@@ -98,7 +99,13 @@ export namespace Quiz {
         workspaceId: Actor.workspace(),
         quizId: id,
         version: currentVersion,
-        steps: [],
+        pages: [
+          {
+            id: ulid(),
+            name: 'Page 1',
+            blocks: [],
+          },
+        ],
         rules: [],
         variables: {},
         theme: DEFAULT_THEME,
@@ -152,7 +159,7 @@ export namespace Quiz {
   export const update = fn(
     z.object({
       id: Identifier.schema('quiz'),
-      steps: z.custom<Step[]>().optional(),
+      pages: z.custom<Page[]>().optional(),
       rules: z.custom<Rule[]>().optional(),
       variables: z.custom<Variables>().optional(),
       theme: z.custom<Theme>().optional(),
@@ -193,7 +200,7 @@ export namespace Quiz {
             workspaceId: Actor.workspace(),
             quizId: input.id,
             version: newVersion,
-            steps: input.steps ?? currentVersion.steps,
+            pages: input.pages ?? currentVersion.pages,
             rules: input.rules ?? currentVersion.rules,
             variables: input.variables ?? currentVersion.variables,
             theme: input.theme ?? currentVersion.theme,
@@ -207,7 +214,7 @@ export namespace Quiz {
           await tx
             .update(QuizVersionTable)
             .set({
-              steps: input.steps,
+              pages: input.pages,
               rules: input.rules,
               variables: input.variables,
               theme: input.theme,
@@ -274,7 +281,7 @@ export namespace Quiz {
           shortId: group[0].quiz.shortId,
           title: group[0].quiz.title,
           version: group[0].quiz_version.version,
-          steps: group[0].quiz_version.steps,
+          pages: group[0].quiz_version.pages,
           rules: group[0].quiz_version.rules,
           variables: group[0].quiz_version.variables,
           theme: group[0].quiz_version.theme,

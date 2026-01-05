@@ -26,7 +26,7 @@ interface MetricsData {
   total_completions: number
 }
 
-const getPublishedVersionNumber = createServerFn()
+const getPublishedVersionNumberQuery = createServerFn()
   .inputValidator(
     z.object({
       workspaceId: Identifier.schema('workspace'),
@@ -35,6 +35,12 @@ const getPublishedVersionNumber = createServerFn()
   )
   .handler(({ data }) => {
     return withActor(() => Quiz.getPublishedVersionNumber(data.quizId), data.workspaceId)
+  })
+
+const getPublishedVersionNumberQueryOptions = (workspaceId: string, quizId: string) =>
+  queryOptions({
+    queryKey: ['quiz-published-version-number', workspaceId, quizId],
+    queryFn: () => getPublishedVersionNumberQuery({ data: { workspaceId, quizId } }),
   })
 
 const getInsights = createServerFn()
@@ -70,29 +76,23 @@ const getInsights = createServerFn()
     return { funnel, metrics }
   })
 
-const getPublishedVersionQueryOptions = (workspaceId: string, quizId: string) =>
-  queryOptions({
-    queryKey: ['quiz-published-version-number', workspaceId, quizId],
-    queryFn: () => getPublishedVersionNumber({ data: { workspaceId, quizId } }),
-  })
-
-const getInsightsQueryOptions = (quizId: string, quizVersion: number) =>
+const getInsightsQueryOptions = (quizId: string, quizVersion: number | null) =>
   queryOptions({
     queryKey: ['insights', quizId, quizVersion],
-    queryFn: () => getInsights({ data: { quizId, quizVersion } }),
+    queryFn: () => getInsights({ data: { quizId, quizVersion: quizVersion! } }),
+    enabled: quizVersion !== null,
   })
 
 export const Route = createFileRoute('/workspace/$workspaceId/quizzes/$id/_layout/insights')({
   component: RouteComponent,
   ssr: false,
   loader: async ({ context, params }) => {
-    const publishedVersion = await context.queryClient.ensureQueryData(
-      getPublishedVersionQueryOptions(params.workspaceId, params.id),
+    const publishedVersionNumber = await context.queryClient.ensureQueryData(
+      getPublishedVersionNumberQueryOptions(params.workspaceId, params.id),
     )
-    if (publishedVersion) {
-      await context.queryClient.ensureQueryData(getInsightsQueryOptions(params.id, publishedVersion))
+    if (publishedVersionNumber) {
+      await context.queryClient.ensureQueryData(getInsightsQueryOptions(params.id, publishedVersionNumber))
     }
-    return { publishedVersion }
   },
 })
 
@@ -112,32 +112,15 @@ function formatDuration(ms: number): string {
   return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`
 }
 
-function RouteComponent() {
-  const params = Route.useParams()
-  const { publishedVersion } = Route.useLoaderData()
+function Insights({ id, publishedVersionNumber }: { id: string; publishedVersionNumber: number }) {
+  const insightsQuery = useSuspenseQuery(getInsightsQueryOptions(id, publishedVersionNumber))
 
-  // If no published version, show empty state
-  if (!publishedVersion) {
-    return (
-      <div className="flex flex-1 justify-center overflow-auto p-6">
-        <div className="w-full max-w-4xl space-y-6">
-          <div className="text-2xl font-bold">Insights</div>
-          <Empty.Root>
-            <Empty.Header>
-              <Empty.Media variant="icon">
-                <ChartBarIcon />
-              </Empty.Media>
-              <Empty.Title>No data yet</Empty.Title>
-              <Empty.Description>Publish your quiz to start collecting analytics.</Empty.Description>
-            </Empty.Header>
-          </Empty.Root>
-        </div>
-      </div>
-    )
+  const funnel = insightsQuery.data?.funnel ?? []
+  const metrics = insightsQuery.data?.metrics ?? {
+    total_views: 0,
+    total_starts: 0,
+    total_completions: 0,
   }
-
-  const insightsQuery = useSuspenseQuery(getInsightsQueryOptions(params.id, publishedVersion))
-  const { funnel, metrics } = insightsQuery.data
 
   // Transform funnel data for chart
   const funnelData = funnel.map((item, index, arr) => {
@@ -154,7 +137,6 @@ function RouteComponent() {
     }
   })
 
-  // Calculate metrics
   const startRate = metrics.total_views > 0 ? Math.round((metrics.total_starts / metrics.total_views) * 100) : 0
   const completionRate =
     metrics.total_starts > 0 ? Math.round((metrics.total_completions / metrics.total_starts) * 100) : 0
@@ -167,85 +149,100 @@ function RouteComponent() {
     { label: 'Completion Rate', value: `${completionRate}%` },
   ]
 
-  const hasData = funnel.length > 0 || metrics.total_views > 0
+  return (
+    <>
+      <div className="grid grid-cols-5 gap-4">
+        {metricsCards.map((metric) => (
+          <div key={metric.label} className="rounded-lg border border-border bg-card px-4 pt-3.5 pb-3">
+            <div className="text-sm text-muted-foreground">{metric.label}</div>
+            <div className="mt-1 text-2xl font-semibold">{metric.value}</div>
+          </div>
+        ))}
+      </div>
+      {funnelData.length > 0 && (
+        <Card.Root>
+          <Card.Header>
+            <Card.Title>Drop-off Funnel</Card.Title>
+          </Card.Header>
+          <Card.Content>
+            <Chart.Container config={chartConfig} className="aspect-2/1 w-full">
+              <BarChart data={funnelData} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
+                <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                <XAxis dataKey="step" tickLine={false} axisLine={false} tickMargin={10} />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={10}
+                  domain={[0, 'auto']}
+                  tickFormatter={(value) => `${value.toLocaleString()}`}
+                  width={50}
+                />
+                <Chart.Tooltip
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null
+                    const data = payload[0].payload
+                    return (
+                      <div className="rounded-lg border border-border bg-background px-3 py-2 shadow-lg">
+                        <div className="font-semibold">{data.step}</div>
+                        <div className="mt-1 space-y-0.5 text-sm">
+                          <div className="text-muted-foreground">
+                            <span className="font-medium text-foreground">{data.views.toLocaleString()}</span> views
+                          </div>
+                          {data.dropoff > 0 && (
+                            <div className="text-muted-foreground">
+                              <span className="font-medium text-foreground">{data.dropoff.toLocaleString()}</span> (
+                              {data.dropoffPercent}%) dropoff
+                            </div>
+                          )}
+                          <div className="text-muted-foreground">
+                            Avg time: <span className="font-medium text-foreground">{data.avgTime}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  }}
+                />
+                <Bar dataKey="views" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </Chart.Container>
+          </Card.Content>
+        </Card.Root>
+      )}
+    </>
+  )
+}
+
+function RouteComponent() {
+  const params = Route.useParams()
+
+  const getPublishedVersionNumberQuery = useSuspenseQuery(
+    getPublishedVersionNumberQueryOptions(params.workspaceId, params.id),
+  )
+  const publishedVersionNumber = getPublishedVersionNumberQuery.data
 
   return (
-    <div className="flex flex-1 justify-center overflow-auto p-6">
-      <div className="w-full max-w-4xl space-y-6">
+    <div className="flex flex-1 justify-center overflow-auto px-6 pt-6 sm:pt-10">
+      <div className="flex w-full max-w-4xl flex-col gap-6">
         <div className="text-2xl font-bold">Insights</div>
-
-        {!hasData ? (
-          <Empty.Root>
-            <Empty.Header>
-              <Empty.Media variant="icon">
-                <ChartBarIcon />
-              </Empty.Media>
-              <Empty.Title>No data yet</Empty.Title>
-              <Empty.Description>Analytics will appear here once visitors start taking your quiz.</Empty.Description>
-            </Empty.Header>
-          </Empty.Root>
+        {!publishedVersionNumber ? (
+          <Card.Root>
+            <Card.Content>
+              <Empty.Root>
+                <Empty.Header>
+                  <Empty.Media variant="icon">
+                    <ChartBarIcon />
+                  </Empty.Media>
+                  <Empty.Title>No insights available yet</Empty.Title>
+                  <Empty.Description>
+                    Publish your quiz to start collecting data. You'll see views, completion rates, and drop-off
+                    analysis here.
+                  </Empty.Description>
+                </Empty.Header>
+              </Empty.Root>
+            </Card.Content>
+          </Card.Root>
         ) : (
-          <>
-            <div className="grid grid-cols-5 gap-4">
-              {metricsCards.map((metric) => (
-                <div key={metric.label} className="rounded-lg border border-border bg-card px-4 pt-3.5 pb-3">
-                  <div className="text-sm text-muted-foreground">{metric.label}</div>
-                  <div className="mt-1 text-2xl font-semibold">{metric.value}</div>
-                </div>
-              ))}
-            </div>
-
-            {funnelData.length > 0 && (
-              <Card.Root>
-                <Card.Header>
-                  <Card.Title>Drop-off Funnel</Card.Title>
-                </Card.Header>
-                <Card.Content>
-                  <Chart.Container config={chartConfig} className="aspect-2/1 w-full">
-                    <BarChart data={funnelData} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
-                      <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                      <XAxis dataKey="step" tickLine={false} axisLine={false} tickMargin={10} />
-                      <YAxis
-                        tickLine={false}
-                        axisLine={false}
-                        tickMargin={10}
-                        domain={[0, 'auto']}
-                        tickFormatter={(value) => `${value.toLocaleString()}`}
-                        width={50}
-                      />
-                      <Chart.Tooltip
-                        content={({ active, payload }) => {
-                          if (!active || !payload?.length) return null
-                          const data = payload[0].payload
-                          return (
-                            <div className="rounded-lg border border-border bg-background px-3 py-2 shadow-lg">
-                              <div className="font-semibold">{data.step}</div>
-                              <div className="mt-1 space-y-0.5 text-sm">
-                                <div className="text-muted-foreground">
-                                  <span className="font-medium text-foreground">{data.views.toLocaleString()}</span>{' '}
-                                  views
-                                </div>
-                                {data.dropoff > 0 && (
-                                  <div className="text-muted-foreground">
-                                    <span className="font-medium text-foreground">{data.dropoff.toLocaleString()}</span>{' '}
-                                    ({data.dropoffPercent}%) dropoff
-                                  </div>
-                                )}
-                                <div className="text-muted-foreground">
-                                  Avg time: <span className="font-medium text-foreground">{data.avgTime}</span>
-                                </div>
-                              </div>
-                            </div>
-                          )
-                        }}
-                      />
-                      <Bar dataKey="views" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </Chart.Container>
-                </Card.Content>
-              </Card.Root>
-            )}
-          </>
+          <Insights id={params.id} publishedVersionNumber={publishedVersionNumber} />
         )}
       </div>
     </div>

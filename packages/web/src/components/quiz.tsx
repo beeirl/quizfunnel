@@ -80,7 +80,7 @@ function evaluateRule(rule: Rule, values: Values, variables: Variables) {
     set: (_, b) => b,
   }
 
-  let nextStepId: string | undefined
+  let nextPageId: string | undefined
   const hiddenBlockIds = new Set<string>()
   let updatedVariables = { ...variables }
 
@@ -90,7 +90,7 @@ function evaluateRule(rule: Rule, values: Values, variables: Variables) {
     switch (action.type) {
       case 'jump':
         if (action.details.to?.value) {
-          nextStepId = action.details.to.value
+          nextPageId = action.details.to.value
         }
         break
 
@@ -116,7 +116,7 @@ function evaluateRule(rule: Rule, values: Values, variables: Variables) {
     }
   }
 
-  return { nextStepId, hiddenBlockIds, variables: updatedVariables }
+  return { nextPageId, hiddenBlockIds, variables: updatedVariables }
 }
 
 function validateBlocks(blocks: BlockType[], values: Values) {
@@ -239,14 +239,14 @@ export interface QuizProps {
   quiz: QuizType
   mode?: 'preview' | 'live'
   onComplete?: (values: Values) => void
-  onStepChange?: (step: { id: string; index: number; name: string }) => void
-  onStepComplete?: (step: { id: string; index: number; name: string; values: Values }) => void
+  onPageChange?: (page: { id: string; index: number; name: string }) => void
+  onPageComplete?: (page: { id: string; index: number; name: string; values: Values }) => void
 }
 
-export function Quiz({ quiz, mode = 'live', onComplete, onStepChange, onStepComplete }: QuizProps) {
+export function Quiz({ quiz, mode = 'live', onComplete, onPageChange, onPageComplete }: QuizProps) {
   const VALUES_STORAGE_KEY = `sf_quiz_${quiz.id}_values`
 
-  const [currentStepIndex, setCurrentStepIndex] = useState(0)
+  const [currentPageIndex, setCurrentPageIndex] = useState(0)
 
   const [values, setValues] = useState<Record<string, unknown>>({})
   const [loadingValues, setLoadingValues] = useState<Record<string, boolean>>({})
@@ -255,11 +255,11 @@ export function Quiz({ quiz, mode = 'live', onComplete, onStepChange, onStepComp
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [hiddenBlockIds, setHiddenBlockIds] = useState<Set<string>>(new Set())
 
-  const currentStep = quiz.steps[currentStepIndex]
+  const currentPage = quiz.pages[currentPageIndex]
 
   const visibleBlocks = useMemo(
-    () => currentStep?.blocks.filter((block) => !hiddenBlockIds.has(block.id)) ?? [],
-    [currentStep?.blocks, hiddenBlockIds],
+    () => currentPage?.blocks.filter((block) => !hiddenBlockIds.has(block.id)) ?? [],
+    [currentPage?.blocks, hiddenBlockIds],
   )
   const resolvedBlocks = useMemo(
     () => resolveBlocks(visibleBlocks, values, variables),
@@ -281,10 +281,10 @@ export function Quiz({ quiz, mode = 'live', onComplete, onStepChange, onStepComp
   }, [VALUES_STORAGE_KEY, mode])
 
   useEffect(() => {
-    const step = quiz.steps[currentStepIndex]
-    if (!step) return
-    onStepChange?.({ id: step.id, index: currentStepIndex, name: step.name })
-  }, [currentStepIndex, quiz.steps, onStepChange])
+    const page = quiz.pages[currentPageIndex]
+    if (!page) return
+    onPageChange?.({ id: page.id, index: currentPageIndex, name: page.name })
+  }, [currentPageIndex, quiz.pages, onPageChange])
 
   const handleBlockValueChange = (blockId: string, value: unknown) => {
     const newValues = { ...values, [blockId]: value }
@@ -306,50 +306,50 @@ export function Quiz({ quiz, mode = 'live', onComplete, onStepChange, onStepComp
   }
 
   function next(values: Values) {
-    if (!currentStep) return
+    if (!currentPage) return
 
     const errors = validateBlocks(visibleBlocks, values)
     setErrors(errors ?? {})
     if (errors) return
 
-    let nextStepIndex = currentStepIndex + 1
+    let nextPageIndex = currentPageIndex + 1
     let nextHiddenBlockIds = new Set<string>()
     let nextVariables = variables
 
-    const currentStepRule = quiz.rules.find((rule) => rule.stepId === currentStep.id)
-    if (currentStepRule) {
-      const result = evaluateRule(currentStepRule, values, variables)
+    const currentPageRule = quiz.rules.find((rule) => rule.pageId === currentPage.id)
+    if (currentPageRule) {
+      const result = evaluateRule(currentPageRule, values, variables)
       nextHiddenBlockIds = result.hiddenBlockIds
       nextVariables = result.variables
 
-      if (result.nextStepId) {
-        const index = quiz.steps.findIndex((step) => step.id === result.nextStepId)
-        if (index !== -1) nextStepIndex = index
+      if (result.nextPageId) {
+        const index = quiz.pages.findIndex((page) => page.id === result.nextPageId)
+        if (index !== -1) nextPageIndex = index
       }
     }
 
-    setCurrentStepIndex(nextStepIndex)
+    setCurrentPageIndex(nextPageIndex)
     setHiddenBlockIds(nextHiddenBlockIds)
     setVariables(nextVariables)
 
-    const currentStepValues = (() => {
-      const currentBlockIds = currentStep.blocks.map((b) => b.id)
-      return currentBlockIds.reduce<Values>((currentStepValues, blockId) => {
+    const currentPageValues = (() => {
+      const currentBlockIds = currentPage.blocks.map((b) => b.id)
+      return currentBlockIds.reduce<Values>((currentPageValues, blockId) => {
         if (values[blockId] !== undefined) {
-          currentStepValues[blockId] = values[blockId]
+          currentPageValues[blockId] = values[blockId]
         }
-        return currentStepValues
+        return currentPageValues
       }, {})
     })()
 
-    onStepComplete?.({
-      id: currentStep.id,
-      index: currentStepIndex,
-      name: currentStep.name,
-      values: currentStepValues,
+    onPageComplete?.({
+      id: currentPage.id,
+      index: currentPageIndex,
+      name: currentPage.name,
+      values: currentPageValues,
     })
 
-    if (nextStepIndex >= quiz.steps.length) {
+    if (nextPageIndex >= quiz.pages.length) {
       localStorage.removeItem(VALUES_STORAGE_KEY)
       onComplete?.(values)
     }
@@ -369,20 +369,20 @@ export function Quiz({ quiz, mode = 'live', onComplete, onStepChange, onStepComp
           <motion.div
             className="h-full rounded-(--radius) bg-primary"
             initial={{ width: 0 }}
-            animate={{ width: `${(currentStepIndex / quiz.steps.length) * 100}%` }}
+            animate={{ width: `${(currentPageIndex / quiz.pages.length) * 100}%` }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
           />
         </div>
         <AnimatePresence mode="wait">
           <motion.div
-            key={`quiz-step-${currentStepIndex}`}
+            key={`quiz-page-${currentPageIndex}`}
             className="flex flex-1 flex-col"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
           >
-            {currentStep && (
+            {currentPage && (
               <>
                 <div className="pt-8">
                   {resolvedBlocks.map((block, index) => (
@@ -400,7 +400,7 @@ export function Quiz({ quiz, mode = 'live', onComplete, onStepChange, onStepComp
                 </div>
                 {!shouldAutoAdvance(visibleBlocks) && (
                   <div className="sticky bottom-0 mt-auto w-full pt-4 pb-5">
-                    <NextButton onClick={() => next(values)}>{currentStep.properties.buttonText}</NextButton>
+                    <NextButton onClick={() => next(values)}>{currentPage.properties.buttonText}</NextButton>
                   </div>
                 )}
               </>

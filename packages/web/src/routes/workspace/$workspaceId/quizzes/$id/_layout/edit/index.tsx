@@ -1,8 +1,7 @@
-import { Resizable } from '@/components/ui/resizable'
 import { withActor } from '@/context/auth.withActor'
 import { Identifier } from '@shopfunnel/core/identifier'
 import { Quiz } from '@shopfunnel/core/quiz/index'
-import type { Block, Info, Step, Theme } from '@shopfunnel/core/quiz/types'
+import type { Block, Info, Page, Theme } from '@shopfunnel/core/quiz/types'
 import { useDebouncer } from '@tanstack/react-pacer'
 import { mutationOptions, useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
@@ -11,18 +10,15 @@ import * as React from 'react'
 import { z } from 'zod'
 import { getQuizQueryOptions } from '../../-common'
 import { BlockPane } from './-components/block-pane'
-import { BlocksPane } from './-components/blocks-pane'
+import { Canvas } from './-components/canvas'
 import { Panel } from './-components/panel'
-import { Preview } from './-components/preview'
-import { StepPane } from './-components/step-pane'
-import { StepsPane } from './-components/steps-pane'
 
 const updateQuiz = createServerFn({ method: 'POST' })
   .inputValidator(
     z.object({
       workspaceId: Identifier.schema('workspace'),
       quizId: Identifier.schema('quiz'),
-      steps: z.custom<Step[]>().optional(),
+      pages: z.custom<Page[]>().optional(),
       theme: z.custom<Theme>().optional(),
     }),
   )
@@ -31,7 +27,7 @@ const updateQuiz = createServerFn({ method: 'POST' })
       () =>
         Quiz.update({
           id: data.quizId,
-          steps: data.steps,
+          pages: data.pages,
           theme: data.theme,
         }),
       data.workspaceId,
@@ -40,7 +36,7 @@ const updateQuiz = createServerFn({ method: 'POST' })
 
 const updateQuizMutationOptions = (workspaceId: string, quizId: string) =>
   mutationOptions({
-    mutationFn: (data: { steps?: Step[]; theme?: Theme }) => updateQuiz({ data: { workspaceId, quizId, ...data } }),
+    mutationFn: (data: { pages?: Page[]; theme?: Theme }) => updateQuiz({ data: { workspaceId, quizId, ...data } }),
   })
 
 const uploadQuizFile = createServerFn({ method: 'POST' })
@@ -87,7 +83,7 @@ function RouteComponent() {
   const updateQuizMutation = useMutation(updateQuizMutationOptions(params.workspaceId, params.id))
 
   const saveDebouncer = useDebouncer(
-    async (data: { steps: Step[]; theme?: Theme }) => {
+    async (data: { pages: Page[]; theme?: Theme }) => {
       await updateQuizMutation.mutateAsync(data)
       queryClient.setQueryData(getQuizQueryOptions(params.workspaceId, params.id).queryKey, (quiz: Info | undefined) =>
         quiz ? { ...quiz, published: false } : quiz,
@@ -103,116 +99,97 @@ function RouteComponent() {
     setQuiz(quizQuery.data)
   }, [quizQuery.data])
 
-  const [selectedStepId, setSelectedStepId] = React.useState<string | null>(quiz.steps[0]?.id ?? null)
-  const selectedStep = quiz.steps.find((step) => step.id === selectedStepId) ?? null
+  const [selectedPageId, setSelectedPageId] = React.useState<string | null>(quiz.pages[0]?.id ?? null)
+  const selectedPage = quiz.pages.find((page) => page.id === selectedPageId) ?? null
 
   const [selectedBlockId, setSelectedBlockId] = React.useState<string | null>(null)
-  const selectedBlock = selectedStep?.blocks.find((b) => b.id === selectedBlockId) ?? null
+  const selectedBlock = quiz.pages.flatMap((p) => p.blocks).find((b) => b.id === selectedBlockId) ?? null
 
-  const handleStepSelect = (stepId: string) => {
-    setSelectedStepId(stepId)
-    const step = quiz.steps.find((s) => s.id === stepId)
-    setSelectedBlockId(step?.blocks[0]?.id ?? null)
-  }
-
-  const handleStepsReorder = (reorderedSteps: Step[]) => {
-    const updated = { ...quiz, steps: reorderedSteps, published: false }
-    setQuiz(updated)
-    saveDebouncer.maybeExecute({ steps: updated.steps })
-  }
-
-  const handleStepAdd = (step: Step) => {
-    const updated = { ...quiz, steps: [...quiz.steps, step], published: false }
-    setQuiz(updated)
-    setSelectedStepId(step.id)
-    setSelectedBlockId(step.blocks[0]?.id ?? null)
-    saveDebouncer.maybeExecute({ steps: updated.steps })
-  }
-
-  const handleStepDelete = (stepId: string) => {
-    setQuiz((prev) => {
-      const stepIndex = prev.steps.findIndex((step) => step.id === stepId)
-      const updatedSteps = prev.steps.filter((step) => step.id !== stepId)
-      const newIndex = Math.max(0, stepIndex - 1)
-      const newSelectedStep = updatedSteps[newIndex] ?? null
-      setSelectedStepId(newSelectedStep?.id ?? null)
-      setSelectedBlockId(newSelectedStep?.blocks[0]?.id ?? null)
-      const updated = { ...prev, steps: updatedSteps, published: false }
-      saveDebouncer.maybeExecute({ steps: updated.steps })
-      return updated
-    })
+  const handlePageSelect = (pageId: string | null) => {
+    setSelectedPageId(pageId)
+    if (pageId) {
+      const page = quiz.pages.find((p) => p.id === pageId)
+      setSelectedBlockId(page?.blocks[0]?.id ?? null)
+    }
   }
 
   const handleBlockSelect = (blockId: string | null) => {
     setSelectedBlockId(blockId)
   }
 
-  const handleStepUpdate = (id: string, updatedStep: Partial<Step>) => {
-    const updatedSteps = quiz.steps.map((step) => (step.id === id ? ({ ...step, ...updatedStep } as Step) : step))
-    const updatedQuiz = { ...quiz, steps: updatedSteps, published: false }
-    setQuiz(updatedQuiz)
-    saveDebouncer.maybeExecute({ steps: updatedQuiz.steps })
+  const handlePagesReorder = (reorderedPages: Page[]) => {
+    const updated = { ...quiz, pages: reorderedPages, published: false }
+    setQuiz(updated)
+    saveDebouncer.maybeExecute({ pages: updated.pages })
   }
 
-  const handleBlocksReorder = (reorderedBlocks: Block[]) => {
-    if (!selectedStepId) return
-    const updatedSteps = quiz.steps.map((step) =>
-      step.id === selectedStepId ? { ...step, blocks: reorderedBlocks } : step,
-    )
-    const updatedQuiz = { ...quiz, steps: updatedSteps, published: false }
-    setQuiz(updatedQuiz)
-    saveDebouncer.maybeExecute({ steps: updatedQuiz.steps })
+  const handlePageAdd = (page: Page, index: number) => {
+    const newPages = [...quiz.pages]
+    newPages.splice(index, 0, page)
+    const updated = { ...quiz, pages: newPages, published: false }
+    setQuiz(updated)
+    setSelectedPageId(page.id)
+    setSelectedBlockId(page.blocks[0]?.id ?? null)
+    saveDebouncer.maybeExecute({ pages: updated.pages })
   }
 
-  const handleBlockAdd = (addedBlock: Block) => {
-    if (!selectedStepId) return
-    const updatedSteps = quiz.steps.map((step) =>
-      step.id === selectedStepId ? { ...step, blocks: [...step.blocks, addedBlock] } : step,
-    )
-    const updatedQuiz = { ...quiz, steps: updatedSteps, published: false }
-    setQuiz(updatedQuiz)
-    setSelectedBlockId(addedBlock.id)
-    saveDebouncer.maybeExecute({ steps: updatedQuiz.steps })
-  }
-
-  const handleBlockUpdate = (id: string, updatedBlock: Partial<Block>) => {
-    const updatedSteps = quiz.steps.map((step) => ({
-      ...step,
-      blocks: step.blocks.map((block) => (block.id === id ? ({ ...block, ...updatedBlock } as Block) : block)),
-    }))
-    const updatedQuiz = { ...quiz, steps: updatedSteps, published: false }
-    setQuiz(updatedQuiz)
-    saveDebouncer.maybeExecute({ steps: updatedQuiz.steps })
-  }
-
-  const handleBlockDelete = (blockId: string) => {
-    if (!selectedStepId) return
+  const handlePageDelete = (pageId: string) => {
     setQuiz((prev) => {
-      const updatedSteps = prev.steps.map((step) => {
-        if (step.id !== selectedStepId) return step
-        const blockIndex = step.blocks.findIndex((block) => block.id === blockId)
-        const updatedBlocks = step.blocks.filter((block) => block.id !== blockId)
-        const newIndex = Math.max(0, blockIndex - 1)
-        const newSelectedBlock = updatedBlocks[newIndex] ?? null
-        setSelectedBlockId(newSelectedBlock?.id ?? null)
-        return { ...step, blocks: updatedBlocks }
-      })
-      const updated = { ...prev, steps: updatedSteps, published: false }
-      saveDebouncer.maybeExecute({ steps: updated.steps })
+      const pageIndex = prev.pages.findIndex((page) => page.id === pageId)
+      const updatedPages = prev.pages.filter((page) => page.id !== pageId)
+      const newIndex = Math.max(0, pageIndex - 1)
+      const newSelectedPage = updatedPages[newIndex] ?? null
+      setSelectedPageId(newSelectedPage?.id ?? null)
+      setSelectedBlockId(newSelectedPage?.blocks[0]?.id ?? null)
+      const updated = { ...prev, pages: updatedPages, published: false }
+      saveDebouncer.maybeExecute({ pages: updated.pages })
       return updated
     })
   }
 
-  const handleThemeUpdate = (updatedTheme: Partial<Theme>) => {
-    const updatedQuiz = {
-      ...quiz,
-      theme: { ...quiz.theme, ...updatedTheme },
-      published: false,
-    }
+  const handleBlocksReorder = (pageId: string, reorderedBlocks: Block[]) => {
+    const updatedPages = quiz.pages.map((page) => (page.id === pageId ? { ...page, blocks: reorderedBlocks } : page))
+    const updatedQuiz = { ...quiz, pages: updatedPages, published: false }
     setQuiz(updatedQuiz)
-    saveDebouncer.maybeExecute({
-      steps: updatedQuiz.steps,
-      theme: updatedQuiz.theme,
+    saveDebouncer.maybeExecute({ pages: updatedQuiz.pages })
+  }
+
+  const handleBlockAdd = (addedBlock: Block) => {
+    if (!selectedPageId) return
+    const updatedPages = quiz.pages.map((page) =>
+      page.id === selectedPageId ? { ...page, blocks: [...page.blocks, addedBlock] } : page,
+    )
+    const updatedQuiz = { ...quiz, pages: updatedPages, published: false }
+    setQuiz(updatedQuiz)
+    setSelectedBlockId(addedBlock.id)
+    saveDebouncer.maybeExecute({ pages: updatedQuiz.pages })
+  }
+
+  const handleBlockUpdate = (id: string, updatedBlock: Partial<Block>) => {
+    const updatedPages = quiz.pages.map((page) => ({
+      ...page,
+      blocks: page.blocks.map((block) => (block.id === id ? ({ ...block, ...updatedBlock } as Block) : block)),
+    }))
+    const updatedQuiz = { ...quiz, pages: updatedPages, published: false }
+    setQuiz(updatedQuiz)
+    saveDebouncer.maybeExecute({ pages: updatedQuiz.pages })
+  }
+
+  const handleBlockDelete = (blockId: string) => {
+    setQuiz((prev) => {
+      const updatedPages = prev.pages.map((page) => {
+        const blockIndex = page.blocks.findIndex((block) => block.id === blockId)
+        if (blockIndex === -1) return page
+
+        const updatedBlocks = page.blocks.filter((block) => block.id !== blockId)
+        const newIndex = Math.max(0, blockIndex - 1)
+        const newSelectedBlock = updatedBlocks[newIndex] ?? null
+        setSelectedBlockId(newSelectedBlock?.id ?? null)
+        return { ...page, blocks: updatedBlocks }
+      })
+      const updated = { ...prev, pages: updatedPages, published: false }
+      saveDebouncer.maybeExecute({ pages: updated.pages })
+      return updated
     })
   }
 
@@ -227,60 +204,29 @@ function RouteComponent() {
 
   return (
     <div className="flex flex-1 overflow-hidden">
-      <Panel className="w-[250px]">
-        <Resizable.PanelGroup direction="vertical">
-          <Resizable.Panel defaultSize={selectedStepId ? 40 : 100} minSize={20}>
-            <StepsPane
-              steps={quiz.steps}
-              selectedStepId={selectedStepId}
-              onStepSelect={handleStepSelect}
-              onStepsReorder={handleStepsReorder}
-              onStepAdd={handleStepAdd}
-              onStepDelete={handleStepDelete}
-            />
-          </Resizable.Panel>
-          {selectedStepId && (
-            <React.Fragment>
-              <Resizable.Handle />
-              <Resizable.Panel defaultSize={60} minSize={20}>
-                <BlocksPane
-                  blocks={selectedStep?.blocks ?? []}
-                  selectedBlockId={selectedBlockId}
-                  onBlockSelect={handleBlockSelect}
-                  onBlocksReorder={handleBlocksReorder}
-                  onBlockAdd={handleBlockAdd}
-                  onBlockDelete={handleBlockDelete}
-                />
-              </Resizable.Panel>
-            </React.Fragment>
-          )}
-        </Resizable.PanelGroup>
-      </Panel>
-      <Preview
-        step={selectedStep}
+      <Canvas
+        pages={quiz.pages}
         theme={quiz.theme}
+        selectedPageId={selectedPageId}
         selectedBlockId={selectedBlockId}
+        onPageSelect={handlePageSelect}
         onBlockSelect={handleBlockSelect}
-        onThemeUpdate={handleThemeUpdate}
-        onImageUpload={handleImageUpload}
+        onPagesReorder={handlePagesReorder}
+        onPageAdd={handlePageAdd}
+        onPageDelete={handlePageDelete}
+        onBlocksReorder={handleBlocksReorder}
+        onBlockAdd={handleBlockAdd}
+        onBlockDelete={handleBlockDelete}
       />
-      {selectedBlock ? (
-        <Panel className="w-[350px]">
+      {selectedBlock && (
+        <Panel className="w-[450px]">
           <BlockPane
             data={selectedBlock}
             onDataUpdate={(data) => handleBlockUpdate(selectedBlock.id, data)}
             onImageUpload={handleImageUpload}
           />
         </Panel>
-      ) : selectedStep ? (
-        <Panel className="w-[350px]">
-          <StepPane
-            step={selectedStep}
-            index={quiz.steps.findIndex((s) => s.id === selectedStepId)}
-            onStepUpdate={(step) => handleStepUpdate(selectedStep.id, step)}
-          />
-        </Panel>
-      ) : null}
+      )}
     </div>
   )
 }

@@ -63,8 +63,8 @@ export namespace Question {
           }
         }
 
-        const inputBlocks = quiz.steps.flatMap((step) =>
-          step.blocks
+        const inputBlocks = quiz.pages.flatMap((page) =>
+          page.blocks
             .filter((block): block is Block & { type: InputBlock } => INPUT_BLOCKS.includes(block.type as InputBlock))
             .map((block) => ({
               blockId: block.id,
@@ -72,7 +72,7 @@ export namespace Question {
               title: block.properties.name,
             })),
         )
-        const blockByBlockId = new Map(quiz.steps.flatMap((step) => step.blocks.map((block) => [block.id, block])))
+        const blockByBlockId = new Map(quiz.pages.flatMap((page) => page.blocks.map((block) => [block.id, block])))
         const questionsToUpsert = inputBlocks.map((inputBlock, index) => {
           const question = existingQuestionByBlockId.get(inputBlock.blockId)
           const block = blockByBlockId.get(inputBlock.blockId)
