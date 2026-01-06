@@ -1,9 +1,9 @@
 import { Quiz } from '@/components/quiz'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
-import { getQuizQueryOptions } from '../-common'
+import { getQuizQueryOptions } from './-common'
 
-export const Route = createFileRoute('/workspace/$workspaceId/quizzes/$id/preview/')({
+export const Route = createFileRoute('/workspace/$workspaceId/quizzes/$id/preview')({
   component: RouteComponent,
   loader: async ({ context, params }) => {
     await context.queryClient.ensureQueryData(getQuizQueryOptions(params.workspaceId, params.id))

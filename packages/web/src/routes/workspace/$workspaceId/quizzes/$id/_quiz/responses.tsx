@@ -36,7 +36,7 @@ const listSubmissionsQueryOptions = (workspaceId: string, quizId: string, page: 
     placeholderData: keepPreviousData,
   })
 
-export const Route = createFileRoute('/workspace/$workspaceId/quizzes/$id/_layout/responses')({
+export const Route = createFileRoute('/workspace/$workspaceId/quizzes/$id/_quiz/responses')({
   validateSearch: (search) =>
     z
       .object({

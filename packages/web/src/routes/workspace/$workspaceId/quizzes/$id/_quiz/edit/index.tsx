@@ -71,7 +71,7 @@ const uploadQuizFile = createServerFn({ method: 'POST' })
     }, data.workspaceId)
   })
 
-export const Route = createFileRoute('/workspace/$workspaceId/quizzes/$id/_layout/edit/')({
+export const Route = createFileRoute('/workspace/$workspaceId/quizzes/$id/_quiz/edit/')({
   component: RouteComponent,
   ssr: false,
 })

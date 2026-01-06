@@ -47,7 +47,7 @@ const updateQuizTitleMutationOptions = (workspaceId: string, quizId: string) =>
     mutationFn: (title: string) => updateQuizTitle({ data: { workspaceId, quizId, title } }),
   })
 
-export const Route = createFileRoute('/workspace/$workspaceId/quizzes/$id/_layout')({
+export const Route = createFileRoute('/workspace/$workspaceId/quizzes/$id/_quiz')({
   component: RouteComponent,
   ssr: false,
   loader: async ({ context, params }) => {

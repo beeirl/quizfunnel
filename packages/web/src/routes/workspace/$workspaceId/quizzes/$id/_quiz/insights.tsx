@@ -83,7 +83,7 @@ const getInsightsQueryOptions = (quizId: string, quizVersion: number | null) =>
     enabled: quizVersion !== null,
   })
 
-export const Route = createFileRoute('/workspace/$workspaceId/quizzes/$id/_layout/insights')({
+export const Route = createFileRoute('/workspace/$workspaceId/quizzes/$id/_quiz/insights')({
   component: RouteComponent,
   ssr: false,
   loader: async ({ context, params }) => {

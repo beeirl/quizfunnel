@@ -40,16 +40,13 @@ export function CanvasPage({
 
   const selected = selectedPageId === page.id
 
-  const handleAddMenuOpenChange = React.useCallback(
-    (open: boolean) => {
-      setAddMenuOpen(open)
-      if (open) {
-        onSelectPage(null)
-        onSelectBlock(null)
-      }
-    },
-    [onSelectPage, onSelectBlock],
-  )
+  const handleAddMenuOpenChange = (open: boolean) => {
+    setAddMenuOpen(open)
+    if (open) {
+      onSelectPage(null)
+      onSelectBlock(null)
+    }
+  }
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: page.id,
@@ -78,27 +75,10 @@ export function CanvasPage({
           touchAction: 'none',
         }
 
-  const handleClick = React.useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation()
-      onSelectPage(page.id)
-    },
-    [onSelectPage, page.id],
-  )
-
-  const handleAddPageLeft = React.useCallback(
-    (newPage: PageType) => {
-      onPageAdd(newPage, pageIndex)
-    },
-    [onPageAdd, pageIndex],
-  )
-
-  const handleAddPageRight = React.useCallback(
-    (newPage: PageType) => {
-      onPageAdd(newPage, pageIndex + 1)
-    },
-    [onPageAdd, pageIndex],
-  )
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onSelectPage(page.id)
+  }
 
   const blocksStatic = isStatic || draggingPage !== null
 
@@ -199,7 +179,11 @@ export function CanvasPage({
           className="pointer-events-none absolute top-1/2 left-0 z-10 -translate-x-1/2 -translate-y-1/2 scale-0 opacity-0 transition-[opacity,transform] group-[:hover:not(:has([data-slot=canvas-block]:hover))]/canvas-page:pointer-events-auto group-[:hover:not(:has([data-slot=canvas-block]:hover))]/canvas-page:scale-100 group-[:hover:not(:has([data-slot=canvas-block]:hover))]/canvas-page:opacity-100 has-data-popup-open:pointer-events-auto has-data-popup-open:scale-100 has-data-popup-open:opacity-100"
           onClick={(e) => e.stopPropagation()}
         >
-          <AddPageMenu.Root onPageAdd={handleAddPageLeft} side="left" onOpenChange={handleAddMenuOpenChange}>
+          <AddPageMenu.Root
+            onPageAdd={(page) => onPageAdd(page, pageIndex)}
+            side="left"
+            onOpenChange={handleAddMenuOpenChange}
+          >
             <AddPageMenu.Trigger
               render={
                 <Button className="cursor-crosshair" size="icon">
@@ -214,7 +198,11 @@ export function CanvasPage({
           className="pointer-events-none absolute top-1/2 right-0 z-10 translate-x-1/2 -translate-y-1/2 scale-0 opacity-0 transition-[opacity,transform] group-[:hover:not(:has([data-slot=canvas-block]:hover))]/canvas-page:pointer-events-auto group-[:hover:not(:has([data-slot=canvas-block]:hover))]/canvas-page:scale-100 group-[:hover:not(:has([data-slot=canvas-block]:hover))]/canvas-page:opacity-100 has-data-popup-open:pointer-events-auto has-data-popup-open:scale-100 has-data-popup-open:opacity-100"
           onClick={(e) => e.stopPropagation()}
         >
-          <AddPageMenu.Root onPageAdd={handleAddPageRight} side="right" onOpenChange={handleAddMenuOpenChange}>
+          <AddPageMenu.Root
+            onPageAdd={(page) => onPageAdd(page, pageIndex + 1)}
+            side="right"
+            onOpenChange={handleAddMenuOpenChange}
+          >
             <AddPageMenu.Trigger
               render={
                 <Button className="cursor-crosshair" size="icon">

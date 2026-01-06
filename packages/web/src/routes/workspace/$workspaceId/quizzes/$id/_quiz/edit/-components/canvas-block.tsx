@@ -31,16 +31,6 @@ export function CanvasBlock({
   const blockInfo = getBlockInfo(block.type)
   const selected = selectedBlockId === block.id
 
-  const handleAddMenuOpenChange = React.useCallback(
-    (open: boolean) => {
-      setAddMenuOpen(open)
-      if (open) {
-        onSelectBlock(null)
-      }
-    },
-    [onSelectBlock],
-  )
-
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: block.id,
     data: { type: 'block' },
@@ -68,27 +58,17 @@ export function CanvasBlock({
           touchAction: 'none',
         }
 
-  const handleClick = React.useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation()
-      onSelectBlock(block.id)
-    },
-    [onSelectBlock, block.id],
-  )
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onSelectBlock(block.id)
+  }
 
-  const handleAddBlockAbove = React.useCallback(
-    (newBlock: BlockType) => {
-      onBlockAdd(newBlock, page.id, index)
-    },
-    [onBlockAdd, page, index],
-  )
-
-  const handleAddBlockBelow = React.useCallback(
-    (newBlock: BlockType) => {
-      onBlockAdd(newBlock, page.id, index + 1)
-    },
-    [onBlockAdd, page, index],
-  )
+  const handleAddMenuOpenChange = (open: boolean) => {
+    setAddMenuOpen(open)
+    if (open) {
+      onSelectBlock(null)
+    }
+  }
 
   if (isStatic) {
     return (
@@ -138,7 +118,10 @@ export function CanvasBlock({
           className="pointer-events-none absolute top-0 left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 scale-0 opacity-0 transition-[opacity,transform] group-hover/canvas-block:pointer-events-auto group-hover/canvas-block:scale-100 group-hover/canvas-block:opacity-100 has-data-popup-open:pointer-events-auto has-data-popup-open:scale-100 has-data-popup-open:opacity-100"
           onClick={(e) => e.stopPropagation()}
         >
-          <AddBlockMenu.Root onBlockAdd={handleAddBlockAbove} onOpenChange={handleAddMenuOpenChange}>
+          <AddBlockMenu.Root
+            onBlockAdd={(block) => onBlockAdd(block, page.id, index)}
+            onOpenChange={handleAddMenuOpenChange}
+          >
             <AddBlockMenu.Trigger
               render={
                 <Button className="cursor-crosshair" size="icon-sm">
@@ -153,7 +136,10 @@ export function CanvasBlock({
           className="pointer-events-none absolute bottom-0 left-1/2 z-10 -translate-x-1/2 translate-y-1/2 scale-0 opacity-0 transition-[opacity,transform] group-hover/canvas-block:pointer-events-auto group-hover/canvas-block:scale-100 group-hover/canvas-block:opacity-100 has-data-popup-open:pointer-events-auto has-data-popup-open:scale-100 has-data-popup-open:opacity-100"
           onClick={(e) => e.stopPropagation()}
         >
-          <AddBlockMenu.Root onBlockAdd={handleAddBlockBelow} onOpenChange={handleAddMenuOpenChange}>
+          <AddBlockMenu.Root
+            onBlockAdd={(block) => onBlockAdd(block, page.id, index + 1)}
+            onOpenChange={handleAddMenuOpenChange}
+          >
             <AddBlockMenu.Trigger
               render={
                 <Button className="cursor-crosshair" size="icon-sm">
