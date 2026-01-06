@@ -5,7 +5,7 @@ import * as React from 'react'
 import { ulid } from 'ulid'
 import { useCanvasPage } from './canvas-page-context'
 
-const ADD_BLOCK_DATA: Record<Block['type'], () => Block> = {
+const BLOCKS: Record<Block['type'], () => Block> = {
   text_input: () => ({
     id: ulid(),
     type: 'text_input',
@@ -144,7 +144,7 @@ function AddBlockMenuContent() {
     : ['text_input', 'multiple_choice', 'picture_choice', 'dropdown', 'loader']
 
   const handleBlockAdd = (type: Block['type']) => {
-    onBlockAdd(ADD_BLOCK_DATA[type]())
+    onBlockAdd(BLOCKS[type]())
   }
 
   return (

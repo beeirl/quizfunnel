@@ -3,9 +3,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { InputGroup } from '@/components/ui/input-group'
 import { SegmentedControl } from '@/components/ui/segmented-control'
-import { move } from '@dnd-kit/helpers'
-import { DragDropProvider } from '@dnd-kit/react'
-import { useSortable } from '@dnd-kit/react/sortable'
+import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
+import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import type { MultipleChoiceBlock as MultipleChoiceBlockType } from '@shopfunnel/core/quiz/types'
 import {
   IconGripVertical as GripVerticalIcon,
@@ -25,32 +25,36 @@ type Choice = MultipleChoiceBlockType['properties']['options'][number]
 
 function ChoiceItem({
   choice,
-  index,
   inputRef,
   onUpdate,
   onDelete,
   onImageUpload,
 }: {
   choice: Choice
-  index: number
   inputRef: (el: HTMLInputElement | null) => void
   onUpdate: (updates: Partial<Choice>) => void
   onDelete: () => void
   onImageUpload: (file: File) => Promise<string>
 }) {
-  const { ref, handleRef } = useSortable({ id: choice.id, index })
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: choice.id })
   const mediaButtonRef = React.useRef<HTMLDivElement>(null)
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
 
   const handleMediaClear = () => {
     onUpdate({ media: undefined })
   }
 
   return (
-    <div ref={ref} className="grid grid-cols-[auto_1fr_auto] items-center gap-1">
+    <div ref={setNodeRef} style={style} className="grid grid-cols-[auto_1fr_auto] items-center gap-1">
       <button
-        ref={handleRef}
         type="button"
         className="cursor-grab touch-none pr-1 text-muted-foreground hover:text-foreground"
+        {...attributes}
+        {...listeners}
       >
         <GripVerticalIcon className="size-4" />
       </button>
@@ -146,6 +150,7 @@ export function MultipleChoiceBlockPanel({
   const options = block.properties.options
 
   const choiceInputRefs = React.useRef<Map<string, HTMLInputElement>>(new Map())
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
 
   const handleChoiceUpdate = (choiceId: string, updates: Partial<Choice>) => {
     onBlockUpdate({
@@ -186,13 +191,18 @@ export function MultipleChoiceBlockPanel({
     })
   }
 
-  const handleChoicesReorder = (newChoices: Choice[]) => {
-    onBlockUpdate({
-      properties: {
-        ...block.properties,
-        options: newChoices,
-      },
-    })
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (over && active.id !== over.id) {
+      const oldIndex = options.findIndex((o) => o.id === active.id)
+      const newIndex = options.findIndex((o) => o.id === over.id)
+      onBlockUpdate({
+        properties: {
+          ...block.properties,
+          options: arrayMove(options, oldIndex, newIndex),
+        },
+      })
+    }
   }
 
   return (
@@ -220,24 +230,25 @@ export function MultipleChoiceBlockPanel({
                 <PlusIcon />
               </Button>
             </Pane.GroupHeader>
-            <DragDropProvider onDragEnd={(event) => handleChoicesReorder(move(options, event))}>
-              <div className="flex flex-col gap-4">
-                {options.map((choice, index) => (
-                  <ChoiceItem
-                    key={choice.id}
-                    choice={choice}
-                    index={index}
-                    inputRef={(el) => {
-                      if (el) choiceInputRefs.current.set(choice.id, el)
-                      else choiceInputRefs.current.delete(choice.id)
-                    }}
-                    onUpdate={(updates) => handleChoiceUpdate(choice.id, updates)}
-                    onDelete={() => handleChoiceDelete(choice.id)}
-                    onImageUpload={onImageUpload}
-                  />
-                ))}
-              </div>
-            </DragDropProvider>
+            <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+              <SortableContext items={options} strategy={verticalListSortingStrategy}>
+                <div className="flex flex-col gap-4">
+                  {options.map((choice) => (
+                    <ChoiceItem
+                      key={choice.id}
+                      choice={choice}
+                      inputRef={(el) => {
+                        if (el) choiceInputRefs.current.set(choice.id, el)
+                        else choiceInputRefs.current.delete(choice.id)
+                      }}
+                      onUpdate={(updates) => handleChoiceUpdate(choice.id, updates)}
+                      onDelete={() => handleChoiceDelete(choice.id)}
+                      onImageUpload={onImageUpload}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           </Pane.Group>
           <Pane.Separator />
           <Pane.Group>

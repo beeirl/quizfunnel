@@ -2,9 +2,9 @@ import { getBlockInfo } from '@/components/block'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { SegmentedControl } from '@/components/ui/segmented-control'
-import { move } from '@dnd-kit/helpers'
-import { DragDropProvider } from '@dnd-kit/react'
-import { useSortable } from '@dnd-kit/react/sortable'
+import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
+import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import type { PictureChoiceBlock as PictureChoiceBlockType } from '@shopfunnel/core/quiz/types'
 import {
   IconGripVertical as GripVerticalIcon,
@@ -22,20 +22,23 @@ type Choice = PictureChoiceBlockType['properties']['options'][number]
 
 function ChoiceItem({
   choice,
-  index,
   inputRef,
   onUpdate,
   onDelete,
   onImageUpload,
 }: {
   choice: Choice
-  index: number
   inputRef: (el: HTMLInputElement | null) => void
   onUpdate: (updates: Partial<Choice>) => void
   onDelete: () => void
   onImageUpload: (file: File) => Promise<string>
 }) {
-  const { ref, handleRef } = useSortable({ id: choice.id, index })
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: choice.id })
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
 
   const handleImageClick = () => {
     const input = document.createElement('input')
@@ -53,13 +56,15 @@ function ChoiceItem({
 
   return (
     <div
-      ref={ref}
+      ref={setNodeRef}
+      style={style}
       className="grid grid-cols-[auto_auto_1fr_auto] items-center gap-1 rounded-lg border border-border bg-card p-2"
     >
       <button
-        ref={handleRef}
         type="button"
         className="h-8 cursor-grab touch-none text-muted-foreground hover:text-foreground"
+        {...attributes}
+        {...listeners}
       >
         <GripVerticalIcon className="size-4" />
       </button>
@@ -112,6 +117,7 @@ export function PictureChoiceBlockPanel({
   const options = block.properties.options
 
   const choiceInputRefs = React.useRef<Map<string, HTMLInputElement>>(new Map())
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
 
   const handleChoiceUpdate = (choiceId: string, updates: Partial<Choice>) => {
     onBlockUpdate({
@@ -152,13 +158,18 @@ export function PictureChoiceBlockPanel({
     })
   }
 
-  const handleChoicesReorder = (newChoices: Choice[]) => {
-    onBlockUpdate({
-      properties: {
-        ...block.properties,
-        options: newChoices,
-      },
-    })
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (over && active.id !== over.id) {
+      const oldIndex = options.findIndex((o) => o.id === active.id)
+      const newIndex = options.findIndex((o) => o.id === over.id)
+      onBlockUpdate({
+        properties: {
+          ...block.properties,
+          options: arrayMove(options, oldIndex, newIndex),
+        },
+      })
+    }
   }
 
   return (
@@ -186,24 +197,25 @@ export function PictureChoiceBlockPanel({
                 <PlusIcon />
               </Button>
             </Pane.GroupHeader>
-            <DragDropProvider onDragEnd={(event) => handleChoicesReorder(move(options, event))}>
-              <div className="flex flex-col gap-2">
-                {options.map((choice, index) => (
-                  <ChoiceItem
-                    key={choice.id}
-                    choice={choice}
-                    index={index}
-                    inputRef={(el) => {
-                      if (el) choiceInputRefs.current.set(choice.id, el)
-                      else choiceInputRefs.current.delete(choice.id)
-                    }}
-                    onUpdate={(updates) => handleChoiceUpdate(choice.id, updates)}
-                    onDelete={() => handleChoiceDelete(choice.id)}
-                    onImageUpload={onImageUpload}
-                  />
-                ))}
-              </div>
-            </DragDropProvider>
+            <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+              <SortableContext items={options} strategy={verticalListSortingStrategy}>
+                <div className="flex flex-col gap-2">
+                  {options.map((choice) => (
+                    <ChoiceItem
+                      key={choice.id}
+                      choice={choice}
+                      inputRef={(el) => {
+                        if (el) choiceInputRefs.current.set(choice.id, el)
+                        else choiceInputRefs.current.delete(choice.id)
+                      }}
+                      onUpdate={(updates) => handleChoiceUpdate(choice.id, updates)}
+                      onDelete={() => handleChoiceDelete(choice.id)}
+                      onImageUpload={onImageUpload}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
             {options.length === 0 && (
               <div className="flex items-center justify-center py-4 text-sm text-muted-foreground">No options yet</div>
             )}

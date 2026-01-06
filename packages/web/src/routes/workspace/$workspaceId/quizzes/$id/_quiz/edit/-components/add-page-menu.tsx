@@ -12,7 +12,7 @@ import * as React from 'react'
 import { ulid } from 'ulid'
 import { useCanvasPage } from './canvas-page-context'
 
-const ADD_BLOCK_DATA = {
+const BLOCKS = {
   heading: (): Block => ({
     id: ulid(),
     type: 'heading',
@@ -127,9 +127,9 @@ function AddPageMenuContent() {
     const blocks: Block[] = []
     template.blocks.forEach((type) => {
       if (['text_input', 'multiple_choice', 'picture_choice', 'dropdown'].includes(type)) {
-        blocks.push(ADD_BLOCK_DATA.heading())
+        blocks.push(BLOCKS.heading())
       }
-      const blockFactory = ADD_BLOCK_DATA[type]
+      const blockFactory = BLOCKS[type]
       if (blockFactory) {
         blocks.push(blockFactory())
       }

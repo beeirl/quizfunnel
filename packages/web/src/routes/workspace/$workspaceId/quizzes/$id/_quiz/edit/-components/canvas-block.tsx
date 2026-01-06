@@ -92,9 +92,9 @@ export function CanvasBlock({
       style={style}
       className="group/canvas-block nopan nodrag relative"
       data-slot="canvas-block"
+      onClick={handleClick}
       {...attributes}
       {...listeners}
-      onClick={handleClick}
     >
       <div
         className={cn(
