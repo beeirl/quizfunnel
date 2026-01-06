@@ -253,7 +253,7 @@ export function MultipleChoiceBlockPanel({
           <Pane.Separator />
           <Pane.Group>
             <Pane.GroupHeader>
-              <Pane.GroupLabel>Validation</Pane.GroupLabel>
+              <Pane.GroupLabel>Options</Pane.GroupLabel>
             </Pane.GroupHeader>
             <Field.Root>
               <Field.Label>Mode</Field.Label>

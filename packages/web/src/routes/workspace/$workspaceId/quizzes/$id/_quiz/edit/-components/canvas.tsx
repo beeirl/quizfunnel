@@ -443,7 +443,7 @@ function CanvasBlock({
             selected || addMenuOpen ? 'block' : 'hidden group-hover/canvas-block:block',
           )}
         >
-          {blockInfo.name}
+          {'name' in block.properties && block.properties.name ? block.properties.name : blockInfo.name}
         </div>
         <BlockComponent block={block} index={index} static />
       </div>
@@ -474,7 +474,7 @@ function CanvasBlock({
               selected || addMenuOpen ? 'block' : 'hidden group-hover/canvas-block:block',
             )}
           >
-            {blockInfo.name}
+            {'name' in block.properties && block.properties.name ? block.properties.name : blockInfo.name}
           </div>
           <BlockComponent block={block} index={index} static />
         </div>

@@ -174,7 +174,7 @@ export function DropdownBlockPanel({
           <Pane.Separator />
           <Pane.Group>
             <Pane.GroupHeader>
-              <Pane.GroupLabel>Validation</Pane.GroupLabel>
+              <Pane.GroupLabel>Options</Pane.GroupLabel>
             </Pane.GroupHeader>
             <Field.Root>
               <Field.Label>Required</Field.Label>

@@ -119,10 +119,9 @@ function RouteComponent() {
               <Dialog.Trigger aria-label="Edit quiz title" render={<Button variant="ghost">{quiz.title}</Button>} />
               <Dialog.Content>
                 <Dialog.Header>
-                  <Dialog.Title>Edit Quiz Title</Dialog.Title>
+                  <Dialog.Title>Edit quiz title</Dialog.Title>
                 </Dialog.Header>
                 <Field.Root data-invalid={!!titleError}>
-                  <Field.Label>Title</Field.Label>
                   <Input
                     autoFocus
                     placeholder="Enter quiz title"
