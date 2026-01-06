@@ -5,7 +5,6 @@ import { ListBox as ReactAriaListbox, ListBoxItem as ReactAriaListboxItem } from
 
 export interface PictureChoiceBlockProps {
   block: BlockType
-  index: number
   static?: boolean
   value?: string | string[] | null
   onValueChange?: (value: string | string[] | null) => void
@@ -13,7 +12,7 @@ export interface PictureChoiceBlockProps {
 
 export function PictureChoiceBlock(props: PictureChoiceBlockProps) {
   return (
-    <div className={cn(props.index > 0 && 'mt-6')}>
+    <div className="group-not-data-first/block:mt-6">
       <ReactAriaListbox
         className="grid grid-cols-2 gap-3"
         disallowEmptySelection={props.static ? false : !props.block.properties.multiple}

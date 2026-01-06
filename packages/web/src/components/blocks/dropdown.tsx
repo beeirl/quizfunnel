@@ -5,7 +5,6 @@ import { IconCheck as CheckIcon, IconChevronDown as ChevronDownIcon } from '@tab
 
 export interface DropdownBlockProps {
   block: BlockType
-  index: number
   static?: boolean
   value?: string
   onValueChange?: (value: string) => void
@@ -19,7 +18,7 @@ export function DropdownBlock(props: DropdownBlockProps) {
   }))
 
   return (
-    <div className={cn(props.index > 0 && 'mt-6')}>
+    <div className="group-not-data-first/block:mt-6">
       <BaseSelect.Root
         disabled={props.static}
         value={props.static ? undefined : (props.value ?? null)}

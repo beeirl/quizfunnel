@@ -2,7 +2,6 @@ import type { ListBlock as BlockType } from '@shopfunnel/core/quiz/types'
 
 export interface ListBlockProps {
   block: BlockType
-  index: number
   static?: boolean
 }
 

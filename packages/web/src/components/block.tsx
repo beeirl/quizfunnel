@@ -37,7 +37,7 @@ import * as React from 'react'
 
 export interface BlockProps {
   block: Block
-  index: number
+  index?: number
   static?: boolean
   value?: unknown
   onValueChange?: (value: unknown) => void
@@ -139,7 +139,6 @@ const BLOCKS = {} as Record<Block['type'], BlockComponent>
 BLOCKS['text_input'] = (props) => (
   <TextInputBlock
     block={props.block as TextInputBlockType}
-    index={props.index}
     static={props.static}
     value={props.value as string}
     onValueChange={props.onValueChange as (value: string) => void}
@@ -149,7 +148,6 @@ BLOCKS['text_input'] = (props) => (
 BLOCKS['multiple_choice'] = (props) => (
   <MultipleChoiceBlock
     block={props.block as MultipleChoiceBlockType}
-    index={props.index}
     static={props.static}
     value={props.value as string | string[] | null}
     onValueChange={props.onValueChange as (value: string | string[] | null) => void}
@@ -159,7 +157,6 @@ BLOCKS['multiple_choice'] = (props) => (
 BLOCKS['picture_choice'] = (props) => (
   <PictureChoiceBlock
     block={props.block as PictureChoiceBlockType}
-    index={props.index}
     static={props.static}
     value={props.value as string | string[] | null}
     onValueChange={props.onValueChange as (value: string | string[] | null) => void}
@@ -169,39 +166,30 @@ BLOCKS['picture_choice'] = (props) => (
 BLOCKS['dropdown'] = (props) => (
   <DropdownBlock
     block={props.block as DropdownBlockType}
-    index={props.index}
     static={props.static}
     value={props.value as string}
     onValueChange={props.onValueChange as (value: string) => void}
   />
 )
 
-BLOCKS['heading'] = (props) => (
-  <HeadingBlock block={props.block as HeadingBlockType} index={props.index} static={props.static} />
-)
+BLOCKS['heading'] = (props) => <HeadingBlock block={props.block as HeadingBlockType} static={props.static} />
 
-BLOCKS['paragraph'] = (props) => (
-  <ParagraphBlock block={props.block as ParagraphBlockType} index={props.index} static={props.static} />
-)
+BLOCKS['paragraph'] = (props) => <ParagraphBlock block={props.block as ParagraphBlockType} static={props.static} />
 
-BLOCKS['gauge'] = (props) => (
-  <GaugeBlock block={props.block as GaugeBlockType} index={props.index} static={props.static} />
-)
+BLOCKS['gauge'] = (props) => <GaugeBlock block={props.block as GaugeBlockType} static={props.static} />
 
-BLOCKS['list'] = (props) => <ListBlock block={props.block as ListBlockType} index={props.index} static={props.static} />
+BLOCKS['list'] = (props) => <ListBlock block={props.block as ListBlockType} static={props.static} />
 
-BLOCKS['image'] = (props) => (
-  <ImageBlock block={props.block as ImageBlockType} index={props.index} static={props.static} />
-)
+BLOCKS['image'] = (props) => <ImageBlock block={props.block as ImageBlockType} static={props.static} />
 
 BLOCKS['loader'] = (props) => (
-  <LoaderBlock
-    block={props.block as LoaderBlockType}
-    index={props.index}
-    onLoadingValueChange={props.onLoadingValueChange}
-  />
+  <LoaderBlock block={props.block as LoaderBlockType} onLoadingValueChange={props.onLoadingValueChange} />
 )
 
 export function Block(props: BlockProps) {
-  return BLOCKS[props.block.type](props)
+  return (
+    <div className="group/block" data-first={props.index === 0 ? '' : undefined}>
+      {BLOCKS[props.block.type](props)}
+    </div>
+  )
 }

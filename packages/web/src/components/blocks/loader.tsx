@@ -1,10 +1,8 @@
-import { cn } from '@/lib/utils'
 import type { LoaderBlock as BlockType } from '@shopfunnel/core/quiz/types'
 import * as React from 'react'
 
 export interface LoaderBlockProps {
   block: BlockType
-  index: number
   onLoadingValueChange?: (value: boolean) => void
 }
 
@@ -87,7 +85,7 @@ export function LoaderBlock(props: LoaderBlockProps) {
   }, [duration])
 
   return (
-    <div className={cn('flex w-full flex-col items-center py-6', props.index > 0 && 'mt-6')}>
+    <div className="flex w-full flex-col items-center py-6 group-not-data-first/block:mt-6">
       <div className="mb-6 text-5xl font-bold text-(--qz-foreground)">{progress}%</div>
       <div className="h-2.5 w-full overflow-hidden rounded-[calc(var(--qz-radius)-5px)] bg-(--qz-muted)">
         <div

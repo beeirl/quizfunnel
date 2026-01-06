@@ -4,7 +4,6 @@ import { ListBox as ReactAriaListbox, ListBoxItem as ReactAriaListboxItem } from
 
 export interface MultipleChoiceBlockProps {
   block: BlockType
-  index: number
   static?: boolean
   value?: string | string[] | null
   onValueChange?: (value: string | string[] | null) => void
@@ -12,7 +11,7 @@ export interface MultipleChoiceBlockProps {
 
 export function MultipleChoiceBlock(props: MultipleChoiceBlockProps) {
   return (
-    <div className={cn(props.index > 0 && 'mt-6')}>
+    <div className="group-not-data-first/block:mt-6">
       <ReactAriaListbox
         className="flex flex-col gap-2"
         disallowEmptySelection={props.static ? false : !props.block.properties.multiple}

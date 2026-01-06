@@ -1,9 +1,7 @@
-import { cn } from '@/lib/utils'
 import type { GaugeBlock as BlockType } from '@shopfunnel/core/quiz/types'
 
 export interface GaugeBlockProps {
   block: BlockType
-  index: number
   static?: boolean
 }
 
@@ -15,7 +13,7 @@ export function GaugeBlock(props: GaugeBlockProps) {
   const percentage = range > 0 ? Math.max(0, Math.min(100, ((value - minValue) / range) * 100)) : 0
 
   return (
-    <div className={cn('w-full pt-14', props.index > 0 && 'mt-6')}>
+    <div className="w-full pt-14 group-not-data-first/block:mt-6">
       <div className="relative">
         <div
           className="h-2.5 w-full rounded-[calc(var(--qz-radius)-5px)]"

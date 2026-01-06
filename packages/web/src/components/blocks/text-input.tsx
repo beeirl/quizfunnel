@@ -4,7 +4,6 @@ import type { TextInputBlock as BlockType } from '@shopfunnel/core/quiz/types'
 
 export interface TextInputBlockProps {
   block: BlockType
-  index: number
   static?: boolean
   value?: string
   onValueChange?: (value: string) => void
@@ -12,7 +11,7 @@ export interface TextInputBlockProps {
 
 export function TextInputBlock(props: TextInputBlockProps) {
   return (
-    <div className={cn(props.index > 0 && 'mt-6')}>
+    <div className="group-not-data-first/block:mt-6">
       <BaseInput
         className={cn(
           // Base
