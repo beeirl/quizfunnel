@@ -171,6 +171,13 @@ const BLOCKS: Record<BlockType['type'], () => BlockType> = {
       duration: 3000,
     },
   }),
+  spacer: () => ({
+    id: ulid(),
+    type: 'spacer',
+    properties: {
+      size: 'md',
+    },
+  }),
 }
 
 const PAGE_TEMPLATES = [
@@ -266,9 +273,10 @@ function AddBlockMenuContent() {
     ['text_input', 'multiple_choice', 'picture_choice', 'dropdown', 'loader'].includes(block.type),
   )
 
-  const availableBlockTypes: BlockType['type'][] = hasInputOrLoader
-    ? ['heading', 'paragraph', 'gauge', 'list', 'image']
-    : ['text_input', 'multiple_choice', 'picture_choice', 'dropdown', 'loader']
+  const displayBlocks: BlockType['type'][] = ['heading', 'paragraph', 'gauge', 'list', 'image', 'spacer']
+  const inputBlocks: BlockType['type'][] = ['text_input', 'multiple_choice', 'picture_choice', 'dropdown', 'loader']
+
+  const availableBlocks: BlockType['type'][] = hasInputOrLoader ? displayBlocks : [...inputBlocks, ...displayBlocks]
 
   const handleBlockAdd = (type: BlockType['type']) => {
     onBlockAdd(BLOCKS[type]())
@@ -278,7 +286,7 @@ function AddBlockMenuContent() {
     <Menu.Content side="bottom" align="center">
       <Menu.Group>
         <Menu.Label>Blocks</Menu.Label>
-        {availableBlockTypes.map((type) => {
+        {availableBlocks.map((type) => {
           const blockInfo = getBlockInfo(type)
           return (
             <Menu.Item key={type} onClick={() => handleBlockAdd(type)}>
@@ -610,7 +618,7 @@ function CanvasPage({
         )}
       >
         <div
-          className="no-scrollbar flex flex-col overflow-y-auto bg-(--qz-background)"
+          className="nowheel no-scrollbar flex flex-col overflow-y-auto bg-(--qz-background)"
           style={{ width: PAGE_WIDTH, height: PAGE_HEIGHT }}
         >
           <div className="mx-auto flex w-full max-w-sm flex-1 flex-col px-6 pt-8">
@@ -652,7 +660,7 @@ function CanvasPage({
                   </SortableContext>
                 )}
                 {!shouldAutoAdvance(page.blocks) && (
-                  <div className="mt-auto w-full pt-4 pb-5">
+                  <div className="sticky bottom-0 mt-auto w-full pt-4 pb-5">
                     <NextButton static>{page.properties?.buttonText || 'Next'}</NextButton>
                   </div>
                 )}

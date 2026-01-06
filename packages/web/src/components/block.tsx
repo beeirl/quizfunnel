@@ -7,6 +7,7 @@ import { LoaderBlock } from '@/components/blocks/loader'
 import { MultipleChoiceBlock } from '@/components/blocks/multiple-choice'
 import { ParagraphBlock } from '@/components/blocks/paragraph'
 import { PictureChoiceBlock } from '@/components/blocks/picture-choice'
+import { SpacerBlock } from '@/components/blocks/spacer'
 import { TextInputBlock } from '@/components/blocks/text-input'
 import type {
   Block,
@@ -19,9 +20,11 @@ import type {
   MultipleChoiceBlock as MultipleChoiceBlockType,
   ParagraphBlock as ParagraphBlockType,
   PictureChoiceBlock as PictureChoiceBlockType,
+  SpacerBlock as SpacerBlockType,
   TextInputBlock as TextInputBlockType,
 } from '@shopfunnel/core/quiz/types'
 import {
+  IconArrowsVertical as ArrowsVerticalIcon,
   IconChevronDown as ChevronDownIcon,
   IconGauge as GaugeIcon,
   IconHeading as HeadingIcon,
@@ -125,6 +128,13 @@ export function getBlockInfo(type: Block['type']): BlockInfo {
         description: 'Display an animated loading bar that fills up over time.',
         icon: LoaderIcon,
       }
+    case 'spacer':
+      return {
+        type: 'spacer',
+        name: 'Spacer',
+        description: 'Add vertical space between blocks.',
+        icon: ArrowsVerticalIcon,
+      }
   }
 }
 
@@ -185,6 +195,8 @@ BLOCKS['image'] = (props) => <ImageBlock block={props.block as ImageBlockType} s
 BLOCKS['loader'] = (props) => (
   <LoaderBlock block={props.block as LoaderBlockType} onLoadingValueChange={props.onLoadingValueChange} />
 )
+
+BLOCKS['spacer'] = (props) => <SpacerBlock block={props.block as SpacerBlockType} static={props.static} />
 
 export function Block(props: BlockProps) {
   return (

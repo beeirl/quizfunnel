@@ -142,6 +142,14 @@ export interface ImageBlock {
   }
 }
 
+export interface SpacerBlock {
+  id: string
+  type: 'spacer'
+  properties: {
+    size: 'sm' | 'md' | 'lg'
+  }
+}
+
 export type Block =
   | TextInputBlock
   | MultipleChoiceBlock
@@ -153,6 +161,7 @@ export type Block =
   | ListBlock
   | ImageBlock
   | LoaderBlock
+  | SpacerBlock
 
 export const INPUT_BLOCKS = ['text_input', 'multiple_choice', 'picture_choice', 'dropdown'] as const
 export type InputBlock = (typeof INPUT_BLOCKS)[number]

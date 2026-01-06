@@ -7,6 +7,7 @@ import { LoaderBlockPanel } from './block-panels/loader'
 import { MultipleChoiceBlockPanel } from './block-panels/multiple-choice'
 import { ParagraphBlockPanel } from './block-panels/paragraph'
 import { PictureChoiceBlockPanel } from './block-panels/picture-choice'
+import { SpacerBlockPanel } from './block-panels/spacer'
 import { TextInputBlockPanel } from './block-panels/text-input'
 
 export function BlockPanel({
@@ -37,5 +38,7 @@ export function BlockPanel({
       return <HeadingBlockPanel block={block} onBlockUpdate={onBlockUpdate} />
     case 'paragraph':
       return <ParagraphBlockPanel block={block} onBlockUpdate={onBlockUpdate} />
+    case 'spacer':
+      return <SpacerBlockPanel block={block} onBlockUpdate={onBlockUpdate} />
   }
 }
