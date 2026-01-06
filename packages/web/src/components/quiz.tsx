@@ -247,7 +247,6 @@ export function Quiz({ quiz, mode = 'live', onComplete, onPageChange, onPageComp
   const VALUES_STORAGE_KEY = `sf_quiz_${quiz.id}_values`
 
   const canNextRef = useRef(true)
-  const onPageChangeRef = useRef(onPageChange)
 
   const [currentPageIndex, setCurrentPageIndex] = useState(0)
 
@@ -286,7 +285,7 @@ export function Quiz({ quiz, mode = 'live', onComplete, onPageChange, onPageComp
   useEffect(() => {
     const page = quiz.pages[currentPageIndex]
     if (!page) return
-    onPageChangeRef.current?.({ id: page.id, index: currentPageIndex, name: page.name })
+    onPageChange?.({ id: page.id, index: currentPageIndex, name: page.name })
   }, [currentPageIndex, quiz.pages])
 
   const handleBlockValueChange = (blockId: string, value: unknown) => {
