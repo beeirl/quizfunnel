@@ -5,6 +5,14 @@ sst.Linkable.wrap(cloudflare.Queue, (queue) => ({
     queueId: queue.queueId,
     accountId: queue.accountId,
   },
+  include: [
+    sst.cloudflare.binding({
+      type: 'queueBindings',
+      properties: {
+        queueName: queue.queueName,
+      },
+    }),
+  ],
 }))
 
 export const analyticsQueue = new cloudflare.Queue('AnalyticsQueue', {
@@ -25,5 +33,6 @@ new cloudflare.QueueConsumer('AnalyticsQueueConsumer', {
   settings: {
     batchSize: 100,
     maxRetries: 3,
+    maxWaitTimeMs: 5000,
   },
 })

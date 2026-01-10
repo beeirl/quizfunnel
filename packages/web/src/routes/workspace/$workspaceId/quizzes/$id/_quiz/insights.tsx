@@ -151,7 +151,6 @@ const getInsights = createServerFn()
     const metricsJson = (await metricsRes.json()) as any
     const pathsJson = (await pathsRes.json()) as any
     const pageStatsJson = (await pageStatsRes.json()) as any
-    console.log(pageStatsJson)
 
     const metrics: MetricsData = metricsJson.data?.[0] ?? {
       total_views: 0,

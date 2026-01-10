@@ -6,11 +6,6 @@
 import "sst"
 declare module "sst" {
   export interface Resource {
-    "AnalyticsQueue": {
-      "accountId": string
-      "queueId": string
-      "type": "cloudflare.index/queue.Queue"
-    }
     "CLOUDFLARE_API_TOKEN": {
       "type": "sst.sst.Secret"
       "value": string
@@ -57,6 +52,7 @@ declare module "sst" {
 import * as cloudflare from "@cloudflare/workers-types";
 declare module "sst" {
   export interface Resource {
+    "AnalyticsQueue": cloudflare.Queue
     "AnalyticsWorker": cloudflare.Service
     "AuthApi": cloudflare.Service
     "AuthStorage": cloudflare.KVNamespace
