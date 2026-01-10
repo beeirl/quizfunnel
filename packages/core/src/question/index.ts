@@ -10,6 +10,16 @@ import { fn } from '../utils/fn'
 import { QuestionTable } from './index.sql'
 
 export namespace Question {
+  export const list = fn(Identifier.schema('quiz'), (quizId) => {
+    return Database.use((tx) =>
+      tx
+        .select()
+        .from(QuestionTable)
+        .where(eq(QuestionTable.quizId, quizId))
+        .orderBy(isNotNull(QuestionTable.archivedAt), QuestionTable.index),
+    )
+  })
+
   export const sync = fn(
     z.object({
       quizId: Identifier.schema('quiz'),
@@ -107,7 +117,7 @@ export namespace Question {
             workspaceId: Actor.workspaceId(),
             quizId: input.quizId,
             blockId: inputBlock.blockId,
-            blockType: inputBlock.blockType,
+            type: inputBlock.blockType,
             title: inputBlock.title,
             index,
             options: questionOptions,
@@ -122,8 +132,8 @@ export namespace Question {
             .values(questionsToUpsert)
             .onDuplicateKeyUpdate({
               set: {
+                type: sql`VALUES(${QuestionTable.type})`,
                 title: sql`VALUES(${QuestionTable.title})`,
-                blockType: sql`VALUES(${QuestionTable.blockType})`,
                 index: sql`VALUES(${QuestionTable.index})`,
                 options: sql`VALUES(${QuestionTable.options})`,
               },
@@ -177,14 +187,4 @@ export namespace Question {
       })
     },
   )
-
-  export const list = fn(Identifier.schema('quiz'), (quizId) => {
-    return Database.use((tx) =>
-      tx
-        .select()
-        .from(QuestionTable)
-        .where(and(eq(QuestionTable.workspaceId, Actor.workspaceId()), eq(QuestionTable.quizId, quizId)))
-        .orderBy(isNotNull(QuestionTable.archivedAt), QuestionTable.index),
-    )
-  })
 }

@@ -13,11 +13,29 @@ SCHEMA >
     `workspace_id` String `json:$.workspace_id`,
     `page_id` Nullable(String) `json:$.page_id`,
     `page_name` Nullable(String) `json:$.page_name`,
-    `page_depth` Nullable(UInt16) `json:$.page_depth`,
     `from_page_id` Nullable(String) `json:$.from_page_id`,
-    `block_id` Nullable(String) `json:$.block_id`,
-    `block_type` LowCardinality(Nullable(String)) `json:$.block_type`,
-    `duration` Nullable(UInt32) `json:$.duration`
+    `from_page_name` Nullable(String) `json:$.from_page_name`,
+    `from_page_index` Nullable(UInt32) `json:$.from_page_index`,
+    `page_index` Nullable(UInt32) `json:$.page_index`,
+    `question_id` Nullable(String) `json:$.question_id`,
+    `question_title` Nullable(String) `json:$.question_title`,
+    `question_type` LowCardinality(Nullable(String)) `json:$.question_type`,
+    `answer_value_text` Nullable(String) `json:$.answer_value_text`,
+    `answer_value_number` Nullable(Float64) `json:$.answer_value_number`,
+    `answer_value_option_ids` Array(String) DEFAULT [] `json:$.answer_value_option_ids[:]`,
+    `time_on_page_ms` Nullable(UInt32) `json:$.time_on_page_ms`,
+    `device` LowCardinality(Nullable(String)) `json:$.device`,
+    `os` LowCardinality(Nullable(String)) `json:$.os`,
+    `browser` LowCardinality(Nullable(String)) `json:$.browser`,
+    `country` LowCardinality(Nullable(String)) `json:$.country`,
+    `region` Nullable(String) `json:$.region`,
+    `city` Nullable(String) `json:$.city`,
+    `referrer` Nullable(String) `json:$.referrer`,
+    `utm_source` Nullable(String) `json:$.utm_source`,
+    `utm_medium` Nullable(String) `json:$.utm_medium`,
+    `utm_campaign` Nullable(String) `json:$.utm_campaign`,
+    `utm_term` Nullable(String) `json:$.utm_term`,
+    `utm_content` Nullable(String) `json:$.utm_content`
 
 ENGINE "MergeTree"
 ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"

@@ -237,17 +237,31 @@ export function getThemeCssVars(theme: ThemeType) {
 export interface QuizProps {
   quiz: QuizType
   mode?: 'preview' | 'live'
-  onComplete?: (values: Values) => void
-  onPageChange?: (page: { id: string; name: string; depth: number; fromId: string | null }) => void
-  onPageComplete?: (page: { id: string; name: string; depth: number; fromId: string | null; values: Values }) => void
+  onPageChange?: (page: {
+    id: string
+    index: number
+    name: string
+    fromId?: string
+    fromIndex?: number
+    fromName?: string
+  }) => void
+  onPageComplete?: (page: {
+    id: string
+    index: number
+    name: string
+    values: Values
+    fromId?: string
+    fromIndex?: number
+    fromName?: string
+  }) => void
+  onComplete?: (values: Values) => Promise<void> | void
 }
 
 export function Quiz({ quiz, mode = 'live', onComplete, onPageChange, onPageComplete }: QuizProps) {
   const VALUES_STORAGE_KEY = `sf_quiz_${quiz.id}_values`
 
   const canNextRef = useRef(true)
-  const fromPageIdRef = useRef<string | null>(null)
-  const depthRef = useRef(0)
+  const fromPageRef = useRef<{ id?: string; index?: number; name?: string }>({})
 
   const [currentPageIndex, setCurrentPageIndex] = useState(0)
 
@@ -286,7 +300,14 @@ export function Quiz({ quiz, mode = 'live', onComplete, onPageChange, onPageComp
   useEffect(() => {
     const page = quiz.pages[currentPageIndex]
     if (!page) return
-    onPageChange?.({ id: page.id, name: page.name, depth: depthRef.current, fromId: fromPageIdRef.current })
+    onPageChange?.({
+      id: page.id,
+      index: currentPageIndex,
+      name: page.name,
+      fromId: fromPageRef.current.id,
+      fromIndex: fromPageRef.current.index,
+      fromName: fromPageRef.current.name,
+    })
   }, [currentPageIndex, quiz.pages])
 
   const handleBlockValueChange = (blockId: string, value: unknown) => {
@@ -308,7 +329,7 @@ export function Quiz({ quiz, mode = 'live', onComplete, onPageChange, onPageComp
     }
   }
 
-  function next(values: Values) {
+  async function next(values: Values) {
     if (!currentPage) return
     if (!canNextRef.current) return
 
@@ -342,39 +363,31 @@ export function Quiz({ quiz, mode = 'live', onComplete, onPageChange, onPageComp
       }, {})
     })()
 
+    onPageComplete?.({
+      id: currentPage!.id,
+      index: currentPageIndex,
+      name: currentPage!.name,
+      values: currentPageValues,
+      fromId: fromPageRef.current.id,
+      fromIndex: fromPageRef.current.index,
+      fromName: fromPageRef.current.name,
+    })
+
     const redirectUrl = currentPage.properties.redirectUrl
     if (redirectUrl) {
-      onPageComplete?.({
-        id: currentPage.id,
-        name: currentPage.name,
-        depth: depthRef.current,
-        fromId: fromPageIdRef.current,
-        values: currentPageValues,
-      })
-
       localStorage.removeItem(VALUES_STORAGE_KEY)
-      onComplete?.(values)
-
+      await onComplete?.(values)
       window.location.href = redirectUrl
     } else {
-      depthRef.current += 1
-      fromPageIdRef.current = currentPage.id
       canNextRef.current = true
+      fromPageRef.current = { id: currentPage.id, index: currentPageIndex, name: currentPage.name }
       setCurrentPageIndex(nextPageIndex)
       setHiddenBlockIds(nextHiddenBlockIds)
       setVariables(nextVariables)
 
-      onPageComplete?.({
-        id: currentPage.id,
-        fromId: fromPageIdRef.current,
-        name: currentPage.name,
-        depth: depthRef.current,
-        values: currentPageValues,
-      })
-
       if (nextPageIndex >= quiz.pages.length) {
         localStorage.removeItem(VALUES_STORAGE_KEY)
-        onComplete?.(values)
+        await onComplete?.(values)
       }
     }
   }

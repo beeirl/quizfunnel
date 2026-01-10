@@ -17,7 +17,6 @@ export namespace Answer {
         z.object({
           blockId: z.string(),
           value: z.unknown(),
-          duration: z.number().optional(),
         }),
       ),
     }),
@@ -92,7 +91,6 @@ export namespace Answer {
               workspaceId: quiz.workspaceId,
               submissionId,
               questionId,
-              duration: answer.duration,
             })
           }
 

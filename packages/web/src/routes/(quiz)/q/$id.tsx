@@ -1,15 +1,17 @@
-import { Quiz, type Values } from '@/components/quiz'
+import { Quiz, QuizProps } from '@/components/quiz'
 import { Analytics } from '@shopfunnel/core/analytics/index'
 import { Answer } from '@shopfunnel/core/answer/index'
 import { Identifier } from '@shopfunnel/core/identifier'
+import { Question } from '@shopfunnel/core/question/index'
 import { Quiz as QuizCore } from '@shopfunnel/core/quiz/index'
-import { INPUT_BLOCKS } from '@shopfunnel/core/quiz/types'
 import { Submission } from '@shopfunnel/core/submission/index'
 import { Resource } from '@shopfunnel/resource'
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute, notFound } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
+import { getRequestHeader } from '@tanstack/react-start/server'
 import { useEffect, useRef, useState } from 'react'
+import { UAParser } from 'ua-parser-js'
 import { ulid } from 'ulid'
 import { z } from 'zod'
 
@@ -27,6 +29,18 @@ const getQuizQueryOptions = (shortId: string) =>
     queryFn: () => getQuiz({ data: { shortId } }),
   })
 
+const getQuestions = createServerFn()
+  .inputValidator(z.object({ quizId: Identifier.schema('quiz') }))
+  .handler(async ({ data }) => {
+    return Question.list(data.quizId)
+  })
+
+const getQuestionsQueryOptions = (quizId: string) =>
+  queryOptions({
+    queryKey: ['questions', quizId],
+    queryFn: () => getQuestions({ data: { quizId } }),
+  })
+
 const submitAnswers = createServerFn()
   .inputValidator(
     z.object({
@@ -36,7 +50,6 @@ const submitAnswers = createServerFn()
         z.object({
           blockId: z.string(),
           value: z.unknown(),
-          duration: z.number().optional(),
         }),
       ),
     }),
@@ -54,192 +67,203 @@ const completeSubmission = createServerFn()
     }
   })
 
-const trackEvents = createServerFn()
-  .inputValidator(z.array(Analytics.QuizEvent))
+const enqueueEvents = createServerFn()
+  .inputValidator(z.array(Analytics.Event))
   .handler(async ({ data }) => {
-    await Resource.AnalyticsQueue.sendBatch(data.map((event) => ({ body: event })))
+    const userAgent = getRequestHeader('user-agent') || ''
+    const country = getRequestHeader('cf-ipcountry') || undefined
+    const region = getRequestHeader('cf-region') || undefined
+    const city = getRequestHeader('cf-ipcity') || undefined
+
+    const parser = new UAParser(userAgent)
+    const os = parser.getOS().name || undefined
+    const browser = parser.getBrowser().name || undefined
+    const deviceType = parser.getDevice().type
+    const device: 'mobile' | 'desktop' = deviceType === 'mobile' || deviceType === 'tablet' ? 'mobile' : 'desktop'
+
+    await Resource.AnalyticsQueue.sendBatch(
+      data.map((event) => ({
+        body: { ...event, country, region, city, os, browser, device },
+      })),
+    )
   })
 
 export const Route = createFileRoute('/(quiz)/q/$id')({
   component: RouteComponent,
   loader: async ({ context, params }) => {
-    await context.queryClient.ensureQueryData(getQuizQueryOptions(params.id))
+    const quiz = await context.queryClient.ensureQueryData(getQuizQueryOptions(params.id))
+    if (!quiz) throw notFound()
+    await context.queryClient.ensureQueryData(getQuestionsQueryOptions(quiz.id))
   },
 })
 
 function RouteComponent() {
   const params = Route.useParams()
 
-  const VISITOR_STORAGE_KEY = 'sf_visitor_id'
   const SESSION_STORAGE_KEY = `sf_quiz_${params.id}_session_id`
+  const VISITOR_STORAGE_KEY = 'sf_visitor_id'
+
+  const quizQuery = useSuspenseQuery(getQuizQueryOptions(params.id))
+  const quiz = quizQuery.data
+
+  const questionsQuery = useSuspenseQuery(getQuestionsQueryOptions(quiz.id))
+  const questions = questionsQuery.data
 
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [visitorId, setVisitorId] = useState<string | null>(null)
 
-  const quizQuery = useSuspenseQuery(getQuizQueryOptions(params.id))
-  const quiz = quizQuery.data
+  useEffect(() => {
+    let id = localStorage.getItem(SESSION_STORAGE_KEY)
+    if (!id) {
+      id = ulid()
+      localStorage.setItem(SESSION_STORAGE_KEY, id)
+    }
+    setSessionId(id)
+  }, [SESSION_STORAGE_KEY])
+
+  useEffect(() => {
+    let id = localStorage.getItem(VISITOR_STORAGE_KEY)
+    if (!id) {
+      id = ulid()
+      localStorage.setItem(VISITOR_STORAGE_KEY, id)
+    }
+    setVisitorId(id)
+  }, [])
 
   const quizViewedRef = useRef(false)
   const quizStartedRef = useRef(false)
   const pageViewedAtRef = useRef<number>(Date.now())
 
   useEffect(() => {
-    const storedSessionId = localStorage.getItem(SESSION_STORAGE_KEY)
-    const sessionId = storedSessionId ?? ulid()
-    if (!storedSessionId) {
-      localStorage.setItem(SESSION_STORAGE_KEY, sessionId)
-    }
-    setSessionId(sessionId)
-  }, [SESSION_STORAGE_KEY])
-
-  useEffect(() => {
-    const storedVisitorId = localStorage.getItem(VISITOR_STORAGE_KEY)
-    const visitorId = storedVisitorId ?? ulid()
-    if (!storedVisitorId) {
-      localStorage.setItem(VISITOR_STORAGE_KEY, visitorId)
-    }
-    setVisitorId(visitorId)
-  }, [])
-
-  useEffect(() => {
-    if (!sessionId || !visitorId || quizViewedRef.current) return
-    quizViewedRef.current = true
-    trackEvents({
-      data: [
-        {
-          type: 'quiz_view',
-          quiz_id: quiz.id,
-          quiz_version: quiz.version,
-          workspace_id: quiz.workspaceId,
-          session_id: sessionId,
-          visitor_id: visitorId,
-          timestamp: new Date().toISOString(),
-        },
-      ],
-    })
-  }, [sessionId, visitorId, quiz.id, quiz.version, quiz.workspaceId])
-
-  const handlePageChange = (page: { id: string; name: string; depth: number; fromId: string | null }) => {
-    pageViewedAtRef.current = Date.now()
-
     if (!sessionId || !visitorId) return
+    if (quizViewedRef.current) return
+    quizViewedRef.current = true
+    trackEvents([{ type: 'quiz_view' }])
+  }, [sessionId, visitorId])
 
-    trackEvents({
-      data: [
-        {
-          type: 'page_view',
-          quiz_id: quiz.id,
-          quiz_version: quiz.version,
-          workspace_id: quiz.workspaceId,
-          session_id: sessionId,
-          visitor_id: visitorId,
-          page_id: page.id,
-          page_name: page.name,
-          page_depth: page.depth,
-          from_page_id: page.fromId,
-          timestamp: new Date().toISOString(),
-        },
-      ],
-    })
+  const promisesRef = useRef<Set<Promise<unknown>>>(new Set())
+  const addPromise = <T,>(promise: Promise<T>): Promise<T> => {
+    promisesRef.current.add(promise)
+    promise.finally(() => promisesRef.current.delete(promise))
+    return promise
   }
 
-  const handlePageComplete = async (page: {
-    id: string
-    name: string
-    depth: number
-    fromId: string | null
-    values: Values
-  }) => {
+  const trackEvents = (events: Partial<Analytics.Event>[]) => {
     if (!sessionId || !visitorId) return
+    const params = new URLSearchParams(window.location.search)
+    addPromise(
+      enqueueEvents({
+        data: events.map(
+          (event) =>
+            ({
+              ...event,
+              quiz_id: quiz.id,
+              quiz_version: quiz.version,
+              workspace_id: quiz.workspaceId,
+              session_id: sessionId,
+              visitor_id: visitorId,
+              timestamp: new Date().toISOString(),
+              referrer: document.referrer || undefined,
+              utm_source: params.get('utm_source') || undefined,
+              utm_medium: params.get('utm_medium') || undefined,
+              utm_campaign: params.get('utm_campaign') || undefined,
+              utm_term: params.get('utm_term') || undefined,
+              utm_content: params.get('utm_content') || undefined,
+            }) as Analytics.Event,
+        ),
+      }),
+    )
+  }
 
-    const baseEvent = {
-      quiz_id: quiz.id,
-      quiz_version: quiz.version,
-      workspace_id: quiz.workspaceId,
-      session_id: sessionId,
-      visitor_id: visitorId,
-      timestamp: new Date().toISOString(),
-    }
+  const handlePageChange: QuizProps['onPageChange'] = (page) => {
+    pageViewedAtRef.current = Date.now()
 
-    const events: Analytics.QuizEvent[] = []
+    trackEvents([
+      {
+        type: 'page_view',
+        from_page_id: page.fromId,
+        from_page_index: page.fromIndex,
+        from_page_name: page.fromName,
+        page_id: page.id,
+        page_index: page.index,
+        page_name: page.name,
+      },
+    ])
+  }
+
+  const handlePageComplete: QuizProps['onPageComplete'] = (page) => {
+    if (!sessionId) return
+
+    const events: Partial<Analytics.Event>[] = []
 
     if (!quizStartedRef.current) {
       quizStartedRef.current = true
-      events.push({ ...baseEvent, type: 'quiz_start' })
+      events.push({ type: 'quiz_start' })
     }
 
-    const duration = Date.now() - pageViewedAtRef.current
+    const timeOnPageMs = Date.now() - pageViewedAtRef.current
+    const questionsByBlockId = new Map(questions.map((q) => [q.blockId, q]))
 
-    const quizPage = quiz.pages.find((p) => p.id === page.id)
-    const blocksById = new Map(quizPage?.blocks.map((b) => [b.id, b]) ?? [])
-    for (const [blockId] of Object.entries(page.values)) {
-      const block = blocksById.get(blockId)
-      if (block && INPUT_BLOCKS.includes(block.type as (typeof INPUT_BLOCKS)[number])) {
+    for (const [blockId, answerValue] of Object.entries(page.values)) {
+      const question = questionsByBlockId.get(blockId)
+      if (question) {
         events.push({
-          ...baseEvent,
           type: 'question_answer',
+          from_page_id: page.fromId,
+          from_page_index: page.fromIndex,
+          from_page_name: page.fromName,
           page_id: page.id,
           page_name: page.name,
-          page_depth: page.depth,
-          from_page_id: page.fromId,
-          block_id: blockId,
-          block_type: block.type,
-          duration,
+          question_id: question.id,
+          question_type: question.type,
+          question_title: question.title,
+          answer_value_text: typeof answerValue === 'string' ? answerValue : undefined,
+          answer_value_number: typeof answerValue === 'number' ? answerValue : undefined,
+          answer_value_option_ids: Array.isArray(answerValue) ? answerValue : undefined,
         })
       }
     }
 
     events.push({
-      ...baseEvent,
       type: 'page_complete',
-      page_id: page.id,
-      page_name: page.name,
-      page_depth: page.depth,
       from_page_id: page.fromId,
-      duration,
+      from_page_index: page.fromIndex,
+      from_page_name: page.fromName,
+      page_id: page.id,
+      page_index: page.index,
+      page_name: page.name,
+      time_on_page_ms: timeOnPageMs,
     })
 
     if (Object.entries(page.values).length) {
-      await submitAnswers({
-        data: {
-          quizId: quiz.id,
-          sessionId,
-          answers: Object.entries(page.values).map(([blockId, value]) => ({
-            blockId,
-            value,
-            duration,
-          })),
-        },
-      })
+      addPromise(
+        submitAnswers({
+          data: {
+            quizId: quiz.id,
+            sessionId,
+            answers: Object.entries(page.values).map(([blockId, value]) => ({
+              blockId,
+              value,
+            })),
+          },
+        }),
+      )
     }
 
     if (events.length > 0) {
-      await trackEvents({ data: events })
+      trackEvents(events)
     }
   }
 
-  const handleComplete = async () => {
-    if (sessionId && visitorId) {
-      await trackEvents({
-        data: [
-          {
-            type: 'quiz_complete',
-            quiz_id: quiz.id,
-            quiz_version: quiz.version,
-            workspace_id: quiz.workspaceId,
-            session_id: sessionId,
-            visitor_id: visitorId,
-            timestamp: new Date().toISOString(),
-          },
-        ],
-      })
+  const handleQuizComplete: QuizProps['onComplete'] = async () => {
+    if (!sessionId) return
 
-      await completeSubmission({
-        data: { sessionId },
-      })
-      localStorage.removeItem(SESSION_STORAGE_KEY)
-      setSessionId(null)
-    }
+    trackEvents([{ type: 'quiz_complete' }])
+    addPromise(completeSubmission({ data: { sessionId } }))
+
+    await Promise.all(promisesRef.current)
+
+    localStorage.removeItem(SESSION_STORAGE_KEY)
   }
 
   return (
@@ -249,7 +273,7 @@ function RouteComponent() {
         mode="live"
         onPageChange={handlePageChange}
         onPageComplete={handlePageComplete}
-        onComplete={handleComplete}
+        onComplete={handleQuizComplete}
       />
     </div>
   )

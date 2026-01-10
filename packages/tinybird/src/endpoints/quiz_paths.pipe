@@ -1,0 +1,25 @@
+DESCRIPTION >
+    Returns page-to-page transitions for quiz flow visualization
+
+TOKEN api READ
+
+NODE paths
+SQL >
+    %
+    SELECT
+        from_page_id,
+        from_page_name,
+        from_page_index,
+        page_id,
+        page_name,
+        page_index,
+        countDistinct(session_id) as transition_count
+    FROM quiz_events
+    WHERE quiz_id = {{String(quiz_id, required=True)}}
+      AND quiz_version = {{UInt32(quiz_version, required=True)}}
+      AND type = 'page_view'
+      AND from_page_id IS NOT NULL
+    GROUP BY from_page_id, from_page_name, from_page_index, page_id, page_name, page_index
+    ORDER BY from_page_index, page_index
+
+TYPE ENDPOINT

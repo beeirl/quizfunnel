@@ -64,18 +64,6 @@ if (isProduction) {
   await $`TB_VERSION_WARNING=0 tb --branch ${stage} deploy --wait`.cwd(dir)
 }
 
-// Check if SST secret already exists
-const secrets = await $`bunx sst secret list --stage ${stage}`
-  .cwd(root)
-  .text()
-  .catch(() => '')
-const hasSecret = secrets.includes('TINYBIRD_TOKEN')
-
-if (hasSecret && !force) {
-  console.log('TINYBIRD_TOKEN already set. Use --force to override.')
-  process.exit(0)
-}
-
 // Get token from appropriate target
 async function getToken(name: string): Promise<string> {
   const tbArgs = isProduction ? ['--cloud'] : ['--branch', stage]
@@ -109,8 +97,18 @@ if (!token.startsWith('p.')) {
   throw new Error('Invalid token format')
 }
 
+// Check if SST secret is already up to date
+const secrets = await $`bunx sst secret list --stage ${stage}`.cwd(root).text().catch(() => '')
+const lines = secrets.split('\n')
+const currentToken = lines.find((line) => line.startsWith('TINYBIRD_TOKEN='))?.split('=')[1]
+
+if (currentToken === token && !force) {
+  console.log('TINYBIRD_TOKEN already up to date.')
+  process.exit(0)
+}
+
 // Set SST secret
-console.log('Setting TINYBIRD_TOKEN...')
+console.log(currentToken ? 'Updating TINYBIRD_TOKEN...' : 'Setting TINYBIRD_TOKEN...')
 await $`bunx sst secret set TINYBIRD_TOKEN ${token} --stage ${stage}`.cwd(root)
 
 console.log('Done!')

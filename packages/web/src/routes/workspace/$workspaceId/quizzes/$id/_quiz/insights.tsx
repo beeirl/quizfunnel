@@ -1,4 +1,5 @@
 import { Card } from '@/components/ui/card'
+import { Chart } from '@/components/ui/chart'
 import { Empty } from '@/components/ui/empty'
 import { withActor } from '@/context/auth.withActor'
 import { Identifier } from '@shopfunnel/core/identifier'
@@ -8,23 +9,70 @@ import { IconChartBar as ChartBarIcon } from '@tabler/icons-react'
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
-import * as React from 'react'
-import { Layer, Rectangle, ResponsiveContainer, Sankey, Tooltip } from 'recharts'
+import { Sankey, Tooltip } from 'recharts'
 import { z } from 'zod'
-
-interface FunnelData {
-  page_depth: number
-  page_id: string
-  page_name: string
-  from_page_id: string | null
-  views: number
-  avg_duration_ms: number
-}
 
 interface MetricsData {
   total_views: number
   total_starts: number
   total_completions: number
+}
+
+interface PathTransition {
+  from_page_id: string
+  from_page_name: string
+  from_page_index: number
+  page_id: string
+  page_name: string
+  page_index: number
+  transition_count: number
+}
+
+interface SankeyNode {
+  name: string
+}
+
+interface SankeyLink {
+  source: number
+  target: number
+  value: number
+}
+
+interface SankeyData {
+  nodes: SankeyNode[]
+  links: SankeyLink[]
+}
+
+function transformPathsToSankey(paths: PathTransition[]): SankeyData {
+  if (paths.length === 0) {
+    return { nodes: [], links: [] }
+  }
+
+  // Build nodes map with page index for ordering
+  const nodeMap = new Map<string, { name: string; index: number }>()
+
+  paths.forEach((p) => {
+    if (!nodeMap.has(p.from_page_id)) {
+      nodeMap.set(p.from_page_id, { name: p.from_page_name || p.from_page_id, index: p.from_page_index })
+    }
+    if (!nodeMap.has(p.page_id)) {
+      nodeMap.set(p.page_id, { name: p.page_name || p.page_id, index: p.page_index })
+    }
+  })
+
+  // Sort nodes by page_index for proper left-to-right ordering
+  const sortedNodes = [...nodeMap.entries()].sort((a, b) => a[1].index - b[1].index)
+
+  const nodeIndexMap = new Map(sortedNodes.map(([id], i) => [id, i]))
+  const nodes = sortedNodes.map(([, { name }]) => ({ name }))
+
+  const links = paths.map((p) => ({
+    source: nodeIndexMap.get(p.from_page_id)!,
+    target: nodeIndexMap.get(p.page_id)!,
+    value: p.transition_count,
+  }))
+
+  return { nodes, links }
 }
 
 const getPublishedVersionsQuery = createServerFn()
@@ -49,32 +97,33 @@ const getInsights = createServerFn()
   .handler(async ({ data }) => {
     const token = Resource.TINYBIRD_TOKEN.value
 
-    const [funnelRes, metricsRes] = await Promise.all([
-      fetch(
-        `https://api.us-east.aws.tinybird.co/v0/pipes/funnel.json?quiz_id=${data.quizId}&quiz_version=${data.quizVersion}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      ),
+    const [metricsRes, pathsRes] = await Promise.all([
       fetch(
         `https://api.us-east.aws.tinybird.co/v0/pipes/quiz_metrics.json?quiz_id=${data.quizId}&quiz_version=${data.quizVersion}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
       ),
+      fetch(
+        `https://api.us-east.aws.tinybird.co/v0/pipes/quiz_paths.json?quiz_id=${data.quizId}&quiz_version=${data.quizVersion}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      ),
     ])
 
-    const funnelJson = (await funnelRes.json()) as any
     const metricsJson = (await metricsRes.json()) as any
+    const pathsJson = (await pathsRes.json()) as any
 
-    const funnel: FunnelData[] = funnelJson.data ?? []
     const metrics: MetricsData = metricsJson.data?.[0] ?? {
       total_views: 0,
       total_starts: 0,
       total_completions: 0,
     }
 
-    return { funnel, metrics }
+    const paths: PathTransition[] = pathsJson.data ?? []
+
+    return { metrics, paths }
   })
 
 const getInsightsQueryOptions = (quizId: string, quizVersion: number | null) =>
@@ -98,220 +147,19 @@ export const Route = createFileRoute('/workspace/$workspaceId/quizzes/$id/_quiz/
   },
 })
 
-function formatDuration(ms: number): string {
-  if (!ms || ms === 0) return '0s'
-  const seconds = Math.round(ms / 1000)
-  if (seconds < 60) return `${seconds}s`
-  const minutes = Math.floor(seconds / 60)
-  const remainingSeconds = seconds % 60
-  return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`
-}
-
-interface SankeyNode {
-  name: string
-  pageId: string
-  pageName: string
-  depth: number
-  views: number
-  avgDuration: number
-}
-
-interface SankeyLink {
-  source: number
-  target: number
-  value: number
-}
-
-function transformToSankeyData(funnelData: FunnelData[]): { nodes: SankeyNode[]; links: SankeyLink[] } {
-  // Create a map of page_id to node index
-  const nodeMap = new Map<string, number>()
-  const nodes: SankeyNode[] = []
-  const links: SankeyLink[] = []
-
-  // First pass: create nodes for each unique page
-  const pageDataMap = new Map<string, FunnelData>()
-
-  // Aggregate views per page (sum across all from_page_id sources)
-  for (const item of funnelData) {
-    const existing = pageDataMap.get(item.page_id)
-    if (existing) {
-      // Aggregate views from different sources
-      pageDataMap.set(item.page_id, {
-        ...existing,
-        views: existing.views + item.views,
-        avg_duration_ms: (existing.avg_duration_ms + item.avg_duration_ms) / 2,
-      })
-    } else {
-      pageDataMap.set(item.page_id, item)
-    }
-  }
-
-  // Create nodes from aggregated data
-  for (const [pageId, item] of pageDataMap) {
-    nodeMap.set(pageId, nodes.length)
-    nodes.push({
-      name: item.page_name,
-      pageId: pageId,
-      pageName: item.page_name,
-      depth: item.page_depth,
-      views: item.views,
-      avgDuration: item.avg_duration_ms,
-    })
-  }
-
-  // Second pass: create links based on from_page_id relationships
-  for (const item of funnelData) {
-    if (item.from_page_id && nodeMap.has(item.from_page_id) && nodeMap.has(item.page_id)) {
-      const sourceIndex = nodeMap.get(item.from_page_id)!
-      const targetIndex = nodeMap.get(item.page_id)!
-      links.push({
-        source: sourceIndex,
-        target: targetIndex,
-        value: item.views,
-      })
-    }
-  }
-
-  return { nodes, links }
-}
-
-// Custom node component for Sankey diagram
-function CustomNode(props: any) {
-  const { x, y, width, height, payload } = props
-
-  return (
-    <Layer>
-      <Rectangle x={x} y={y} width={width} height={height} fill="var(--chart-1)" radius={[4, 4, 4, 4]} />
-      <text x={x + width + 8} y={y + height / 2} textAnchor="start" dominantBaseline="middle" className="text-xs">
-        {payload.pageName}
-      </text>
-      <text
-        x={x + width / 2}
-        y={y - 8}
-        textAnchor="middle"
-        dominantBaseline="middle"
-        className="text-xs font-semibold"
-        fill="var(--foreground)"
-      >
-        {payload.views?.toLocaleString()}
-      </text>
-    </Layer>
-  )
-}
-
-// Custom link component for Sankey diagram - draws straight dotted lines
-function CustomLink(props: any) {
-  const { sourceX, sourceY, sourceControlX, targetX, targetY, targetControlX, linkWidth, payload } = props
-
-  // Calculate center points for source and target
-  const sourceYCenter = sourceY + linkWidth / 2
-  const targetYCenter = targetY + linkWidth / 2
-
-  return (
-    <Layer>
-      <path
-        d={`M${sourceX},${sourceYCenter} C${sourceControlX},${sourceYCenter} ${targetControlX},${targetYCenter} ${targetX},${targetYCenter}`}
-        fill="none"
-        stroke="var(--border)"
-        strokeWidth={Math.max(1, linkWidth * 0.5)}
-        strokeOpacity={0.6}
-        strokeDasharray="4 2"
-      />
-    </Layer>
-  )
-}
-
-// Custom tooltip for Sankey
-function CustomTooltip({ active, payload }: any) {
-  if (!active || !payload || !payload.length) return null
-
-  const data = payload[0].payload
-
-  // Handle node tooltip
-  if (data.pageName) {
-    return (
-      <div className="rounded-lg border border-border bg-background px-3 py-2 shadow-lg">
-        <div className="font-semibold">{data.pageName}</div>
-        <div className="mt-1 space-y-0.5 text-sm">
-          <div className="text-muted-foreground">
-            <span className="font-medium text-foreground">{data.views?.toLocaleString()}</span> views
-          </div>
-          <div className="text-muted-foreground">
-            Avg time: <span className="font-medium text-foreground">{formatDuration(data.avgDuration)}</span>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Handle link tooltip
-  if (data.source && data.target) {
-    return (
-      <div className="rounded-lg border border-border bg-background px-3 py-2 shadow-lg">
-        <div className="font-semibold">
-          {data.source.pageName} → {data.target.pageName}
-        </div>
-        <div className="mt-1 text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">{data.value?.toLocaleString()}</span> users
-        </div>
-      </div>
-    )
-  }
-
-  return null
-}
-
-function BranchingFunnel({ funnelData }: { funnelData: FunnelData[] }) {
-  const { nodes, links } = React.useMemo(() => transformToSankeyData(funnelData), [funnelData])
-
-  if (nodes.length === 0) {
-    return (
-      <div className="flex h-64 items-center justify-center text-muted-foreground">No funnel data available yet</div>
-    )
-  }
-
-  // If there are no links (single page or only first page data), show a simpler visualization
-  if (links.length === 0) {
-    return (
-      <div className="flex h-64 flex-col items-center justify-center gap-4">
-        {nodes.map((node) => (
-          <div key={node.pageId} className="flex items-center gap-4">
-            <div className="h-16 w-8 rounded bg-[var(--chart-1)]" />
-            <div>
-              <div className="font-medium">{node.pageName}</div>
-              <div className="text-sm text-muted-foreground">{node.views.toLocaleString()} views</div>
-            </div>
-          </div>
-        ))}
-      </div>
-    )
-  }
-
-  return (
-    <ResponsiveContainer width="100%" height={400}>
-      <Sankey
-        data={{ nodes, links }}
-        nodeWidth={20}
-        nodePadding={40}
-        margin={{ top: 40, right: 160, bottom: 40, left: 40 }}
-        link={<CustomLink />}
-        node={<CustomNode />}
-      >
-        <Tooltip content={<CustomTooltip />} />
-      </Sankey>
-    </ResponsiveContainer>
-  )
-}
+const nodeColors = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)']
 
 function Insights({ quizId, quizVersion }: { quizId: string; quizVersion: number }) {
   const insightsQuery = useSuspenseQuery(getInsightsQueryOptions(quizId, quizVersion))
 
-  const funnel = insightsQuery.data?.funnel ?? []
   const metrics = insightsQuery.data?.metrics ?? {
     total_views: 0,
     total_starts: 0,
     total_completions: 0,
   }
+
+  const paths = insightsQuery.data?.paths ?? []
+  const sankeyData = transformPathsToSankey(paths)
 
   const startRate = metrics.total_views > 0 ? Math.round((metrics.total_starts / metrics.total_views) * 100) : 0
   const completionRate =
@@ -335,14 +183,106 @@ function Insights({ quizId, quizVersion }: { quizId: string; quizVersion: number
           </div>
         ))}
       </div>
-      <Card.Root>
-        <Card.Header>
-          <Card.Title>Drop-off Funnel</Card.Title>
-        </Card.Header>
-        <Card.Content>
-          <BranchingFunnel funnelData={funnel} />
-        </Card.Content>
-      </Card.Root>
+
+      {sankeyData.nodes.length > 0 && (
+        <Card.Root>
+          <Card.Header>
+            <Card.Title>Quiz Paths</Card.Title>
+          </Card.Header>
+          <Card.Content>
+            <Chart.Container config={{}} className="aspect-2/1 w-full">
+              <Sankey
+                data={sankeyData}
+                nodeWidth={10}
+                nodePadding={40}
+                linkCurvature={0.5}
+                iterations={64}
+                node={(props) => {
+                  const { x, y, width, height, index, payload } = props
+                  // Check if this node has any outgoing links (is it a terminal node?)
+                  const hasOutgoingLinks = sankeyData.links.some((link) => link.source === index)
+                  const isTerminal = !hasOutgoingLinks
+
+                  return (
+                    <g>
+                      <rect
+                        x={x}
+                        y={y}
+                        width={width}
+                        height={height}
+                        fill={nodeColors[index % nodeColors.length]}
+                        fillOpacity={0.9}
+                        rx={2}
+                      />
+                      <text
+                        x={isTerminal ? x - 6 : x + width + 6}
+                        y={y + height / 2}
+                        textAnchor={isTerminal ? 'end' : 'start'}
+                        dominantBaseline="middle"
+                        className="fill-foreground text-xs"
+                      >
+                        {payload.name}
+                      </text>
+                    </g>
+                  )
+                }}
+                link={(props) => {
+                  const { sourceX, sourceY, sourceControlX, targetX, targetY, targetControlX, linkWidth } = props
+                  return (
+                    <path
+                      d={`
+                        M${sourceX},${sourceY}
+                        C${sourceControlX},${sourceY} ${targetControlX},${targetY} ${targetX},${targetY}
+                      `}
+                      fill="none"
+                      stroke="var(--chart-1)"
+                      strokeOpacity={0.3}
+                      strokeWidth={Math.max(linkWidth, 1)}
+                    />
+                  )
+                }}
+              >
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null
+                    const data = payload[0]?.payload
+                    if (!data) return null
+
+                    // Check if it's a link or node
+                    if (data.source !== undefined && data.target !== undefined) {
+                      // Link tooltip
+                      const sourceName = sankeyData.nodes[data.source]?.name ?? 'Unknown'
+                      const targetName = sankeyData.nodes[data.target]?.name ?? 'Unknown'
+                      return (
+                        <div className="rounded-lg border border-border bg-background px-3 py-2 shadow-lg">
+                          <div className="text-sm">
+                            <span className="font-medium">{sourceName}</span>
+                            <span className="text-muted-foreground"> → </span>
+                            <span className="font-medium">{targetName}</span>
+                          </div>
+                          <div className="mt-1 text-sm text-muted-foreground">
+                            <span className="font-medium text-foreground">{data.value?.toLocaleString()}</span> sessions
+                          </div>
+                        </div>
+                      )
+                    }
+
+                    // Node tooltip
+                    return (
+                      <div className="rounded-lg border border-border bg-background px-3 py-2 shadow-lg">
+                        <div className="font-medium">{data.name}</div>
+                        <div className="mt-1 text-sm text-muted-foreground">
+                          <span className="font-medium text-foreground">{data.value?.toLocaleString()}</span> sessions
+                        </div>
+                      </div>
+                    )
+                  }}
+                />
+              </Sankey>
+            </Chart.Container>
+          </Card.Content>
+        </Card.Root>
+      )}
     </>
   )
 }

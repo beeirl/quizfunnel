@@ -3,7 +3,7 @@ import type { Analytics } from '@shopfunnel/core/analytics/index'
 import { Resource } from '@shopfunnel/resource'
 
 export default {
-  async queue(batch: MessageBatch<Analytics.QuizEvent>) {
+  async queue(batch: MessageBatch<Analytics.Event>) {
     const events = batch.messages.map((m) => m.body)
     if (events.length === 0) return
 
