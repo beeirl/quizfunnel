@@ -363,7 +363,14 @@ function RouteComponent() {
         onPagesReorder={handlePagesReorder}
         onPageAdd={handlePageAdd}
         onBlocksReorder={handleBlocksReorder}
-        onBlockAdd={(block) => selectedPageId && handleBlockAdd(block, selectedPageId)}
+        onBlockAdd={(block) => {
+          const pageId =
+            selectedPageId ||
+            (selectedBlockId ? quiz.pages.find((page) => page.blocks.some((b) => b.id === selectedBlockId))?.id : null)
+          if (pageId) {
+            handleBlockAdd(block, pageId)
+          }
+        }}
       />
       <Canvas
         pages={quiz.pages}
