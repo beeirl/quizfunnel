@@ -1,0 +1,50 @@
+DESCRIPTION >
+    KPIs: views, starts, completions, rates.
+    Supports date filtering.
+
+TOKEN api READ
+
+NODE date_calculations_node
+SQL >
+    %
+    WITH
+        {% if defined(date_from) %}
+            toDate({{ String(date_from) }}) AS current_start,
+        {% else %}
+            toDate(timestampAdd(today(), INTERVAL -30 DAY)) AS current_start,
+        {% end %}
+        {% if defined(date_to) %}
+            toDate({{ String(date_to) }}) AS current_end
+        {% else %}
+            toDate(today()) AS current_end
+        {% end %}
+    SELECT
+        current_start,
+        current_end,
+        dateDiff('day', current_start, current_end) + 1 AS period_days
+
+NODE current_period_node
+SQL >
+    %
+    SELECT
+        uniqIf(session_id, type = 'quiz_view') AS total_views,
+        uniqIf(session_id, type = 'quiz_start') AS total_starts,
+        uniqIf(session_id, type = 'quiz_complete') AS total_completions
+    FROM events
+    WHERE workspace_id = {{ String(workspace_id, required=True) }}
+        AND quiz_id = {{ String(quiz_id, required=True) }}
+        AND quiz_version = {{ UInt32(quiz_version, required=True) }}
+        AND toDate(timestamp) >= (SELECT current_start FROM date_calculations_node)
+        AND toDate(timestamp) <= (SELECT current_end FROM date_calculations_node)
+
+NODE endpoint_node
+SQL >
+    SELECT
+        total_views,
+        total_starts,
+        total_completions,
+        if(total_views > 0, round(total_starts / total_views * 100, 1), 0) AS start_rate,
+        if(total_starts > 0, round(total_completions / total_starts * 100, 1), 0) AS completion_rate
+    FROM current_period_node
+
+TYPE endpoint

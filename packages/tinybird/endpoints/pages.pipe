@@ -1,0 +1,34 @@
+DESCRIPTION >
+    Page-level stats: views, completions, avg duration, dropoff rate.
+
+TOKEN api READ
+
+NODE pages_node
+SQL >
+    %
+    SELECT
+        page_id,
+        any(page_name) AS page_name,
+        any(page_index) AS page_index,
+        uniqMerge(views) AS page_views,
+        uniqMerge(completions) AS page_completions,
+        if(countMerge(duration_count) > 0,
+           round(sumMerge(total_duration) / countMerge(duration_count)),
+           0) AS avg_duration,
+        if(uniqMerge(views) > 0,
+           round((uniqMerge(views) - uniqMerge(completions)) * 100.0 / uniqMerge(views), 1),
+           0) AS dropoff_rate
+    FROM pages_mv
+    WHERE workspace_id = {{ String(workspace_id, required=True) }}
+        AND quiz_id = {{ String(quiz_id, required=True) }}
+        AND quiz_version = {{ UInt32(quiz_version, required=True) }}
+        {% if defined(date_from) %}
+        AND date >= toDate({{ String(date_from) }})
+        {% end %}
+        {% if defined(date_to) %}
+        AND date <= toDate({{ String(date_to) }})
+        {% end %}
+    GROUP BY page_id
+    ORDER BY page_index
+
+TYPE endpoint

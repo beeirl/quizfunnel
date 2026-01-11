@@ -7,7 +7,6 @@ import { Question } from '@shopfunnel/core/question/index'
 import { Quiz as QuizCore } from '@shopfunnel/core/quiz/index'
 import { Submission } from '@shopfunnel/core/submission/index'
 import { Resource } from '@shopfunnel/resource'
-import { queryOptions, useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute, notFound } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { getRequestHeader } from '@tanstack/react-start/server'
@@ -22,12 +21,12 @@ const getQuiz = createServerFn()
     const quiz = await QuizCore.getPublishedVersion(data.shortId)
     if (!quiz) throw notFound()
 
-    // Check if request is from a custom domain
+    const stage = process.env.SST_STAGE
+    const domain = process.env.DOMAIN
     const host = getRequestHeader('host')
-    if (host && !host.endsWith('shopfunnel.app')) {
-      const domain = await Domain.fromHostname(host)
-      // If on a custom domain, verify the quiz belongs to that workspace
-      if (!domain || domain.workspaceId !== quiz.workspaceId) {
+    if (stage === 'production' && domain && host && !host.endsWith(domain)) {
+      const customDomain = await Domain.fromHostname(host)
+      if (!customDomain || customDomain.workspaceId !== quiz.workspaceId) {
         throw notFound()
       }
     }
@@ -35,22 +34,10 @@ const getQuiz = createServerFn()
     return quiz
   })
 
-const getQuizQueryOptions = (shortId: string) =>
-  queryOptions({
-    queryKey: ['quiz', 'published', shortId],
-    queryFn: () => getQuiz({ data: { shortId } }),
-  })
-
 const getQuestions = createServerFn()
   .inputValidator(z.object({ quizId: Identifier.schema('quiz') }))
   .handler(async ({ data }) => {
     return Question.list(data.quizId)
-  })
-
-const getQuestionsQueryOptions = (quizId: string) =>
-  queryOptions({
-    queryKey: ['questions', quizId],
-    queryFn: () => getQuestions({ data: { quizId } }),
   })
 
 const submitAnswers = createServerFn()
@@ -79,127 +66,152 @@ const completeSubmission = createServerFn()
     }
   })
 
-const enqueueEvents = createServerFn()
+const trackEvents = createServerFn()
   .inputValidator(z.array(Analytics.Event))
   .handler(async ({ data }) => {
-    const userAgent = getRequestHeader('user-agent') || ''
-    const country = getRequestHeader('cf-ipcountry') || undefined
-    const region = getRequestHeader('cf-region') || undefined
-    const city = getRequestHeader('cf-ipcity') || undefined
-
-    const parser = new UAParser(userAgent)
-    const os = parser.getOS().name || undefined
-    const browser = parser.getBrowser().name || undefined
-    const deviceType = parser.getDevice().type
-    const device: 'mobile' | 'desktop' = deviceType === 'mobile' || deviceType === 'tablet' ? 'mobile' : 'desktop'
-
     await Resource.AnalyticsQueue.sendBatch(
-      data.map((event) => ({
-        body: { ...event, country, region, city, os, browser, device },
-      })),
+      data.map((event) => {
+        if (event.type === 'quiz_view') {
+          const userAgent = getRequestHeader('user-agent') || ''
+          const country = getRequestHeader('cf-ipcountry') || undefined
+          const region = getRequestHeader('cf-region') || undefined
+          const city = getRequestHeader('cf-ipcity') || undefined
+          const referrer = getRequestHeader('referer') || undefined
+
+          const parser = new UAParser(userAgent)
+          const os = parser.getOS().name || undefined
+          const browser = parser.getBrowser().name || undefined
+          const deviceType = parser.getDevice().type
+          const device: 'mobile' | 'desktop' = deviceType === 'mobile' || deviceType === 'tablet' ? 'mobile' : 'desktop'
+
+          return {
+            body: {
+              ...event,
+              payload: {
+                ...event.payload,
+                country,
+                region,
+                city,
+                os,
+                browser,
+                device,
+                referrer,
+              },
+            },
+          }
+        }
+        return { body: event }
+      }),
     )
   })
 
 export const Route = createFileRoute('/(quiz)/q/$id')({
   component: RouteComponent,
-  loader: async ({ context, params }) => {
-    const quiz = await context.queryClient.ensureQueryData(getQuizQueryOptions(params.id))
+  loader: async ({ params }) => {
+    const quiz = await getQuiz({ data: { shortId: params.id } })
     if (!quiz) throw notFound()
-    await context.queryClient.ensureQueryData(getQuestionsQueryOptions(quiz.id))
+    const questions = await getQuestions({ data: { quizId: quiz.id } })
+    return { quiz, questions }
   },
 })
 
 function RouteComponent() {
-  const params = Route.useParams()
-
-  const SESSION_STORAGE_KEY = `sf_quiz_${params.id}_session_id`
-  const VISITOR_STORAGE_KEY = 'sf_visitor_id'
-
-  const quizQuery = useSuspenseQuery(getQuizQueryOptions(params.id))
-  const quiz = quizQuery.data
-
-  const questionsQuery = useSuspenseQuery(getQuestionsQueryOptions(quiz.id))
-  const questions = questionsQuery.data
+  const { quiz, questions } = Route.useLoaderData()
 
   const quizViewedRef = useRef(false)
   const quizStartedRef = useRef(false)
 
   const prevPageRef = useRef<{ id: string; index: number; name: string } | undefined>(undefined)
+
   const currentPageViewedAtRef = useRef<number | undefined>(undefined)
   const [currentPage, setCurrentPage] = useState<{ id: string; index: number; name: string } | undefined>(undefined)
 
-  const sessionId = () => {
-    let id = localStorage.getItem(SESSION_STORAGE_KEY)
-    if (!id) {
-      id = ulid()
-      localStorage.setItem(SESSION_STORAGE_KEY, id)
+  const [session] = useState(() => {
+    const key = `sf_quiz_${quiz.shortId}_session_id`
+    return {
+      id: () => {
+        let id = localStorage.getItem(key)
+        if (!id) {
+          id = ulid()
+          localStorage.setItem(key, id)
+        }
+        return id
+      },
+      clear: () => localStorage.removeItem(key),
     }
-    return id
-  }
+  })
 
-  const visitorId = () => {
-    let id = localStorage.getItem(VISITOR_STORAGE_KEY)
-    if (!id) {
-      id = ulid()
-      localStorage.setItem(VISITOR_STORAGE_KEY, id)
+  const [visitor] = useState(() => {
+    const key = 'sf_visitor_id'
+    return {
+      id: () => {
+        let id = localStorage.getItem(key)
+        if (!id) {
+          id = ulid()
+          localStorage.setItem(key, id)
+        }
+        return id
+      },
     }
-    return id
-  }
+  })
+
+  const [queue] = useState(() => {
+    const items: Promise<unknown>[] = []
+    return {
+      push: (item: Promise<unknown>) => {
+        items.push(item)
+      },
+      flush: () => Promise.all(items),
+    }
+  })
+
+  const [event] = useState(() => {
+    type Event = Pick<Analytics.Event, 'type' | 'payload'>
+    const events: Event[] = []
+    return {
+      track: (type: Event['type'], payload: Event['payload'] = {}) => {
+        const shouldBatch = events.length === 0
+        events.push({ type, payload })
+        if (shouldBatch) {
+          queueMicrotask(() => {
+            queue.push(
+              trackEvents({
+                data: events.splice(0).map((e) => ({
+                  type: e.type,
+                  visitor_id: visitor.id(),
+                  session_id: session.id(),
+                  workspace_id: quiz.workspaceId,
+                  quiz_id: quiz.id,
+                  quiz_version: quiz.version,
+                  version: '1',
+                  payload: e.payload,
+                  timestamp: new Date().toISOString(),
+                })) as Analytics.Event[],
+              }),
+            )
+          })
+        }
+      },
+    }
+  })
 
   useEffect(() => {
     if (quizViewedRef.current) return
     quizViewedRef.current = true
-    trackEvents([{ type: 'quiz_view' }])
+    event.track('quiz_view')
   }, [])
 
   useEffect(() => {
     if (!currentPage) return
-    trackEvents([
-      {
-        type: 'page_view',
-        prev_page_id: prevPageRef.current?.id,
-        prev_page_index: prevPageRef.current?.index,
-        prev_page_name: prevPageRef.current?.name,
-        page_id: currentPage.id,
-        page_index: currentPage.index,
-        page_name: currentPage.name,
-      },
-    ])
+    event.track('page_view', {
+      prev_page_id: prevPageRef.current?.id,
+      prev_page_index: prevPageRef.current?.index,
+      prev_page_name: prevPageRef.current?.name,
+      page_id: currentPage.id,
+      page_index: currentPage.index,
+      page_name: currentPage.name,
+    })
   }, [currentPage])
-
-  const promisesRef = useRef<Set<Promise<unknown>>>(new Set())
-  const addPromise = <T,>(promise: Promise<T>): Promise<T> => {
-    promisesRef.current.add(promise)
-    promise.finally(() => promisesRef.current.delete(promise))
-    return promise
-  }
-
-  const trackEvents = (events: Partial<Analytics.Event>[]) => {
-    if (!sessionId || !visitorId) return
-    const params = new URLSearchParams(window.location.search)
-    addPromise(
-      enqueueEvents({
-        data: events.map(
-          (event) =>
-            ({
-              ...event,
-              quiz_id: quiz.id,
-              quiz_version: quiz.version,
-              workspace_id: quiz.workspaceId,
-              session_id: sessionId(),
-              visitor_id: visitorId(),
-              timestamp: new Date().toISOString(),
-              referrer: document.referrer || undefined,
-              utm_source: params.get('utm_source') || undefined,
-              utm_medium: params.get('utm_medium') || undefined,
-              utm_campaign: params.get('utm_campaign') || undefined,
-              utm_term: params.get('utm_term') || undefined,
-              utm_content: params.get('utm_content') || undefined,
-            }) as Analytics.Event,
-        ),
-      }),
-    )
-  }
 
   const handlePageChange: QuizProps['onPageChange'] = (page) => {
     currentPageViewedAtRef.current = Date.now()
@@ -208,72 +220,51 @@ function RouteComponent() {
   }
 
   const handlePageComplete: QuizProps['onPageComplete'] = (page) => {
-    const events: Partial<Analytics.Event>[] = []
-
     if (!quizStartedRef.current) {
       quizStartedRef.current = true
-      events.push({ type: 'quiz_start' })
+      event.track('quiz_start')
     }
 
     const questionsByBlockId = new Map(questions.map((q) => [q.blockId, q]))
-    for (const [blockId, answerValue] of Object.entries(page.values)) {
+    for (const [blockId, value] of Object.entries(page.values)) {
       const question = questionsByBlockId.get(blockId)
-      if (question) {
-        events.push({
-          type: 'question_answer',
-          prev_page_id: prevPageRef.current?.id,
-          prev_page_index: prevPageRef.current?.index,
-          prev_page_name: prevPageRef.current?.name,
-          page_id: page.id,
-          page_name: page.name,
-          question_id: question.id,
-          question_type: question.type,
-          question_title: question.title,
-          answer_value_text: typeof answerValue === 'string' ? answerValue : undefined,
-          answer_value_number: typeof answerValue === 'number' ? answerValue : undefined,
-          answer_value_option_ids: Array.isArray(answerValue) ? answerValue : undefined,
-        })
-      }
+      if (!question) continue
+      event.track('question_answer', {
+        page_id: page.id,
+        question_id: question.id,
+        question_type: question.type,
+        question_title: question.title,
+        ...(typeof value === 'string' && { answer_value_text: value }),
+        ...(typeof value === 'number' && { answer_value_number: value }),
+        ...(Array.isArray(value) && { answer_value_option_ids: value }),
+      })
     }
 
-    events.push({
-      type: 'page_complete',
-      prev_page_id: prevPageRef.current?.id,
-      prev_page_index: prevPageRef.current?.index,
-      prev_page_name: prevPageRef.current?.name,
+    event.track('page_complete', {
       page_id: page.id,
       page_index: page.index,
       page_name: page.name,
-      page_duration: currentPageViewedAtRef.current ? Date.now() - currentPageViewedAtRef.current : undefined,
+      page_duration: currentPageViewedAtRef.current ? Date.now() - currentPageViewedAtRef.current : 0,
     })
 
-    if (Object.entries(page.values).length) {
-      addPromise(
+    if (Object.keys(page.values).length > 0) {
+      queue.push(
         submitAnswers({
           data: {
             quizId: quiz.id,
-            sessionId: sessionId(),
-            answers: Object.entries(page.values).map(([blockId, value]) => ({
-              blockId,
-              value,
-            })),
+            sessionId: session.id(),
+            answers: Object.entries(page.values).map(([blockId, value]) => ({ blockId, value })),
           },
         }),
       )
     }
-
-    if (events.length > 0) {
-      trackEvents(events)
-    }
   }
 
   const handleQuizComplete: QuizProps['onComplete'] = async () => {
-    trackEvents([{ type: 'quiz_complete' }])
-    addPromise(completeSubmission({ data: { sessionId: sessionId() } }))
-
-    await Promise.all(promisesRef.current)
-
-    localStorage.removeItem(SESSION_STORAGE_KEY)
+    event.track('quiz_complete')
+    queue.push(completeSubmission({ data: { sessionId: session.id() } }))
+    await queue.flush()
+    session.clear()
   }
 
   return (

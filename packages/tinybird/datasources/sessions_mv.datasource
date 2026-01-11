@@ -1,0 +1,20 @@
+SCHEMA >
+    `date` Date,
+    `workspace_id` String,
+    `quiz_id` String,
+    `quiz_version` UInt32,
+    `session_id` String,
+    `visitor_id` SimpleAggregateFunction(any, String),
+    `device` SimpleAggregateFunction(any, String),
+    `browser` SimpleAggregateFunction(any, String),
+    `os` SimpleAggregateFunction(any, String),
+    `country` SimpleAggregateFunction(any, String),
+    `region` SimpleAggregateFunction(any, String),
+    `city` SimpleAggregateFunction(any, String),
+    `referrer` SimpleAggregateFunction(any, String),
+    `first_hit` SimpleAggregateFunction(min, DateTime64(3)),
+    `latest_hit` SimpleAggregateFunction(max, DateTime64(3))
+
+ENGINE AggregatingMergeTree
+ENGINE_PARTITION_KEY toYYYYMM(date)
+ENGINE_SORTING_KEY workspace_id, quiz_id, quiz_version, date, session_id

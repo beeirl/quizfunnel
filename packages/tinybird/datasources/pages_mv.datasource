@@ -1,0 +1,16 @@
+SCHEMA >
+    `date` Date,
+    `workspace_id` String,
+    `quiz_id` String,
+    `quiz_version` UInt32,
+    `page_id` String,
+    `page_name` SimpleAggregateFunction(any, String),
+    `page_index` SimpleAggregateFunction(any, UInt32),
+    `views` AggregateFunction(uniq, String),
+    `completions` AggregateFunction(uniq, String),
+    `total_duration` AggregateFunction(sum, UInt64),
+    `duration_count` AggregateFunction(count)
+
+ENGINE AggregatingMergeTree
+ENGINE_PARTITION_KEY toYYYYMM(date)
+ENGINE_SORTING_KEY workspace_id, quiz_id, quiz_version, date, page_id

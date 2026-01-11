@@ -4,12 +4,25 @@ import { Resource } from '@shopfunnel/resource'
 
 export default {
   async queue(batch: MessageBatch<Analytics.Event>) {
-    const events = batch.messages.map((m) => m.body)
+    const events = batch.messages.map((m) => {
+      const event = m.body
+      return {
+        timestamp: event.timestamp,
+        session_id: event.session_id,
+        visitor_id: event.visitor_id,
+        type: event.type,
+        version: event.version,
+        workspace_id: event.workspace_id,
+        quiz_id: event.quiz_id,
+        quiz_version: event.quiz_version,
+        payload: JSON.stringify(event.payload),
+      }
+    })
     if (events.length === 0) return
 
     const body = events.map((e) => JSON.stringify(e)).join('\n')
 
-    await fetch('https://api.us-east.aws.tinybird.co/v0/events?name=quiz_events', {
+    await fetch('https://api.us-east.aws.tinybird.co/v0/events?name=events', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${Resource.TINYBIRD_TOKEN.value}`,

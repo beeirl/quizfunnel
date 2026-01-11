@@ -1,0 +1,23 @@
+NODE pages_node
+DESCRIPTION >
+    Aggregate by page_id and calculate page metrics
+
+SQL >
+    SELECT
+        toDate(timestamp) AS date,
+        workspace_id,
+        quiz_id,
+        quiz_version,
+        page_id,
+        anySimpleState(page_name) AS page_name,
+        anySimpleState(toUInt32(page_index)) AS page_index,
+        uniqStateIf(session_id, type = 'page_view') AS views,
+        uniqStateIf(session_id, type = 'page_complete') AS completions,
+        sumStateIf(toUInt64(page_duration), type = 'page_complete' AND page_duration > 0) AS total_duration,
+        countStateIf(type = 'page_complete' AND page_duration > 0) AS duration_count
+    FROM page_events
+    WHERE page_id != ''
+    GROUP BY date, workspace_id, quiz_id, quiz_version, page_id
+
+TYPE MATERIALIZED
+DATASOURCE pages_mv

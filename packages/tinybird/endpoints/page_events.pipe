@@ -1,0 +1,25 @@
+DESCRIPTION >
+    Parsed page_view and page_complete events.
+
+TOKEN api READ
+
+NODE page_events_node
+SQL >
+    SELECT
+        timestamp,
+        session_id,
+        type,
+        workspace_id,
+        quiz_id,
+        quiz_version,
+        JSONExtractString(payload, 'page_id') AS page_id,
+        JSONExtractString(payload, 'page_name') AS page_name,
+        JSONExtractUInt(payload, 'page_index') AS page_index,
+        JSONExtractString(payload, 'prev_page_id') AS prev_page_id,
+        JSONExtractString(payload, 'prev_page_name') AS prev_page_name,
+        JSONExtractUInt(payload, 'prev_page_index') AS prev_page_index,
+        JSONExtractUInt(payload, 'page_duration') AS page_duration
+    FROM events
+    WHERE type IN ('page_view', 'page_complete')
+
+TYPE endpoint

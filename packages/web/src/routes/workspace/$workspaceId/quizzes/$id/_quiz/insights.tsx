@@ -16,6 +16,8 @@ interface MetricsData {
   total_views: number
   total_starts: number
   total_completions: number
+  start_rate: number
+  completion_rate: number
 }
 
 interface PathTransition {
@@ -35,6 +37,7 @@ interface PageStats {
   page_views: number
   page_completions: number
   avg_duration: number
+  dropoff_rate: number
 }
 
 interface SankeyNode {
@@ -84,15 +87,11 @@ function transformPathsToSankey(paths: PathTransition[], pageStats: PageStats[])
   const nodeIndexMap = new Map(sortedNodes.map(([id], i) => [id, i]))
   const nodes = sortedNodes.map(([pageId, { name }]) => {
     const stats = statsMap.get(pageId)
-    const dropoffRate =
-      stats && stats.page_views > 0
-        ? Math.round(((stats.page_views - stats.page_completions) / stats.page_views) * 100)
-        : undefined
     return {
       name,
       pageId,
       avgDuration: stats?.avg_duration,
-      dropoffRate,
+      dropoffRate: stats?.dropoff_rate,
     }
   })
 
@@ -123,29 +122,21 @@ const getPublishedVersionsQueryOptions = (workspaceId: string, quizId: string) =
   })
 
 const getInsights = createServerFn()
-  .inputValidator(z.object({ quizId: z.string(), quizVersion: z.number() }))
+  .inputValidator(z.object({ workspaceId: z.string(), quizId: z.string(), quizVersion: z.number() }))
   .handler(async ({ data }) => {
     const token = Resource.TINYBIRD_TOKEN.value
+    const baseParams = `workspace_id=${data.workspaceId}&quiz_id=${data.quizId}&quiz_version=${data.quizVersion}`
 
     const [metricsRes, pathsRes, pageStatsRes] = await Promise.all([
-      fetch(
-        `https://api.us-east.aws.tinybird.co/v0/pipes/quiz_metrics.json?quiz_id=${data.quizId}&quiz_version=${data.quizVersion}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      ),
-      fetch(
-        `https://api.us-east.aws.tinybird.co/v0/pipes/quiz_paths.json?quiz_id=${data.quizId}&quiz_version=${data.quizVersion}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      ),
-      fetch(
-        `https://api.us-east.aws.tinybird.co/v0/pipes/quiz_page_stats.json?quiz_id=${data.quizId}&quiz_version=${data.quizVersion}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      ),
+      fetch(`https://api.us-east.aws.tinybird.co/v0/pipes/kpis.json?${baseParams}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+      fetch(`https://api.us-east.aws.tinybird.co/v0/pipes/paths.json?${baseParams}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+      fetch(`https://api.us-east.aws.tinybird.co/v0/pipes/pages.json?${baseParams}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
     ])
 
     const metricsJson = (await metricsRes.json()) as any
@@ -164,10 +155,10 @@ const getInsights = createServerFn()
     return { metrics, paths, pageStats }
   })
 
-const getInsightsQueryOptions = (quizId: string, quizVersion: number | null) =>
+const getInsightsQueryOptions = (workspaceId: string, quizId: string, quizVersion: number | null) =>
   queryOptions({
-    queryKey: ['insights', quizId, quizVersion],
-    queryFn: () => getInsights({ data: { quizId, quizVersion: quizVersion! } }),
+    queryKey: ['insights', workspaceId, quizId, quizVersion],
+    queryFn: () => getInsights({ data: { workspaceId, quizId, quizVersion: quizVersion! } }),
     enabled: quizVersion !== null,
   })
 
@@ -180,36 +171,36 @@ export const Route = createFileRoute('/workspace/$workspaceId/quizzes/$id/_quiz/
     )
     const latestPublishedVersion = publishedVersions.at(-1)
     if (latestPublishedVersion) {
-      await context.queryClient.ensureQueryData(getInsightsQueryOptions(params.id, latestPublishedVersion))
+      await context.queryClient.ensureQueryData(
+        getInsightsQueryOptions(params.workspaceId, params.id, latestPublishedVersion),
+      )
     }
   },
 })
 
 const nodeColors = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)']
 
-function Insights({ quizId, quizVersion }: { quizId: string; quizVersion: number }) {
-  const insightsQuery = useSuspenseQuery(getInsightsQueryOptions(quizId, quizVersion))
+function Insights({ workspaceId, quizId, quizVersion }: { workspaceId: string; quizId: string; quizVersion: number }) {
+  const insightsQuery = useSuspenseQuery(getInsightsQueryOptions(workspaceId, quizId, quizVersion))
 
   const metrics = insightsQuery.data?.metrics ?? {
     total_views: 0,
     total_starts: 0,
     total_completions: 0,
+    start_rate: 0,
+    completion_rate: 0,
   }
 
   const paths = insightsQuery.data?.paths ?? []
   const pageStats = insightsQuery.data?.pageStats ?? []
   const sankeyData = transformPathsToSankey(paths, pageStats)
 
-  const startRate = metrics.total_views > 0 ? Math.round((metrics.total_starts / metrics.total_views) * 100) : 0
-  const completionRate =
-    metrics.total_starts > 0 ? Math.round((metrics.total_completions / metrics.total_starts) * 100) : 0
-
   const metricsCards = [
     { label: 'Total Views', value: metrics.total_views.toLocaleString() },
     { label: 'Started', value: metrics.total_starts.toLocaleString() },
-    { label: 'Start Rate', value: `${startRate}%` },
+    { label: 'Start Rate', value: `${metrics.start_rate}%` },
     { label: 'Completions', value: metrics.total_completions.toLocaleString() },
-    { label: 'Completion Rate', value: `${completionRate}%` },
+    { label: 'Completion Rate', value: `${metrics.completion_rate}%` },
   ]
 
   return (
@@ -367,7 +358,7 @@ function RouteComponent() {
             </Card.Content>
           </Card.Root>
         ) : (
-          <Insights quizId={params.id} quizVersion={latestPublishedVersion} />
+          <Insights workspaceId={params.workspaceId} quizId={params.id} quizVersion={latestPublishedVersion} />
         )}
       </div>
     </div>
