@@ -417,11 +417,34 @@ export function Funnel({ funnel, mode = 'live', onComplete, onPageChange, onPage
                     </div>
                   ))}
                 </div>
-                {!shouldAutoAdvance(visibleBlocks) && (
-                  <div className="sticky bottom-0 mt-auto w-full pt-4 pb-5">
+                <div className="sticky bottom-0 mt-auto flex w-full flex-col gap-4 bg-(--fun-background) py-6">
+                  {!shouldAutoAdvance(visibleBlocks) && (
                     <NextButton onClick={() => next(values)}>{currentPage.properties.buttonText}</NextButton>
-                  </div>
-                )}
+                  )}
+                  {currentPageIndex === 0 && funnel.settings.privacyUrl && funnel.settings.termsUrl && (
+                    <span className="text-center text-xs text-balance text-(--fun-muted-foreground)">
+                      By clicking any of the options above, you agree with the{' '}
+                      <a
+                        className="underline"
+                        href={funnel.settings.termsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Terms of Use
+                      </a>{' '}
+                      and{' '}
+                      <a
+                        className="underline"
+                        href={funnel.settings.privacyUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Privacy Policy
+                      </a>
+                      .
+                    </span>
+                  )}
+                </div>
               </>
             )}
           </motion.div>
