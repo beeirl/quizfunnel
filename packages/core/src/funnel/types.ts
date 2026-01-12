@@ -239,26 +239,16 @@ export interface Rule {
 // Theme
 // ============================================
 
-export interface Colors {
-  primary: string
-  primaryForeground: string
-  background: string
-  foreground: string
-}
-
-export const RADII = [
-  { name: 'none', value: '0' },
-  { name: 'small', value: '0.45rem' },
-  { name: 'medium', value: '0.625rem' },
-  { name: 'large', value: '0.875rem' },
-] as const
-
-export type Radius = (typeof RADII)[number]
-
 export interface Theme {
-  colors: Colors
-  radius: Radius
   logo?: string
+  radius: string
+  style: 'outline' | 'soft'
+  colors: {
+    primary: string
+    primaryForeground: string
+    background: string
+    foreground: string
+  }
 }
 
 // ============================================

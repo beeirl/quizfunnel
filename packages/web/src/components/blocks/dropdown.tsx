@@ -7,6 +7,7 @@ export interface DropdownBlockProps {
   block: BlockType
   static?: boolean
   value?: string
+  variant?: 'outline' | 'soft'
   onValueChange?: (value: string) => void
 }
 
@@ -20,6 +21,10 @@ export function DropdownBlock(props: DropdownBlockProps) {
   return (
     <div className="group-not-data-first/block:mt-6">
       <BaseSelect.Root
+        items={options.map((option) => ({
+          label: option.label,
+          value: option.id,
+        }))}
         disabled={props.static}
         value={props.static ? undefined : (props.value ?? null)}
         onValueChange={props.static ? undefined : props.onValueChange}
@@ -27,7 +32,10 @@ export function DropdownBlock(props: DropdownBlockProps) {
         <BaseSelect.Trigger
           className={cn(
             // Base
-            'flex h-14 w-full items-center justify-between rounded-(--sf-radius) border-2 border-(--sf-border) px-4 text-base text-(--sf-foreground) transition-all outline-none',
+            'flex h-14 w-full items-center justify-between rounded-(--sf-radius) border-2 px-4 text-base transition-all outline-none',
+            // Variant
+            props.variant === 'soft' && 'border-transparent bg-(--sf-muted) text-(--sf-foreground)',
+            props.variant === 'outline' && 'border-(--sf-border) bg-(--sf-background) text-(--sf-foreground)',
             // Focus
             'focus-visible:border-(--sf-ring) focus-visible:ring-3 focus-visible:ring-(--sf-ring)/50',
             props.static && 'pointer-events-none',
@@ -35,9 +43,8 @@ export function DropdownBlock(props: DropdownBlockProps) {
         >
           <BaseSelect.Value className="data-placeholder:text-(--sf-foreground)/50">
             {(value) => {
-              if (!value) return props.block.properties.placeholder
-              const option = options.find((opt) => opt.id === value)
-              return option?.label ?? value
+              if (value) return value
+              return props.block.properties.placeholder
             }}
           </BaseSelect.Value>
           <BaseSelect.Icon render={<ChevronDownIcon className="pointer-events-none size-5 opacity-30" />} />

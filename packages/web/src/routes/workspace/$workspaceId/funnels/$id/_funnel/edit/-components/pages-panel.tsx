@@ -58,7 +58,7 @@ function createBlock(type: Block['type']): Block {
       return {
         id: ulid(),
         type: 'dropdown',
-        properties: { name: 'Dropdown', options: [{ id: ulid(), label: 'Option 1' }] },
+        properties: { name: 'Dropdown', placeholder: 'Select an option', options: [{ id: ulid(), label: 'Option 1' }] },
         validations: { required: false },
       }
     case 'heading':

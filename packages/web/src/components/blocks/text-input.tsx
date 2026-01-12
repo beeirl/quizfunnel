@@ -5,6 +5,7 @@ import type { TextInputBlock as BlockType } from '@shopfunnel/core/funnel/types'
 export interface TextInputBlockProps {
   block: BlockType
   static?: boolean
+  variant?: 'outline' | 'soft'
   value?: string
   onValueChange?: (value: string) => void
 }
@@ -15,7 +16,10 @@ export function TextInputBlock(props: TextInputBlockProps) {
       <BaseInput
         className={cn(
           // Base
-          'h-14 w-full rounded-(--sf-radius) border-2 border-(--sf-border) bg-(--sf-background) px-4 text-base text-(--sf-foreground) transition-all outline-none placeholder:text-(--sf-foreground)/50',
+          'h-14 w-full rounded-(--sf-radius) border-2 border-(--sf-border) px-4 text-base transition-all outline-none placeholder:text-(--sf-foreground)/50',
+          // Variant
+          props.variant === 'soft' && 'border-transparent bg-(--sf-muted) text-(--sf-foreground)',
+          props.variant === 'outline' && 'border-(--sf-border) bg-(--sf-background) text-(--sf-foreground)',
           // Focus
           'focus-visible:border-(--sf-ring) focus-visible:ring-3 focus-visible:ring-(--sf-ring)/50',
           props.static && 'pointer-events-none',

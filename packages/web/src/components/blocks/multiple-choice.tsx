@@ -5,6 +5,7 @@ import { ListBox as ReactAriaListbox, ListBoxItem as ReactAriaListboxItem } from
 export interface MultipleChoiceBlockProps {
   block: BlockType
   static?: boolean
+  variant?: 'outline' | 'soft'
   value?: string | string[] | null
   onValueChange?: (value: string | string[] | null) => void
 }
@@ -33,13 +34,13 @@ export function MultipleChoiceBlock(props: MultipleChoiceBlockProps) {
             className={cn(
               // Base
               choice.media ? 'min-h-18 grid-cols-[auto_1fr]' : 'min-h-14 grid-cols-1',
-              'group relative grid cursor-pointer overflow-hidden rounded-(--sf-radius) border-2 border-transparent bg-(--sf-muted) text-left transition-all outline-none',
-              // Hover
-              'hover:scale-[1.01]',
+              'group relative grid cursor-pointer overflow-hidden rounded-(--sf-radius) border-2 text-left transition-all outline-none hover:scale-[1.01]',
+              props.variant === 'soft' &&
+                'border-transparent bg-(--sf-muted) data-selected:border-(--sf-primary) data-selected:bg-(--sf-primary)/20 data-selected:text-(--sf-primary)',
+              props.variant === 'outline' &&
+                'border-(--sf-border) bg-(--sf-background) text-(--sf-foreground) data-selected:border-transparent data-selected:bg-(--sf-primary) data-selected:text-(--sf-primary-foreground)',
               // Focus
               'data-focus-visible:ring-3 data-focus-visible:ring-(--sf-ring)/50',
-              // Selected
-              'data-selected:border-(--sf-primary) data-selected:bg-(--sf-primary)/20 data-selected:text-(--sf-primary)',
               props.static && 'pointer-events-none',
             )}
             onClick={() => {
@@ -62,14 +63,8 @@ export function MultipleChoiceBlock(props: MultipleChoiceBlockProps) {
               </div>
             )}
             <div className="flex flex-col justify-center py-3 pr-4 first:pl-4">
-              <span className="text-base font-semibold text-(--sf-foreground) group-data-selected:text-(--sf-primary)">
-                {choice.label}
-              </span>
-              {choice.description && (
-                <span className="text-sm text-(--sf-muted-foreground) group-data-selected:text-(--sf-primary)/70">
-                  {choice.description}
-                </span>
-              )}
+              <span className="text-base font-semibold">{choice.label}</span>
+              {choice.description && <span className="text-sm opacity-70">{choice.description}</span>}
             </div>
           </ReactAriaListboxItem>
         ))}

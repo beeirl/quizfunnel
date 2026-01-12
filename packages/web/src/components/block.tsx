@@ -42,6 +42,7 @@ export interface BlockProps {
   block: Block
   index?: number
   static?: boolean
+  variant?: 'outline' | 'soft'
   value?: unknown
   onValueChange?: (value: unknown) => void
   onLoadingValueChange?: (value: boolean) => void
@@ -150,6 +151,7 @@ BLOCKS['text_input'] = (props) => (
   <TextInputBlock
     block={props.block as TextInputBlockType}
     static={props.static}
+    variant={props.variant}
     value={props.value as string}
     onValueChange={props.onValueChange as (value: string) => void}
   />
@@ -159,6 +161,7 @@ BLOCKS['multiple_choice'] = (props) => (
   <MultipleChoiceBlock
     block={props.block as MultipleChoiceBlockType}
     static={props.static}
+    variant={props.variant}
     value={props.value as string | string[] | null}
     onValueChange={props.onValueChange as (value: string | string[] | null) => void}
   />
@@ -168,6 +171,7 @@ BLOCKS['picture_choice'] = (props) => (
   <PictureChoiceBlock
     block={props.block as PictureChoiceBlockType}
     static={props.static}
+    variant={props.variant}
     value={props.value as string | string[] | null}
     onValueChange={props.onValueChange as (value: string | string[] | null) => void}
   />
@@ -177,6 +181,7 @@ BLOCKS['dropdown'] = (props) => (
   <DropdownBlock
     block={props.block as DropdownBlockType}
     static={props.static}
+    variant={props.variant}
     value={props.value as string}
     onValueChange={props.onValueChange as (value: string) => void}
   />

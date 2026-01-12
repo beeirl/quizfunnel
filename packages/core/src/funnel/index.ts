@@ -9,7 +9,7 @@ import { Identifier } from '../identifier'
 import { Question } from '../question'
 import { fn } from '../utils/fn'
 import { FunnelFileTable, FunnelTable, FunnelVersionTable } from './index.sql'
-import { Info, Page, RADII, Rule, Variables, type Theme } from './types'
+import { Info, Page, Rule, Variables, type Theme } from './types'
 
 export namespace Funnel {
   const NEW_VERSION_THRESHOLD = 15 * 60 * 1000
@@ -21,7 +21,8 @@ export namespace Funnel {
       background: '#ffffff',
       foreground: '#0a0a0a',
     },
-    radius: RADII.find((radius) => radius.name === 'medium')!,
+    radius: '0.625rem',
+    style: 'soft',
   }
 
   export const getCurrentVersion = fn(Identifier.schema('funnel'), (id) =>

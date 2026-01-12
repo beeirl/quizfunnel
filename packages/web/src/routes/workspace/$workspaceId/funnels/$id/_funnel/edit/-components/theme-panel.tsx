@@ -1,12 +1,24 @@
 import { ColorPicker } from '@/components/ui/color-picker'
 import { InputGroup } from '@/components/ui/input-group'
 import { Select } from '@/components/ui/select'
-import { RADII, type Colors, type Theme } from '@shopfunnel/core/funnel/types'
+import { type Theme } from '@shopfunnel/core/funnel/types'
 import { IconUpload as UploadIcon, IconX as XIcon } from '@tabler/icons-react'
 import * as React from 'react'
 import { Field } from './field'
 import { Pane } from './pane'
 import { Panel } from './panel'
+
+const RADII: { value: Theme['radius']; label: string }[] = [
+  { label: 'None', value: '0rem' },
+  { label: 'Small', value: '0.45rem' },
+  { label: 'Medium', value: '0.625rem' },
+  { label: 'Large', value: '0.875rem' },
+]
+
+const STYLES: { value: Theme['style']; label: string }[] = [
+  { label: 'Outline', value: 'outline' },
+  { label: 'Soft', value: 'soft' },
+]
 
 interface ThemePanelProps {
   theme: Theme
@@ -18,7 +30,7 @@ export function ThemePanel({ theme, onThemeUpdate, onImageUpload }: ThemePanelPr
   const fileInputRef = React.useRef<HTMLInputElement>(null)
   const [isUploading, setIsUploading] = React.useState(false)
 
-  const handleColorChange = (key: keyof Colors, value: string) => {
+  const handleColorChange = (key: keyof Theme['colors'], value: string) => {
     onThemeUpdate({
       colors: {
         ...theme.colors,
@@ -89,11 +101,9 @@ export function ThemePanel({ theme, onThemeUpdate, onImageUpload }: ThemePanelPr
               <Pane.GroupLabel>Border Radius</Pane.GroupLabel>
             </Pane.GroupHeader>
             <Select.Root
-              value={theme.radius.name}
-              onValueChange={(name) => {
-                const radius = RADII.find((r) => r.name === name)
-                if (radius) onThemeUpdate({ radius })
-              }}
+              items={RADII}
+              value={theme.radius}
+              onValueChange={(value) => onThemeUpdate({ radius: value! })}
             >
               <Select.Trigger className="w-full">
                 <svg
@@ -112,13 +122,33 @@ export function ThemePanel({ theme, onThemeUpdate, onImageUpload }: ThemePanelPr
                     d="M4 20v-5C4 8.925 8.925 4 15 4h5"
                   />
                 </svg>
-                <Select.Value className="capitalize" />
+                <Select.Value />
               </Select.Trigger>
               <Select.Content alignItemWithTrigger={false}>
                 <Select.Group>
-                  {RADII.map((r) => (
-                    <Select.Item key={r.name} value={r.name} className="capitalize">
-                      {r.name}
+                  {RADII.map((radius) => (
+                    <Select.Item key={radius.value} value={radius.value}>
+                      {radius.label}
+                    </Select.Item>
+                  ))}
+                </Select.Group>
+              </Select.Content>
+            </Select.Root>
+          </Pane.Group>
+          <Pane.Separator />
+          <Pane.Group>
+            <Pane.GroupHeader>
+              <Pane.GroupLabel>Style</Pane.GroupLabel>
+            </Pane.GroupHeader>
+            <Select.Root items={STYLES} value={theme.style} onValueChange={(value) => onThemeUpdate({ style: value! })}>
+              <Select.Trigger className="w-full">
+                <Select.Value />
+              </Select.Trigger>
+              <Select.Content alignItemWithTrigger={false}>
+                <Select.Group>
+                  {STYLES.map((style) => (
+                    <Select.Item key={style.value} value={style.value}>
+                      {style.label}
                     </Select.Item>
                   ))}
                 </Select.Group>

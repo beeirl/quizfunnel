@@ -49,10 +49,11 @@ interface SelectableBlockProps {
   block: BlockType
   index: number
   selected: boolean
+  variant?: 'outline' | 'soft'
   onSelect: () => void
 }
 
-function SelectableBlock({ block, index, selected, onSelect }: SelectableBlockProps) {
+function SelectableBlock({ block, index, selected, variant, onSelect }: SelectableBlockProps) {
   const blockInfo = getBlockInfo(block.type)
 
   const handleClick = (e: React.MouseEvent) => {
@@ -75,7 +76,7 @@ function SelectableBlock({ block, index, selected, onSelect }: SelectableBlockPr
 
         {/* Block content */}
         <div className="relative w-full select-none">
-          <Block block={block} index={index} static />
+          <Block block={block} index={index} variant={variant} static />
         </div>
       </div>
     </div>
@@ -155,6 +156,7 @@ function PageNode({ data }: { data: PageNodeData }) {
                     block={block}
                     index={index}
                     selected={selectedBlockId === block.id}
+                    variant={theme.style}
                     onSelect={() => handleBlockSelect(block.id)}
                   />
                 ))}

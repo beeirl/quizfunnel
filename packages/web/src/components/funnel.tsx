@@ -222,7 +222,7 @@ export function shouldAutoAdvance(blocks: BlockType[]): boolean {
 
 export function getThemeCssVars(theme: ThemeType) {
   return {
-    '--sf-radius': theme.radius.value,
+    '--sf-radius': theme.radius,
     '--sf-primary': theme.colors.primary,
     '--sf-primary-foreground': theme.colors.primaryForeground,
     '--sf-muted': '#F5F5F5',
@@ -409,6 +409,7 @@ export function Funnel({ funnel, mode = 'live', onComplete, onPageChange, onPage
                       <Block
                         block={block}
                         index={index}
+                        variant={funnel.theme.style}
                         value={values[block.id]}
                         onValueChange={(value) => handleBlockValueChange(block.id, value)}
                         onLoadingValueChange={(value) => handleBlockLoadingValueChange(block.id, value)}

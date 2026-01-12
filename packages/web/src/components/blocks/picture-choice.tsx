@@ -6,6 +6,7 @@ import { ListBox as ReactAriaListbox, ListBoxItem as ReactAriaListboxItem } from
 export interface PictureChoiceBlockProps {
   block: BlockType
   static?: boolean
+  variant?: 'outline' | 'soft'
   value?: string | string[] | null
   onValueChange?: (value: string | string[] | null) => void
 }
@@ -43,17 +44,16 @@ export function PictureChoiceBlock(props: PictureChoiceBlockProps) {
             }}
             className={cn(
               // Base
-              'group relative flex cursor-pointer flex-col overflow-hidden rounded-(--sf-radius) border-2 border-(--sf-border) transition-all outline-none',
+              'group relative flex cursor-pointer flex-col overflow-hidden rounded-(--sf-radius) border-2 transition-all outline-none',
+              'border-(--sf-border) data-selected:border-(--sf-primary)',
               // Hover
               'hover:scale-[1.02]',
               // Focus
               'data-focus-visible:ring-3 data-focus-visible:ring-(--sf-ring)/50',
-              // Selected
-              'data-selected:border-(--sf-primary)',
               props.static && 'pointer-events-none',
             )}
           >
-            <div className="relative aspect-4/3 w-full overflow-hidden bg-(--sf-muted)/50 group-data-selected:bg-(--sf-primary)/5">
+            <div className="relative aspect-4/3 w-full overflow-hidden bg-(--sf-muted)/40 group-data-selected:bg-(--sf-primary)/5">
               {choice.media?.value ? (
                 <img src={choice.media.value} alt={choice.label} className="size-full object-cover" />
               ) : (
@@ -62,15 +62,17 @@ export function PictureChoiceBlock(props: PictureChoiceBlockProps) {
                 </div>
               )}
             </div>
-            <div className="flex flex-1 flex-col gap-0.5 bg-(--sf-muted) px-3 py-2.5 group-data-selected:bg-(--sf-primary)/20">
-              <span className="text-center text-sm font-semibold text-(--sf-foreground) group-data-selected:text-(--sf-primary)">
-                {choice.label}
-              </span>
-              {choice.description && (
-                <span className="text-center text-xs text-(--sf-muted-foreground) group-data-selected:text-(--sf-primary)/70">
-                  {choice.description}
-                </span>
+            <div
+              className={cn(
+                'flex flex-1 flex-col gap-0.5 px-3 py-2.5',
+                props.variant === 'soft' &&
+                  'bg-(--sf-muted) text-(--sf-foreground) group-data-selected:bg-(--sf-primary)/20 group-data-selected:text-(--sf-primary)',
+                props.variant === 'outline' &&
+                  'text-(--sf-foreground) group-data-selected:bg-(--sf-primary) group-data-selected:text-(--sf-primary-foreground)',
               )}
+            >
+              <span className="text-center text-sm font-semibold">{choice.label}</span>
+              {choice.description && <span className="text-center text-xs opacity-70">{choice.description}</span>}
             </div>
           </ReactAriaListboxItem>
         ))}
