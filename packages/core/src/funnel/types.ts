@@ -262,6 +262,16 @@ export interface Theme {
 }
 
 // ============================================
+// Settings
+// ============================================
+
+export interface Settings {
+  metaPixelId?: string
+  privacyUrl?: string
+  termsUrl?: string
+}
+
+// ============================================
 // Info
 // ============================================
 
@@ -275,6 +285,7 @@ export interface Info {
   rules: Rule[]
   variables: Variables
   theme: Theme
+  settings: Settings
   published: boolean
   createdAt: Date
   publishedAt: Date | null

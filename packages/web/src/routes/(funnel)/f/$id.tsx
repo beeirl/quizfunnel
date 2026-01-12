@@ -6,12 +6,17 @@ import { Funnel as FunnelCore } from '@shopfunnel/core/funnel/index'
 import { Identifier } from '@shopfunnel/core/identifier'
 import { Question } from '@shopfunnel/core/question/index'
 import { Submission } from '@shopfunnel/core/submission/index'
-import { createFileRoute, notFound } from '@tanstack/react-router'
+import { AnyRouteMatch, createFileRoute, notFound } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { getRequestHeader } from '@tanstack/react-start/server'
 import { useEffect, useRef, useState } from 'react'
 import { ulid } from 'ulid'
 import { z } from 'zod'
+
+// prettier-ignore
+const SCRIPTS = {
+  metaPixel: (metaPixelId: string) => `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${metaPixelId}');fbq('track','PageView');`
+}
 
 const getFunnel = createServerFn()
   .inputValidator(z.object({ shortId: z.string().length(8) }))
@@ -71,6 +76,14 @@ export const Route = createFileRoute('/(funnel)/f/$id')({
     if (!funnel) throw notFound()
     const questions = await getQuestions({ data: { funnelId: funnel.id } })
     return { funnel, questions }
+  },
+  head: ({ loaderData }) => {
+    let scripts: AnyRouteMatch['headScripts'] = []
+
+    const metaPixelId = loaderData?.funnel.settings.metaPixelId
+    if (metaPixelId) scripts.push({ children: SCRIPTS.metaPixel(metaPixelId) })
+
+    return { scripts }
   },
 })
 

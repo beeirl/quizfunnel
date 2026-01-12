@@ -103,6 +103,7 @@ export namespace Funnel {
         workspaceId: Actor.workspace(),
         shortId,
         title: 'New funnel',
+        settings: {},
         currentVersion,
       })
 
@@ -165,6 +166,28 @@ export namespace Funnel {
         tx
           .update(FunnelTable)
           .set({ title: input.title })
+          .where(and(eq(FunnelTable.workspaceId, Actor.workspace()), eq(FunnelTable.id, input.id))),
+      )
+    },
+  )
+
+  export const updateSettings = fn(
+    z.object({
+      id: Identifier.schema('funnel'),
+      settings: z.object({
+        metaPixelId: z
+          .string()
+          .regex(/^\d{10,20}$/, 'Meta Pixel ID must be a 10-20 digit number')
+          .optional(),
+        privacyUrl: z.url().optional().or(z.literal('')),
+        termsUrl: z.url().optional().or(z.literal('')),
+      }),
+    }),
+    async (input) => {
+      await Database.use((tx) =>
+        tx
+          .update(FunnelTable)
+          .set({ settings: input.settings })
           .where(and(eq(FunnelTable.workspaceId, Actor.workspace()), eq(FunnelTable.id, input.id))),
       )
     },
@@ -310,6 +333,7 @@ export namespace Funnel {
           rules: group[0].funnel_version.rules,
           variables: group[0].funnel_version.variables,
           theme: group[0].funnel_version.theme,
+          settings: group[0].funnel.settings,
           published: group[0].funnel.currentVersion === group[0].funnel.publishedVersion,
           createdAt: group[0].funnel.createdAt,
           publishedAt: group[0].funnel.publishedAt,

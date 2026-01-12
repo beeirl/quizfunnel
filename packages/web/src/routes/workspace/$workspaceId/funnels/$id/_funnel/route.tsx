@@ -4,6 +4,7 @@ import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { withActor } from '@/context/auth.withActor'
 import { Funnel } from '@shopfunnel/core/funnel/index'
+import type { Settings as SettingsType } from '@shopfunnel/core/funnel/types'
 import { Identifier } from '@shopfunnel/core/identifier'
 import { IconChevronLeft as ChevronLeftIcon } from '@tabler/icons-react'
 import { mutationOptions, useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
@@ -46,6 +47,23 @@ const updateFunnelTitleMutationOptions = (workspaceId: string, funnelId: string)
     mutationFn: (title: string) => updateFunnelTitle({ data: { workspaceId, funnelId, title } }),
   })
 
+const updateFunnelSettings = createServerFn({ method: 'POST' })
+  .inputValidator(
+    z.object({
+      workspaceId: Identifier.schema('workspace'),
+      funnelId: Identifier.schema('funnel'),
+      settings: z.custom<SettingsType>(),
+    }),
+  )
+  .handler(({ data }) => {
+    return withActor(() => Funnel.updateSettings({ id: data.funnelId, settings: data.settings }), data.workspaceId)
+  })
+
+const updateFunnelSettingsMutationOptions = (workspaceId: string, funnelId: string) =>
+  mutationOptions({
+    mutationFn: (settings: SettingsType) => updateFunnelSettings({ data: { workspaceId, funnelId, settings } }),
+  })
+
 export const Route = createFileRoute('/workspace/$workspaceId/funnels/$id/_funnel')({
   component: RouteComponent,
   ssr: false,
@@ -53,6 +71,134 @@ export const Route = createFileRoute('/workspace/$workspaceId/funnels/$id/_funne
     await context.queryClient.ensureQueryData(getFunnelQueryOptions(params.workspaceId, params.id))
   },
 })
+
+function Title({ title }: { title: string }) {
+  const params = Route.useParams()
+  const queryClient = useQueryClient()
+  const updateTitleMutation = useMutation(updateFunnelTitleMutationOptions(params.workspaceId, params.id))
+
+  const [dialogOpen, setDialogOpen] = React.useState(false)
+  const [value, setValue] = React.useState(title)
+  const [error, setError] = React.useState<string | null>(null)
+
+  const handleDialogOpenChange = (open: boolean) => {
+    setDialogOpen(open)
+    if (open) {
+      setValue(title)
+      setError(null)
+    }
+  }
+
+  const handleTitleSave = async () => {
+    const trimmedValue = value.trim()
+    if (!trimmedValue) {
+      setError('Title cannot be empty')
+      return
+    }
+    setDialogOpen(false)
+    await updateTitleMutation.mutateAsync(trimmedValue)
+    queryClient.invalidateQueries(getFunnelQueryOptions(params.workspaceId, params.id))
+  }
+
+  return (
+    <Dialog.Root open={dialogOpen} onOpenChange={handleDialogOpenChange}>
+      <Dialog.Trigger aria-label="Edit funnel title" render={<Button variant="ghost">{title}</Button>} />
+      <Dialog.Content>
+        <Dialog.Header>
+          <Dialog.Title>Edit funnel title</Dialog.Title>
+        </Dialog.Header>
+        <Field.Root data-invalid={!!error}>
+          <Input
+            autoFocus
+            placeholder="Enter funnel title"
+            value={value}
+            onValueChange={(value) => {
+              setValue(value)
+              if (error) setError(null)
+            }}
+          />
+          <Field.Error>{error}</Field.Error>
+        </Field.Root>
+        <Dialog.Footer>
+          <Dialog.Close render={<Button variant="outline" />}>Cancel</Dialog.Close>
+          <Button onClick={handleTitleSave} disabled={updateTitleMutation.isPending}>
+            Save
+          </Button>
+        </Dialog.Footer>
+      </Dialog.Content>
+    </Dialog.Root>
+  )
+}
+
+function Settings({ settings }: { settings: SettingsType }) {
+  const params = Route.useParams()
+
+  const queryClient = useQueryClient()
+  const updateSettingsMutation = useMutation(updateFunnelSettingsMutationOptions(params.workspaceId, params.id))
+
+  const [dialogOpen, setDialogOpen] = React.useState(false)
+  const [value, setValue] = React.useState<SettingsType>(settings)
+
+  const handlDialogOpenChange = (open: boolean) => {
+    setDialogOpen(open)
+    if (open) setValue(settings)
+  }
+
+  const handleSettingsSave = async () => {
+    setDialogOpen(false)
+    await updateSettingsMutation.mutateAsync(value)
+    queryClient.invalidateQueries(getFunnelQueryOptions(params.workspaceId, params.id))
+  }
+
+  return (
+    <Dialog.Root open={dialogOpen} onOpenChange={handlDialogOpenChange}>
+      <Dialog.Trigger
+        render={
+          <Button className="cursor-pointer" variant="ghost">
+            Settings
+          </Button>
+        }
+      />
+      <Dialog.Content>
+        <Dialog.Header>
+          <Dialog.Title>Settings</Dialog.Title>
+        </Dialog.Header>
+        <div className="flex flex-col gap-4">
+          <Field.Root>
+            <Field.Label>Meta Pixel ID</Field.Label>
+            <Input
+              placeholder="Enter Meta Pixel ID"
+              value={value.metaPixelId ?? ''}
+              onValueChange={(value) => setValue((prev) => ({ ...prev, metaPixelId: value || undefined }))}
+            />
+          </Field.Root>
+          <Field.Root>
+            <Field.Label>Privacy Policy URL</Field.Label>
+            <Input
+              placeholder="https://example.com/privacy"
+              value={value.privacyUrl ?? ''}
+              onValueChange={(value) => setValue((prev) => ({ ...prev, privacyUrl: value || undefined }))}
+            />
+          </Field.Root>
+          <Field.Root>
+            <Field.Label>Terms of Service URL</Field.Label>
+            <Input
+              placeholder="https://example.com/terms"
+              value={value.termsUrl ?? ''}
+              onValueChange={(value) => setValue((prev) => ({ ...prev, termsUrl: value || undefined }))}
+            />
+          </Field.Root>
+        </div>
+        <Dialog.Footer>
+          <Dialog.Close render={<Button variant="outline" />}>Cancel</Dialog.Close>
+          <Button onClick={handleSettingsSave} disabled={updateSettingsMutation.isPending}>
+            Save
+          </Button>
+        </Dialog.Footer>
+      </Dialog.Content>
+    </Dialog.Root>
+  )
+}
 
 const tabs = [
   { title: 'Edit', linkOptions: linkOptions({ from: Route.fullPath, to: './edit' }) },
@@ -68,33 +214,6 @@ function RouteComponent() {
   const funnel = funnelQuery.data
 
   const publishMutation = useMutation(publishFunnelMutationOptions(params.workspaceId, params.id))
-  const updateTitleMutation = useMutation(updateFunnelTitleMutationOptions(params.workspaceId, params.id))
-
-  const [editTitleOpen, setEditTitleOpen] = React.useState(false)
-  const [titleValue, setTitleValue] = React.useState(funnel.title)
-  const [titleError, setTitleError] = React.useState<string | null>(null)
-
-  const handleTitleOpenChange = (open: boolean) => {
-    setEditTitleOpen(open)
-    if (open) {
-      setTitleValue(funnel.title)
-      setTitleError(null)
-    }
-  }
-
-  const handleTitleSave = () => {
-    const trimmedTitle = titleValue.trim()
-    if (!trimmedTitle) {
-      setTitleError('Title cannot be empty')
-      return
-    }
-    updateTitleMutation.mutate(trimmedTitle, {
-      onSuccess: () => {
-        queryClient.invalidateQueries(getFunnelQueryOptions(params.workspaceId, params.id))
-        setEditTitleOpen(false)
-      },
-    })
-  }
 
   return (
     <div className="flex h-screen w-screen flex-col">
@@ -108,38 +227,7 @@ function RouteComponent() {
           >
             <ChevronLeftIcon />
           </Button>
-          <Dialog.Root open={editTitleOpen} onOpenChange={handleTitleOpenChange}>
-            <Dialog.Trigger aria-label="Edit funnel title" render={<Button variant="ghost">{funnel.title}</Button>} />
-            <Dialog.Content>
-              <Dialog.Header>
-                <Dialog.Title>Edit funnel title</Dialog.Title>
-              </Dialog.Header>
-              <Field.Root data-invalid={!!titleError}>
-                <Input
-                  autoFocus
-                  placeholder="Enter funnel title"
-                  value={titleValue}
-                  onValueChange={(value) => {
-                    setTitleValue(value)
-                    if (titleError) setTitleError(null)
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      handleTitleSave()
-                    }
-                  }}
-                />
-                {titleError && <Field.Error>{titleError}</Field.Error>}
-              </Field.Root>
-              <Dialog.Footer>
-                <Dialog.Close render={<Button variant="outline" />}>Cancel</Dialog.Close>
-                <Button onClick={handleTitleSave} disabled={updateTitleMutation.isPending}>
-                  {updateTitleMutation.isPending ? 'Saving...' : 'Save'}
-                </Button>
-              </Dialog.Footer>
-            </Dialog.Content>
-          </Dialog.Root>
+          <Title title={funnel.title} />
         </div>
         <div className="flex items-center justify-center gap-1">
           {tabs.map((tab) => (
@@ -151,6 +239,7 @@ function RouteComponent() {
               )}
             </MatchRoute>
           ))}
+          <Settings settings={funnel.settings} />
         </div>
         <div className="flex items-center justify-end gap-1">
           <Button

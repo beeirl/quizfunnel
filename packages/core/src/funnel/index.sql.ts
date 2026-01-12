@@ -1,6 +1,6 @@
 import { int, json, mysqlTable, primaryKey, uniqueIndex, varchar } from 'drizzle-orm/mysql-core'
 import { id, timestamp, timestampColumns, workspaceColumns, workspaceIndexes } from '../database/types'
-import type { Page, Rule, Theme, Variables } from './types'
+import type { Page, Rule, Settings, Theme, Variables } from './types'
 
 export const FunnelTable = mysqlTable(
   'funnel',
@@ -9,6 +9,7 @@ export const FunnelTable = mysqlTable(
     ...timestampColumns,
     shortId: varchar('short_id', { length: 8 }).notNull(),
     title: varchar('title', { length: 255 }).notNull(),
+    settings: json('settings').$type<Settings>().notNull(),
     currentVersion: int('current_version').notNull(),
     publishedVersion: int('published_version'),
     publishedAt: timestamp('published_at'),
