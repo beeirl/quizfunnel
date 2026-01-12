@@ -11,9 +11,9 @@ export namespace Analytics {
     timestamp: z.string(),
   })
 
-  const FunnelViewEvent = z.object({
+  const FunnelEnterEvent = z.object({
     ...EventBase.shape,
-    type: z.literal('funnel_view'),
+    type: z.literal('funnel_enter'),
     payload: z.object({
       device: z.enum(['mobile', 'desktop']).optional(),
       os: z.string().optional(),
@@ -31,9 +31,15 @@ export namespace Analytics {
     payload: z.object({}),
   })
 
-  const FunnelCompleteEvent = z.object({
+  const FunnelEndEvent = z.object({
     ...EventBase.shape,
-    type: z.literal('funnel_complete'),
+    type: z.literal('funnel_end'),
+    payload: z.object({}),
+  })
+
+  const FunnelExitEvent = z.object({
+    ...EventBase.shape,
+    type: z.literal('funnel_exit'),
     payload: z.object({}),
   })
 
@@ -76,9 +82,10 @@ export namespace Analytics {
   })
 
   export const Event = z.discriminatedUnion('type', [
-    FunnelViewEvent,
+    FunnelEnterEvent,
     FunnelStartEvent,
-    FunnelCompleteEvent,
+    FunnelEndEvent,
+    FunnelExitEvent,
     PageViewEvent,
     PageCompleteEvent,
     QuestionAnswerEvent,

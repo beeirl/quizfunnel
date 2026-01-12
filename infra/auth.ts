@@ -18,10 +18,8 @@ export const auth = new sst.cloudflare.Worker('AuthApi', {
   },
 })
 
-if ($app.stage === 'production') {
-  new cloudflare.WorkersRoute('AuthWorkerRoute', {
-    zoneId: secret.CLOUDFLARE_ZONE_ID.value,
-    pattern: `auth.${domain}/*`,
-    script: auth.nodes.worker.scriptName,
-  })
-}
+new cloudflare.WorkersRoute('AuthWorkerRoute', {
+  zoneId: secret.CLOUDFLARE_ZONE_ID.value,
+  pattern: `auth.${domain}/*`,
+  script: auth.nodes.worker.scriptName,
+})

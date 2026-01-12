@@ -1,9 +1,9 @@
 DESCRIPTION >
-    Parsed funnel_view events with session metadata.
+    Parsed funnel_enter events with session metadata.
 
 TOKEN api READ
 
-NODE funnel_view_events_node
+NODE funnel_enter_events_node
 SQL >
     SELECT
         timestamp,
@@ -20,6 +20,6 @@ SQL >
         JSONExtractString(payload, 'city') AS city,
         JSONExtractString(payload, 'referrer') AS referrer
     FROM events
-    WHERE type = 'funnel_view'
+    WHERE type = 'funnel_enter'
 
 TYPE endpoint

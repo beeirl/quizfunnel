@@ -269,15 +269,13 @@ export function Funnel({ funnel, mode = 'live', onComplete, onPageChange, onPage
 
   useEffect(() => {
     if (mode === 'preview') return
-
-    const storedValues = localStorage.getItem(VALUES_STORAGE_KEY)
-    if (!storedValues) return
-
     try {
-      const parsedValues = JSON.parse(storedValues)
-      setValues(parsedValues)
+      const storedValues = localStorage.getItem(VALUES_STORAGE_KEY)
+      if (!storedValues) return
+      const values = JSON.parse(storedValues)
+      setValues(values)
     } catch {
-      // Invalid stored data, ignore
+      // noop
     }
   }, [VALUES_STORAGE_KEY, mode])
 
@@ -293,7 +291,11 @@ export function Funnel({ funnel, mode = 'live', onComplete, onPageChange, onPage
   const handleBlockValueChange = (blockId: string, value: unknown) => {
     const newValues = { ...values, [blockId]: value }
     setValues(newValues)
-    localStorage.setItem(VALUES_STORAGE_KEY, JSON.stringify(newValues))
+    try {
+      localStorage.setItem(VALUES_STORAGE_KEY, JSON.stringify(newValues))
+    } catch {
+      // noop
+    }
     if (shouldAutoAdvance(visibleBlocks)) {
       next(newValues)
     }
@@ -362,7 +364,11 @@ export function Funnel({ funnel, mode = 'live', onComplete, onPageChange, onPage
       setVariables(nextVariables)
 
       if (nextPageIndex >= funnel.pages.length) {
-        localStorage.removeItem(VALUES_STORAGE_KEY)
+        try {
+          localStorage.removeItem(VALUES_STORAGE_KEY)
+        } catch {
+          // noop
+        }
         await onComplete?.(values)
       }
     }

@@ -27,9 +27,9 @@ NODE current_period_node
 SQL >
     %
     SELECT
-        uniqIf(session_id, type = 'funnel_view') AS total_views,
+        uniqIf(session_id, type = 'funnel_enter') AS total_views,
         uniqIf(session_id, type = 'funnel_start') AS total_starts,
-        uniqIf(session_id, type = 'funnel_complete') AS total_completions
+        uniqIf(session_id, type = 'funnel_end') AS total_completions
     FROM events
     WHERE workspace_id = {{ String(workspace_id, required=True) }}
         AND funnel_id = {{ String(funnel_id, required=True) }}
