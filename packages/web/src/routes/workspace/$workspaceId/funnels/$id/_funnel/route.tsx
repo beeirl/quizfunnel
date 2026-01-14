@@ -232,6 +232,7 @@ function RouteComponent() {
             variant="ghost"
             size="icon"
             aria-label="Back to dashboard"
+            nativeButton={false}
             render={<Link from={Route.fullPath} to="../.." />}
           >
             <ChevronLeftIcon />
@@ -242,7 +243,11 @@ function RouteComponent() {
           {tabs.map((tab) => (
             <MatchRoute key={tab.title} {...tab.linkOptions}>
               {(match) => (
-                <Button variant={match ? 'secondary' : 'ghost'} render={<Link {...tab.linkOptions} />}>
+                <Button
+                  variant={match ? 'secondary' : 'ghost'}
+                  nativeButton={false}
+                  render={<Link {...tab.linkOptions} />}
+                >
                   {tab.title}
                 </Button>
               )}
@@ -255,6 +260,7 @@ function RouteComponent() {
             <Button
               variant="ghost"
               aria-label="Preview"
+              nativeButton={false}
               render={<Link from={Route.fullPath} to="preview" target="_blank" />}
             >
               Preview
@@ -263,6 +269,7 @@ function RouteComponent() {
           <Button
             variant="ghost"
             aria-label="Share"
+            nativeButton={false}
             render={<Link to="/f/$id" params={{ id: funnel.shortId }} target="_blank" />}
           >
             Share

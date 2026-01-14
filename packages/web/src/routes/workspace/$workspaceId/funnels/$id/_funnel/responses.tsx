@@ -138,25 +138,27 @@ function RouteComponent() {
       <div className="px-6 text-2xl font-bold sm:px-14">Responses</div>
       {!hasResponses ? (
         <div className="px-6 sm:px-14">
-          <Card.Root>
-            <Card.Content>
-              <Empty.Root>
-                <Empty.Header>
-                  <Empty.Media variant="icon">
-                    <InboxIcon />
-                  </Empty.Media>
-                  <Empty.Title>No responses yet</Empty.Title>
-                  <Empty.Description>
-                    Responses will appear here once users start completing your funnel.
-                  </Empty.Description>
-                </Empty.Header>
-              </Empty.Root>
-            </Card.Content>
-          </Card.Root>
+          <div className="rounded-3xl bg-muted p-2">
+            <Card.Root>
+              <Card.Content>
+                <Empty.Root>
+                  <Empty.Header>
+                    <Empty.Media variant="icon">
+                      <InboxIcon />
+                    </Empty.Media>
+                    <Empty.Title>No responses yet</Empty.Title>
+                    <Empty.Description>
+                      Responses will appear here once users start completing your funnel.
+                    </Empty.Description>
+                  </Empty.Header>
+                </Empty.Root>
+              </Card.Content>
+            </Card.Root>
+          </div>
         </div>
       ) : (
         <>
-          <div className="max-h-full overflow-auto px-6 sm:px-12">
+          <div className="no-scrollbar max-h-full overflow-auto px-6 sm:px-12">
             <table className="w-full min-w-max caption-bottom text-sm">
               <thead className="sticky top-0 z-10 [&_tr]:border-b">
                 {table.getHeaderGroups().map((headerGroup) => (
