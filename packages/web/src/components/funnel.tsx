@@ -247,8 +247,7 @@ export interface FunnelProps {
 export function Funnel({ funnel, mode = 'live', onComplete, onPageChange, onPageComplete }: FunnelProps) {
   const VALUES_STORAGE_KEY = `sf_funnel_${funnel.id}_values`
 
-  const canNextRef = useRef(true)
-
+  const canChangePageRef = useRef(true)
   const [currentPageIndex, setCurrentPageIndex] = useState(0)
 
   const [values, setValues] = useState<Record<string, unknown>>({})
@@ -313,15 +312,22 @@ export function Funnel({ funnel, mode = 'live', onComplete, onPageChange, onPage
     }
   }
 
+  const handlePageChangeComplete = () => {
+    canChangePageRef.current = true
+  }
+
   async function next(values: Values) {
     if (!currentPage) return
-    if (!canNextRef.current) return
+    if (!canChangePageRef.current) return
+
+    canChangePageRef.current = false
 
     const errors = validateBlocks(visibleBlocks, values)
     setErrors(errors ?? {})
-    if (errors) return
-
-    canNextRef.current = false
+    if (errors) {
+      canChangePageRef.current = true
+      return
+    }
 
     let nextPageIndex = currentPageIndex + 1
     let nextHiddenBlockIds = new Set<string>()
@@ -360,7 +366,6 @@ export function Funnel({ funnel, mode = 'live', onComplete, onPageChange, onPage
       await onComplete?.(values)
       window.location.href = redirectUrl
     } else {
-      canNextRef.current = true
       setCurrentPageIndex(nextPageIndex)
       setHiddenBlockIds(nextHiddenBlockIds)
       setVariables(nextVariables)
@@ -396,9 +401,9 @@ export function Funnel({ funnel, mode = 'live', onComplete, onPageChange, onPage
               transition={{ duration: 0.3, ease: 'easeOut' }}
             />
           </div>
-          <AnimatePresence mode="wait">
+          <AnimatePresence initial={false} mode="wait" onExitComplete={handlePageChangeComplete}>
             <motion.div
-              key={`funnel-page-${currentPageIndex}`}
+              key={`page-${currentPageIndex}`}
               className="flex flex-1 flex-col"
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}

@@ -14,6 +14,7 @@ export function MultipleChoiceBlock(props: MultipleChoiceBlockProps) {
   return (
     <div className="group-not-data-first/block:mt-6">
       <ReactAriaListbox
+        aria-label="Multiple choice options"
         className="flex flex-col gap-2"
         disallowEmptySelection={props.static ? false : !props.block.properties.multiple}
         selectionMode={props.static ? 'none' : props.block.properties.multiple ? 'multiple' : 'single'}
@@ -30,6 +31,7 @@ export function MultipleChoiceBlock(props: MultipleChoiceBlockProps) {
           <ReactAriaListboxItem
             key={choice.id}
             id={choice.id}
+            textValue={choice.label}
             isDisabled={props.static}
             className={cn(
               // Base
