@@ -102,6 +102,7 @@ function RouteComponent() {
         {funnels.map((funnel) => (
           <Item.Root
             key={funnel.id}
+            size="xs"
             variant="outline"
             render={<Link from={Route.fullPath} to="funnels/$id/edit" params={{ id: funnel.id }} />}
           >

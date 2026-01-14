@@ -28,7 +28,9 @@ interface ThemePanelProps {
 
 export function ThemePanel({ theme, onThemeUpdate, onImageUpload }: ThemePanelProps) {
   const fileInputRef = React.useRef<HTMLInputElement>(null)
+  const faviconInputRef = React.useRef<HTMLInputElement>(null)
   const [isUploading, setIsUploading] = React.useState(false)
+  const [isUploadingFavicon, setIsUploadingFavicon] = React.useState(false)
 
   const handleColorChange = (key: keyof Theme['colors'], value: string) => {
     onThemeUpdate({
@@ -57,6 +59,26 @@ export function ThemePanel({ theme, onThemeUpdate, onImageUpload }: ThemePanelPr
 
   const handleLogoRemove = () => {
     onThemeUpdate({ logo: undefined })
+  }
+
+  const handleFaviconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !onImageUpload) return
+
+    setIsUploadingFavicon(true)
+    try {
+      const url = await onImageUpload(file)
+      onThemeUpdate({ favicon: url })
+    } finally {
+      setIsUploadingFavicon(false)
+      if (faviconInputRef.current) {
+        faviconInputRef.current.value = ''
+      }
+    }
+  }
+
+  const handleFaviconRemove = () => {
+    onThemeUpdate({ favicon: undefined })
   }
 
   return (
@@ -94,6 +116,42 @@ export function ThemePanel({ theme, onThemeUpdate, onImageUpload }: ThemePanelPr
               )}
             </InputGroup.Root>
             <input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+          </Pane.Group>
+          <Pane.Separator />
+          <Pane.Group>
+            <Pane.GroupHeader>
+              <Pane.GroupLabel>Favicon</Pane.GroupLabel>
+            </Pane.GroupHeader>
+            <InputGroup.Root>
+              <InputGroup.Addon>
+                {theme.favicon ? (
+                  <img src={theme.favicon} alt="Favicon" className="size-6 rounded object-contain" />
+                ) : (
+                  <UploadIcon className="size-4" />
+                )}
+              </InputGroup.Addon>
+              <InputGroup.Input
+                readOnly
+                placeholder="Upload favicon"
+                value={isUploadingFavicon ? 'Uploading...' : theme.favicon ? 'Image' : ''}
+                className="cursor-pointer"
+                onClick={() => faviconInputRef.current?.click()}
+              />
+              {theme.favicon && (
+                <InputGroup.Addon align="inline-end">
+                  <InputGroup.Button size="icon-xs" variant="ghost" onClick={handleFaviconRemove}>
+                    <XIcon className="size-4" />
+                  </InputGroup.Button>
+                </InputGroup.Addon>
+              )}
+            </InputGroup.Root>
+            <input
+              ref={faviconInputRef}
+              type="file"
+              accept="image/x-icon,image/png,image/svg+xml,image/webp,.ico"
+              onChange={handleFaviconUpload}
+              className="hidden"
+            />
           </Pane.Group>
           <Pane.Separator />
           <Pane.Group>

@@ -254,6 +254,7 @@ export interface Rule {
 
 export interface Theme {
   logo?: string
+  favicon?: string
   radius: string
   style: 'outline' | 'soft'
   colors: {

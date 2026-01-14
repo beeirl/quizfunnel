@@ -78,14 +78,18 @@ export const Route = createFileRoute('/(funnel)/f/$id')({
     return { funnel, questions }
   },
   head: ({ loaderData }) => {
-    let scripts: AnyRouteMatch['headScripts'] = []
+    const scripts: AnyRouteMatch['headScripts'] = []
+    const links: AnyRouteMatch['links'] = []
 
     const title = loaderData?.funnel.title
+
+    const favicon = loaderData?.funnel.theme?.favicon
+    if (favicon) links.push({ rel: 'icon', href: favicon })
 
     const metaPixelId = loaderData?.funnel.settings.metaPixelId
     if (metaPixelId) scripts.push({ children: SCRIPTS.metaPixel(metaPixelId) })
 
-    return { meta: [{ title }], scripts }
+    return { meta: [{ title }], scripts, links }
   },
 })
 
