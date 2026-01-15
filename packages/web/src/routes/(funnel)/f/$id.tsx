@@ -86,8 +86,14 @@ export const Route = createFileRoute('/(funnel)/f/$id')({
     const favicon = loaderData?.funnel.theme?.favicon
     if (favicon) links.push({ rel: 'icon', href: favicon })
 
-    const metaPixelId = loaderData?.funnel.settings.metaPixelId
-    if (metaPixelId) scripts.push({ children: SCRIPTS.metaPixel(metaPixelId) })
+    if (loaderData?.funnel.workspaceId === 'wrk_01KEWFQB218VAN76CCRVJV2RQ2') {
+      // prettier-ignore
+      scripts.push({ children: `window._adqLoaded=0;window._upsqueue=window._upsqueue||[];window._upstack=window._upstack||function(){window._upsqueue.push(arguments);};window._upstack('init','919f42b8-b4de-40f8-b2e3-bc7af67609a6');window._upstack('page');` })
+      scripts.push({ src: 'https://prod2-cdn.upstackified.com/scripts/px/ups.min.js', defer: true })
+    } else {
+      const metaPixelId = loaderData?.funnel.settings.metaPixelId
+      if (metaPixelId) scripts.push({ children: SCRIPTS.metaPixel(metaPixelId) })
+    }
 
     return { meta: [{ title }], scripts, links }
   },

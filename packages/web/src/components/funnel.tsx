@@ -1,5 +1,6 @@
 import { Block } from '@/components/block'
 import { NextButton } from '@/components/next-button'
+import { cn } from '@/lib/utils'
 import type {
   Block as BlockType,
   Condition,
@@ -268,6 +269,9 @@ export function Funnel({ funnel, mode = 'live', onComplete, onPageChange, onPage
     [visibleBlocks, values, variables],
   )
 
+  const showLegalDisclaimer = currentPageIndex === 0 && funnel.settings.privacyUrl && funnel.settings.termsUrl
+  const showNextButton = !shouldAutoAdvance(visibleBlocks)
+
   useEffect(() => {
     if (mode === 'preview') return
     try {
@@ -412,7 +416,7 @@ export function Funnel({ funnel, mode = 'live', onComplete, onPageChange, onPage
             >
               {currentPage && (
                 <>
-                  <div className="pt-8">
+                  <div className="flex-1 pt-8">
                     {resolvedBlocks.map((block, index) => (
                       <div key={block.id}>
                         <Block
@@ -429,34 +433,39 @@ export function Funnel({ funnel, mode = 'live', onComplete, onPageChange, onPage
                       </div>
                     ))}
                   </div>
-                  <div className="sticky bottom-0 mt-auto flex w-full flex-col gap-4 bg-(--sf-background) py-6">
-                    {!shouldAutoAdvance(visibleBlocks) && (
+                  {showNextButton && (
+                    <div className="sticky bottom-0 bg-(--sf-background) pb-6">
                       <NextButton onClick={() => next(values)}>{currentPage.properties.buttonText}</NextButton>
-                    )}
-                    {currentPageIndex === 0 && funnel.settings.privacyUrl && funnel.settings.termsUrl && (
-                      <span className="text-center text-xs text-balance text-(--sf-muted-foreground)">
-                        By clicking any of the options above, you agree with the{' '}
-                        <a
-                          className="underline"
-                          href={funnel.settings.termsUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Terms of Use
-                        </a>{' '}
-                        and{' '}
-                        <a
-                          className="underline"
-                          href={funnel.settings.privacyUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Privacy Policy
-                        </a>
-                        .
-                      </span>
-                    )}
-                  </div>
+                    </div>
+                  )}
+                  {showLegalDisclaimer && (
+                    <div
+                      className={cn(
+                        'py-3 text-center text-[0.625rem] text-balance text-(--sf-muted-foreground)',
+                        showNextButton && 'z-1 -mt-3 pt-0',
+                      )}
+                    >
+                      By clicking any of the options above, you agree with the{' '}
+                      <a
+                        className="underline"
+                        href={funnel.settings.termsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Terms of Use
+                      </a>{' '}
+                      and{' '}
+                      <a
+                        className="underline"
+                        href={funnel.settings.privacyUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Privacy Policy
+                      </a>
+                      .
+                    </div>
+                  )}
                 </>
               )}
             </motion.div>
