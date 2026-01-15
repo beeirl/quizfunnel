@@ -378,7 +378,7 @@ function RouteComponent() {
   }
 
   return (
-    <div className="flex flex-1 overflow-hidden">
+    <div className="flex h-[calc(100vh-var(--dashboard-header-height))]">
       <PagesPanel
         pages={funnel.pages}
         selectedPageId={selectedPageId}

@@ -225,8 +225,11 @@ function RouteComponent() {
   const publishMutation = useMutation(publishFunnelMutationOptions(params.workspaceId, params.id))
 
   return (
-    <div className="flex h-screen w-screen flex-col">
-      <div className="grid h-12 w-full shrink-0 grid-cols-3 items-center border-b border-border bg-background px-2">
+    <div
+      className="flex min-h-screen w-screen flex-col"
+      style={{ '--dashboard-header-height': '3rem' } as React.CSSProperties}
+    >
+      <div className="sticky top-0 z-10 grid h-(--dashboard-header-height) w-full shrink-0 grid-cols-3 items-center border-b border-border bg-background px-2">
         <div className="flex items-center">
           <Button
             variant="ghost"

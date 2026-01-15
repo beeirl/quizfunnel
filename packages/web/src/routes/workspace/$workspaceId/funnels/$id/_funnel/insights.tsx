@@ -11,14 +11,6 @@ import { createFileRoute } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
-function formatDuration(ms: number): string {
-  if (ms <= 0) return '0:00 min'
-  const totalSeconds = Math.round(ms / 1000)
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-  return `${minutes}:${seconds.toString().padStart(2, '0')} min`
-}
-
 const getPublishedVersionsQuery = createServerFn()
   .inputValidator(
     z.object({
@@ -63,6 +55,26 @@ const getInsightsQueryOptions = (workspaceId: string, funnelId: string, funnelVe
     queryFn: () => getInsights({ data: { workspaceId, funnelId, funnelVersion: funnelVersion! } }),
     enabled: funnelVersion !== null,
   })
+
+function formatDuration(ms: number): string {
+  if (ms <= 0) return '0:00 min'
+  const totalSeconds = Math.round(ms / 1000)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${minutes}:${seconds.toString().padStart(2, '0')} min`
+}
+
+function formatNumber(value: number, compact = false): string {
+  if (compact && value >= 1000) {
+    return new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(value)
+  }
+  return value.toLocaleString('en-US')
+}
+
+function formatPercentage(value: number): string {
+  const formatted = value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+  return `${formatted}%`
+}
 
 export const Route = createFileRoute('/workspace/$workspaceId/funnels/$id/_funnel/insights')({
   component: RouteComponent,
@@ -116,11 +128,11 @@ function Insights({
   }
 
   const kpis = [
-    { label: 'Total Views', value: insights.kpis.total_views.toLocaleString() },
-    { label: 'Started', value: insights.kpis.total_starts.toLocaleString() },
-    { label: 'Start Rate', value: `${insights.kpis.start_rate}%` },
-    { label: 'Completions', value: insights.kpis.total_completions.toLocaleString() },
-    { label: 'Completion Rate', value: `${insights.kpis.completion_rate}%` },
+    { label: 'Total Views', value: formatNumber(insights.kpis.total_views, true) },
+    { label: 'Started', value: formatNumber(insights.kpis.total_starts, true) },
+    { label: 'Start Rate', value: formatPercentage(insights.kpis.start_rate) },
+    { label: 'Completions', value: formatNumber(insights.kpis.total_completions, true) },
+    { label: 'Completion Rate', value: formatPercentage(insights.kpis.completion_rate) },
   ]
 
   return (
@@ -152,11 +164,11 @@ function Insights({
                 {insights.pages.map((page) => (
                   <Table.Row key={page.page_id} className="hover:bg-transparent">
                     <Table.Cell>{page.page_name || page.page_id}</Table.Cell>
-                    <Table.Cell className="text-right">{page.page_views.toLocaleString()}</Table.Cell>
+                    <Table.Cell className="text-right">{formatNumber(page.page_views)}</Table.Cell>
                     <Table.Cell className="text-right">
-                      {(page.page_views - page.page_completions).toLocaleString()}
+                      {formatNumber(page.page_views - page.page_completions)}
                     </Table.Cell>
-                    <Table.Cell className="text-right">{page.dropoff_rate}%</Table.Cell>
+                    <Table.Cell className="text-right">{formatPercentage(page.dropoff_rate)}</Table.Cell>
                     <Table.Cell className="text-right">{formatDuration(page.avg_duration)}</Table.Cell>
                   </Table.Row>
                 ))}
@@ -177,8 +189,8 @@ function RouteComponent() {
   const latestPublishedVersion = publishedVersions.at(-1)
 
   return (
-    <div className="flex flex-1 justify-center overflow-auto p-6 sm:pt-10">
-      <div className="flex w-full max-w-4xl flex-col gap-6">
+    <div className="p-6 sm:pt-10">
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
         <div className="text-2xl font-bold">Insights</div>
         {!latestPublishedVersion ? (
           <div className="rounded-3xl bg-muted p-2">
