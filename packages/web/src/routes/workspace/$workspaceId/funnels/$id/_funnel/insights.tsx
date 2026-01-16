@@ -224,11 +224,11 @@ function Insights({
             <Table.Root className="table-fixed">
               <Table.Header>
                 <Table.Row className="hover:bg-transparent">
-                  <Table.Head className="w-[20%]">Page</Table.Head>
-                  <Table.Head className="w-[20%] text-right">Views</Table.Head>
-                  <Table.Head className="w-[20%] text-right">Exits</Table.Head>
-                  <Table.Head className="w-[20%] text-right">Drop-off rate</Table.Head>
-                  <Table.Head className="w-[20%] text-right">Avg time</Table.Head>
+                  <Table.Head className="w-[40%]">Page</Table.Head>
+                  <Table.Head className="w-[15%] text-right">Views</Table.Head>
+                  <Table.Head className="w-[15%] text-right">Exits</Table.Head>
+                  <Table.Head className="w-[15%] text-right">Drop-off</Table.Head>
+                  <Table.Head className="w-[15%] text-right">Avg time</Table.Head>
                 </Table.Row>
               </Table.Header>
               <Table.Body>
