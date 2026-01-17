@@ -20,7 +20,7 @@ interface StepsProps {
 }
 
 function ChecklistSteps({ items, progress, isStatic }: StepsProps) {
-  const completedCount = isStatic ? Math.floor(items.length / 2) : Math.floor((progress / 100) * items.length)
+  const completedCount = isStatic ? 1 : Math.floor((progress / 100) * items.length)
   const activeIndex = completedCount
 
   return (
@@ -28,7 +28,7 @@ function ChecklistSteps({ items, progress, isStatic }: StepsProps) {
       <div className="flex max-w-full flex-col gap-2">
         {items.map((item, index) => {
           const completed = index < completedCount
-          const active = index === activeIndex && !isStatic
+          const active = index === activeIndex && (!isStatic || index === 1)
           return (
             <div
               key={index}
@@ -40,11 +40,11 @@ function ChecklistSteps({ items, progress, isStatic }: StepsProps) {
               {completed ? (
                 <CircleCheckFilledIcon className="mt-0.5 size-5 shrink-0 animate-in text-(--sf-primary) duration-300 zoom-in-50" />
               ) : active ? (
-                <LoaderIcon className="mt-0.5 size-5 shrink-0 animate-spin text-(--sf-primary)" />
+                <LoaderIcon className={cn('mt-0.5 size-5 shrink-0 text-(--sf-primary)', !isStatic && 'animate-spin')} />
               ) : (
                 <div className="mt-0.5 size-5 shrink-0" />
               )}
-              <span className="min-w-0 break-words">{item}</span>
+              <span className="min-w-0 wrap-break-word">{item}</span>
             </div>
           )
         })}

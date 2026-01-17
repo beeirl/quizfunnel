@@ -481,7 +481,7 @@ export function Funnel({ funnel, mode = 'live', onComplete, onPageChange, onPage
       </div>
       {redirecting &&
         createPortal(
-          <div className="fixed inset-0 z-50 flex animate-in flex-col items-center justify-center gap-1 bg-(--sf-background)/70 duration-500 fade-in supports-backdrop-filter:backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex animate-in flex-col items-center justify-center gap-0.5 bg-(--sf-background)/70 duration-500 fade-in supports-backdrop-filter:backdrop-blur-sm">
             <LoaderIcon className="size-4.5 animate-spin text-(--sf-foreground)" />
             <div className="text-sm text-(--sf-foreground)">Please wait...</div>
           </div>,
